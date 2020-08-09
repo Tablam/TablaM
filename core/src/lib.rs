@@ -1,7 +1,10 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+pub mod dsl;
+pub mod scalar;
+pub mod schema;
+pub mod types;
+
+pub mod prelude {
+    pub use crate::dsl::*;
+    pub use crate::scalar::Scalar;
+    pub use crate::types::{ColumnAlias, DataType, Rel};
 }

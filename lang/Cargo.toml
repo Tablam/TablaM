@@ -1,0 +1,17 @@
+[package]
+name = "tablam-lang"
+version = "0.1.0"
+authors = ["Mario Montoya <mamcx@elmalabarista.com>"]
+repository = "https://bitbucket.org/tablam/tablam/"
+homepage = "https://bitbucket.org/tablam/tablam/"
+license = "MPL-2.0"
+keywords = ["database", "interpreter", "language", "relational"]
+categories = ["interpreter", "language", "relational", "tablam"]
+edition = "2018"
+
+[dependencies]
+tablam = { path = "../core" }
+
+[[bin]]
+name = "tablam"
+path = "src/main.rs"

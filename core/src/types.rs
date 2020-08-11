@@ -28,6 +28,7 @@ pub enum DataType {
     // For list, dynamic
     ANY,
     // Complex
+    Sum(Box<DataType>),
     Vec(Box<DataType>),
     Tree(Box<DataType>, Box<DataType>),
     Table(Vec<DataType>),

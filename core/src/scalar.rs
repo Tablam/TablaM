@@ -5,6 +5,7 @@ use decorum::R64;
 use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
+use crate::sum_type::Case;
 use crate::types::{DataType, NativeKind};
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -28,6 +29,8 @@ pub enum Scalar {
     //Strings
     Char(char),
     UTF8(Rc<String>),
+    //Sum types
+    Sum(Rc<Case>),
 }
 
 impl Scalar {
@@ -44,22 +47,25 @@ impl Scalar {
             Scalar::Char(_) => "Char",
             Scalar::DateTime(_) => "DateTime",
             Scalar::UTF8(_) => "UTF8",
+            //TODO: This is wrong, show the tag not the type...
+            Scalar::Sum(x) => &x.tag,
         }
     }
 
     fn kind(&self) -> DataType {
         match self {
             Scalar::None => DataType::None,
+            Scalar::Bit(_) => DataType::Bit,
             Scalar::Bool(_) => DataType::Bool,
-            Scalar::Bit(_) => DataType::Bool,
-            Scalar::I64(_) => DataType::I64,
-            Scalar::F64(_) => DataType::F64,
-            Scalar::Decimal(_) => DataType::Decimal,
-            Scalar::Time(_) => DataType::Time,
+            Scalar::Char(_) => DataType::Char,
             Scalar::Date(_) => DataType::Date,
             Scalar::DateTime(_) => DataType::DateTime,
-            Scalar::Char(_) => DataType::DateTime,
+            Scalar::Decimal(_) => DataType::Decimal,
+            Scalar::F64(_) => DataType::F64,
+            Scalar::I64(_) => DataType::I64,
+            Scalar::Time(_) => DataType::Time,
             Scalar::UTF8(_) => DataType::UTF8,
+            Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
         }
     }
 }
@@ -85,5 +91,11 @@ kind_native!(String, UTF8);
 impl From<&str> for Scalar {
     fn from(x: &str) -> Self {
         Scalar::UTF8(Rc::new(x.into()))
+    }
+}
+
+impl From<Box<Scalar>> for Scalar {
+    fn from(x: Box<Scalar>) -> Self {
+        *x
     }
 }

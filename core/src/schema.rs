@@ -203,7 +203,8 @@ impl Schema {
     }
 
     pub fn kind(&self) -> DataType {
-        DataType::Table(self.columns.iter().map(|x| x.kind.clone()).collect())
+        let kinds: Vec<_> = self.columns.iter().map(|x| x.kind.clone()).collect();
+        DataType::Map(kinds.into())
     }
 }
 

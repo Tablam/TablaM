@@ -1,8 +1,9 @@
-use crate::scalar::{Col, Scalar};
-use crate::schema::*;
-use crate::types::*;
+use crate::prelude::*;
+use crate::scalar::Col;
+use crate::types::Column;
+
+use crate::rust_decimal::Decimal;
 use decorum::R64;
-use rust_decimal::Decimal;
 
 pub fn field(name: &str, kind: DataType) -> Field {
     Field::new(name, kind)
@@ -58,4 +59,8 @@ pub fn float(x: R64) -> Scalar {
 }
 pub fn dec(x: Decimal) -> Scalar {
     x.into()
+}
+
+pub fn some<T: Into<Scalar>>(x: T) -> Scalar {
+    Case::some(x.into()).into()
 }

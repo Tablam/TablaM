@@ -1,15 +1,36 @@
+use std::any::Any;
 use std::cmp::Ordering;
-use std::fmt;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
+use derive_more::Display;
+
 use crate::scalar::Scalar;
 use crate::schema::Schema;
-use std::any::Any;
+use std::fmt;
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct KindRel(Vec<DataType>);
+
+impl fmt::Display for KindRel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[|")?;
+        for x in &self.0 {
+            write!(f, "{}", x)?;
+        }
+        write!(f, "|]")
+    }
+}
+
+impl From<Vec<DataType>> for KindRel {
+    fn from(x: Vec<DataType>) -> Self {
+        KindRel(x)
+    }
+}
 
 //NOTE: This define a total order, so it matter what is the order of the enum!
 //The overall sorting order is defined as:
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub enum DataType {
     None,
     Bit,
@@ -28,17 +49,15 @@ pub enum DataType {
     // For list, dynamic
     ANY,
     // Complex
+    #[display(fmt = "Enum({})", _0)]
     Sum(Box<DataType>),
+    #[display(fmt = "Vec({})", _0)]
     Vec(Box<DataType>),
-    Tree(Box<DataType>, Box<DataType>),
-    Table(Vec<DataType>),
-    // Planed: Blob, Sum(DataType), Product(DataType)
-}
-
-impl fmt::Display for DataType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
+    #[display(fmt = "Tree({})", _0)]
+    Tree(KindRel),
+    #[display(fmt = "Map({})", _0)]
+    Map(KindRel),
+    // Planed: Blob
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]

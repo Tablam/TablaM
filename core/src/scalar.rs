@@ -7,6 +7,7 @@ use rust_decimal::Decimal;
 
 use crate::sum_type::Case;
 use crate::types::{DataType, NativeKind};
+use crate::vector::Vector;
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
 pub type Date = chrono::Date<chrono::FixedOffset>;
@@ -30,29 +31,13 @@ pub enum Scalar {
     Char(char),
     UTF8(Rc<String>),
     //Sum types
-    Sum(Rc<Case>),
+    Sum(Box<Case>),
+    //Collections
+    Vector(Box<Vector>),
 }
 
 impl Scalar {
-    fn type_name(&self) -> &str {
-        match self {
-            Scalar::None => "None",
-            Scalar::Bit(_) => "Bit",
-            Scalar::Bool(_) => "Bool",
-            Scalar::I64(_) => "I64",
-            Scalar::F64(_) => "F64",
-            Scalar::Decimal(_) => "Decimal",
-            Scalar::Time(_) => "Time",
-            Scalar::Date(_) => "Date",
-            Scalar::Char(_) => "Char",
-            Scalar::DateTime(_) => "DateTime",
-            Scalar::UTF8(_) => "UTF8",
-            //TODO: This is wrong, show the tag not the type...
-            Scalar::Sum(x) => &x.tag,
-        }
-    }
-
-    fn kind(&self) -> DataType {
+    pub fn kind(&self) -> DataType {
         match self {
             Scalar::None => DataType::None,
             Scalar::Bit(_) => DataType::Bit,
@@ -66,6 +51,7 @@ impl Scalar {
             Scalar::Time(_) => DataType::Time,
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
+            Scalar::Vector(x) => DataType::Vec(Box::new(x.kind.clone())),
         }
     }
 }
@@ -88,6 +74,12 @@ kind_native!(Decimal, Decimal);
 kind_native!(R64, F64);
 kind_native!(String, UTF8);
 
+impl From<i32> for Scalar {
+    fn from(x: i32) -> Self {
+        Scalar::I64(x as i64)
+    }
+}
+
 impl From<&str> for Scalar {
     fn from(x: &str) -> Self {
         Scalar::UTF8(Rc::new(x.into()))
@@ -97,5 +89,11 @@ impl From<&str> for Scalar {
 impl From<Box<Scalar>> for Scalar {
     fn from(x: Box<Scalar>) -> Self {
         *x
+    }
+}
+
+impl From<Case> for Scalar {
+    fn from(x: Case) -> Self {
+        Scalar::Sum(Box::new(x))
     }
 }

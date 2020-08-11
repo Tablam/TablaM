@@ -14,7 +14,6 @@ edition = "2018"
 bit-vec =  { version ="0.6.2", features = ["std"] }
 chrono = { version = "0.4.13", features = ["default"] }
 decorum = { version = "0.3.1", features = ["std"] }
-downcast-rs = "1.2.0"
 derive_more = "0.99.9"
 genawaiter = "0.99.1"
 indexmap = "1.5.1"

@@ -1,43 +1,47 @@
-use tablam::scalar::{DateTime,Time,Date};
-use tablam::decorum::R64;
-use tablam::rust_decimal::Decimal;
+use std::iter::Peekable;
+use tablam::prelude::*;
 
-use logos::{Logos, Lexer, Span, Skip};
+use logos::{Lexer, Logos, Skip, Span};
 
 #[derive(Default)]
-struct ExtrasLexer {
-    current_line: usize
+pub struct ExtrasLexer {
+    current_line: usize,
 }
 
-fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip{
+fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
     lexer.extras.current_line += 1;
     Skip
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct TokenData<T>{
-    value: T,
-    line: usize,
-    range_column: logos::Span,
-    has_inner_expression: bool
+pub struct TokenData<T> {
+    pub value: Option<T>,
+    pub line: usize,
+    pub range_column: logos::Span,
 }
 
-fn parse_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>>{
-    let parsed_value:T = lexer.slice().parse().unwrap();
-    let mut token_data:TokenData<T> = extract_token_data(lexer).unwrap();
-    token_data.value = parsed_value;
+fn parse_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>>
+where
+    T: std::fmt::Debug + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    let parsed_value: T = lexer.slice().parse().unwrap();
+    let mut token_data: TokenData<T> = extract_token_data(lexer).unwrap();
+    token_data.value = Some(parsed_value);
 
     Some(token_data)
 }
 
-fn extract_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>>{
-
-    Some(TokenData::<T>{line: lexer.extras.current_line, range_column: lexer.span(),
-        value:None, has_inner_expression:false })
+fn extract_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>> {
+    Some(TokenData::<T> {
+        line: lexer.extras.current_line,
+        range_column: lexer.span(),
+        value: None,
+    })
 }
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-#[logos(extras = Scanner)]
+#[logos(extras = ExtrasLexer)]
 pub enum Token {
     //Numbers
     #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]
@@ -57,36 +61,54 @@ pub enum Token {
     #[token("true")]
     True,
     #[token("false")]
-    False,
-
+    False,*/
     //Definition keywords
-    #[token("let")]
-    Let,
-    #[token("var")]
-    Var,
+    #[token("let", |lex| extract_token_data::<String>(lex))]
+    Let(TokenData<String>),
+    #[token("var", |lex| extract_token_data::<String>(lex))]
+    Var(TokenData<String>),
 
     //Identifiers
-    #[regex(r"[[:upper:]]+(?:_[[[:upper:]][[:digit:]]]+)*")]
-    Constant,
-    #[regex(r"[[:upper:]](?:[[[:lower:]][[:digit:]]])+(?:_[[:upper:]][[[:lower:]][[:digit:]]]+)*")]
-    Type,
-    #[regex(r"[[:lower:]][[[:lower:]][[:digit:]]]+(?:_[[[:lower:]][[:digit:]]]+)*")]
-    Variable,
+    #[regex(r"[[:upper:]]+(?:_[[[:upper:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
+    Constant(TokenData<String>),
+    #[regex(r"[[:upper:]](?:[[[:lower:]][[:digit:]]])+(?:_[[:upper:]][[[:lower:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
+    Type(TokenData<String>),
+    #[regex(r"[[:lower:]][[[:lower:]][[:digit:]]]+(?:_[[[:lower:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
+    Variable(TokenData<String>),
 
     //Operators
+    #[token(":=", |lex| extract_token_data::<String>(lex))]
+    Assignment(TokenData<String>),
+    /*
     #[token("=")]
     Equal,
-    #[token(":=")]
-    Assignment,
     #[token(":")]
     Start,
     #[token("+")]
     Plus,
     #[token("+=")]
     PlusEqual,*/
-
     #[token("\n", increase_current_line)]
     #[regex(r" ", logos::skip)]
     #[error]
     Error,
+}
+
+pub struct Scanner<'source> {
+    tokens: Peekable<Lexer<'source, Token>>,
+}
+
+impl<'source> Scanner<'source> {
+    pub fn new(buffer: &'source str) -> Self {
+        let lexer = Token::lexer(buffer).peekable();
+        Scanner { tokens: lexer }
+    }
+
+    pub fn peek(&mut self) -> Option<&Token> {
+        self.tokens.peek()
+    }
+
+    pub fn accept(&mut self) -> Option<Token> {
+        self.tokens.next()
+    }
 }

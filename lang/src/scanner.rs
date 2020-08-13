@@ -1,11 +1,17 @@
 use std::iter::Peekable;
-use tablam::prelude::*;
+use tablam::decorum::R64;
+use tablam::rust_decimal::Decimal;
 
-use logos::{Lexer, Logos, Skip, Span};
+use logos::{Lexer, Logos, Skip};
 
-#[derive(Default)]
 pub struct ExtrasLexer {
     current_line: usize,
+}
+
+impl Default for ExtrasLexer {
+    fn default() -> Self {
+        ExtrasLexer { current_line: 1 }
+    }
 }
 
 fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
@@ -18,6 +24,38 @@ pub struct TokenData<T> {
     pub value: Option<T>,
     pub line: usize,
     pub range_column: logos::Span,
+}
+
+fn parse_token_data_without_suffix<T>(
+    lexer: &mut Lexer<Token>,
+    suffix_len: usize,
+) -> Option<TokenData<T>>
+where
+    T: std::fmt::Debug + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    let value = lexer.slice();
+    let parsed_value: T = value[..value.len() - suffix_len].parse().unwrap();
+    let mut token_data: TokenData<T> = extract_token_data(lexer).unwrap();
+    token_data.value = Some(parsed_value);
+
+    Some(token_data)
+}
+
+fn parse_token_data_without_prefix<T>(
+    lexer: &mut Lexer<Token>,
+    suffix_len: usize,
+) -> Option<TokenData<T>>
+where
+    T: std::fmt::Debug + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    let value = lexer.slice();
+    let parsed_value: T = value[suffix_len - 1..value.len()].parse().unwrap();
+    let mut token_data: TokenData<T> = extract_token_data(lexer).unwrap();
+    token_data.value = Some(parsed_value);
+
+    Some(token_data)
 }
 
 fn parse_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>>
@@ -46,11 +84,11 @@ pub enum Token {
     //Numbers
     #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]
     Integer(TokenData<i64>),
-    /*#[regex(r"\d+\.*\d*f")]
-    Float,
-    #[regex(r"\d+\.*\d*d")]
-    Decimal,
-
+    #[regex(r"\d+\.*\d*f", |lex| parse_token_data_without_suffix::<R64>(lex, 1))]
+    Float(TokenData<R64>),
+    #[regex(r"\d+\.*\d*d", |lex| parse_token_data_without_suffix::<Decimal>(lex, 1))]
+    Decimal(TokenData<Decimal>),
+    /*
     //Strings
     #[regex(r#""[\w\d\s[^\s"{}]]+""#)]
     String,
@@ -86,8 +124,10 @@ pub enum Token {
     Start,
     #[token("+")]
     Plus,
-    #[token("+=")]
-    PlusEqual,*/
+    */
+    #[token("+=", |lex| extract_token_data::<String>(lex))]
+    PlusEqual(TokenData<String>),
+
     #[token("\n", increase_current_line)]
     #[regex(r" ", logos::skip)]
     #[error]

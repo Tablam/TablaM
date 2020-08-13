@@ -202,9 +202,8 @@ impl Schema {
         }
     }
 
-    pub fn kind(&self) -> DataType {
-        let kinds: Vec<_> = self.columns.iter().map(|x| x.kind.clone()).collect();
-        DataType::Map(kinds.into())
+    pub fn kind(&self) -> Vec<DataType> {
+        self.columns.iter().map(|x| x.kind.clone()).collect()
     }
 }
 

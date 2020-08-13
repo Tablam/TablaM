@@ -1,9 +1,4 @@
 use crate::prelude::*;
-use crate::scalar::Col;
-use crate::types::Column;
-
-use crate::rust_decimal::Decimal;
-use decorum::R64;
 
 pub fn field(name: &str, kind: DataType) -> Field {
     Field::new(name, kind)
@@ -34,18 +29,18 @@ pub fn coln(name: &str) -> Column {
     Column::Name(name.to_string())
 }
 
-pub fn row<'a, T>(x: &'a [T]) -> Col
+pub fn array<T>(x: &[T]) -> Vector
 where
-    &'a T: Into<Scalar> + Clone,
+    T: Into<Scalar> + Clone + NativeKind,
 {
-    x.iter().map(|x| x.into()).collect()
+    Vector::from_slice(x, schema_it(T::kind()))
 }
 
-pub fn value<'a, T>(x: &'a [T]) -> Scalar
+pub fn narray<'a, T: 'a>(x: impl Iterator<Item = &'a [T]>) -> Vector
 where
-    &'a [T]: Into<Scalar>,
+    T: Into<Scalar> + Clone + NativeKind,
 {
-    x.into()
+    Vector::from_iter(x, schema_it(T::kind()))
 }
 
 pub fn int(x: i64) -> Scalar {
@@ -59,6 +54,10 @@ pub fn float(x: R64) -> Scalar {
 }
 pub fn dec(x: Decimal) -> Scalar {
     x.into()
+}
+
+pub fn scalar<T: Into<Scalar>>(x: T) -> Vector {
+    Vector::new_scalar(x.into())
 }
 
 pub fn some<T: Into<Scalar>>(x: T) -> Scalar {

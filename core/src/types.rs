@@ -219,6 +219,8 @@ pub trait Rel: Debug {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+    fn cols(&self) -> usize;
+    fn rows(&self) -> Option<usize>;
 
     fn as_any(&self) -> &dyn Any;
 

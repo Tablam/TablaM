@@ -6,7 +6,7 @@ use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
 use crate::sum_type::Case;
-use crate::types::{DataType, NativeKind};
+use crate::types::{DataType, NativeKind, Rel};
 use crate::vector::Vector;
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -51,7 +51,7 @@ impl Scalar {
             Scalar::Time(_) => DataType::Time,
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
-            Scalar::Vector(x) => DataType::Vec(Box::new(x.kind.clone())),
+            Scalar::Vector(x) => x.kind(),
         }
     }
 }
@@ -69,6 +69,7 @@ macro_rules! kind_native {
     };
 }
 
+kind_native!(i64, I64);
 kind_native!(bool, Bool);
 kind_native!(Decimal, Decimal);
 kind_native!(R64, F64);
@@ -95,5 +96,11 @@ impl From<Box<Scalar>> for Scalar {
 impl From<Case> for Scalar {
     fn from(x: Case) -> Self {
         Scalar::Sum(Box::new(x))
+    }
+}
+
+impl From<Vector> for Scalar {
+    fn from(x: Vector) -> Self {
+        Scalar::Vector(Box::new(x))
     }
 }

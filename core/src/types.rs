@@ -141,6 +141,13 @@ pub enum Column {
     Name(String),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RelShape {
+    Scalar,
+    Vec,
+    Table,
+}
+
 pub trait ToHash {
     fn to_hash(&self, h: &mut dyn Hasher);
 }
@@ -226,6 +233,7 @@ pub trait Rel: Debug {
 
     fn tuple(&self, pos: usize) -> Scalar;
 
+    fn rel_shape(&self) -> RelShape;
     fn rel_hash(&self, hasher: &mut dyn Hasher);
     fn rel_eq(&self, other: &dyn Rel) -> bool;
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering;

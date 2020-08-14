@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use tablam::dsl::field;
 use tablam::schema::Schema;
 use tablam::types::*;

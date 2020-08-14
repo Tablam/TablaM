@@ -42,10 +42,6 @@ impl Shape {
         }
     }
 
-    pub fn is_scalar(&self) -> bool {
-        self == &Self::scalar()
-    }
-
     pub fn vector(rows: usize) -> Self {
         Shape {
             cols: 1,
@@ -67,7 +63,7 @@ impl Shape {
     }
 
     pub fn column(&self, col: usize) -> Shape {
-        let mut shape = self.clone();
+        let mut shape = *self;
         shape.start = col;
         shape.cols = 1;
         shape.stride = self.rows;
@@ -75,7 +71,7 @@ impl Shape {
     }
 
     pub fn row(&self, row: usize) -> Shape {
-        let mut shape = self.clone();
+        let mut shape = *self;
         shape.start = row;
         shape.end = row;
         shape
@@ -83,6 +79,10 @@ impl Shape {
 
     pub fn len(&self) -> usize {
         (self.cols * self.rows) / self.stride
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -94,6 +94,10 @@ pub struct Vector {
 }
 
 impl Vector {
+    pub fn new_empty(kind: DataType) -> Self {
+        Self::new_vector(vec![], kind)
+    }
+
     pub fn new_scalar(data: Scalar) -> Self {
         let shape = Shape::scalar();
         let schema = schema_it(data.kind());
@@ -152,10 +156,6 @@ impl Vector {
         }
     }
 
-    pub fn is_scalar(&self) -> bool {
-        self.shape.is_scalar()
-    }
-
     pub fn index(&self, row: usize, col: usize) -> usize {
         index(self.shape.cols, row, col)
     }
@@ -180,21 +180,12 @@ impl Vector {
         &self.data[start..end]
     }
 
-    pub fn rows_iter(&self) -> RowIter<'_> {
-        RowIter {
-            data: self,
-            pos: 0,
-            rows: self._rows(),
-        }
+    pub fn rows_iter(&self) -> VectorIter<'_> {
+        VectorIter::new_rows(self)
     }
 
-    pub fn col_iter(&self, col: usize) -> ColIter<'_> {
-        ColIter {
-            data: self,
-            pos: 0,
-            col,
-            rows: self._rows(),
-        }
+    pub fn col_iter(&self, col: usize) -> VectorIter<'_> {
+        VectorIter::new_col(self, col)
     }
 }
 
@@ -236,6 +227,18 @@ impl Rel for Vector {
         self.data[pos].clone()
     }
 
+    fn rel_shape(&self) -> RelShape {
+        if self.shape.cols == 1 {
+            if self.shape.rows == 1 {
+                RelShape::Scalar
+            } else {
+                RelShape::Vec
+            }
+        } else {
+            RelShape::Table
+        }
+    }
+
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
         self.data.hash(&mut hasher)
     }
@@ -249,39 +252,46 @@ impl Rel for Vector {
     }
 }
 
-pub struct RowIter<'a> {
+pub struct VectorIter<'a> {
     data: &'a Vector,
     pos: usize,
-    rows: usize,
+    stride: usize,
+    len: usize,
+    end: usize,
 }
 
-impl<'a> Iterator for RowIter<'a> {
-    type Item = &'a [Scalar];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.rows {
-            self.pos += 1;
-            Some(self.data.row(self.pos - 1))
-        } else {
-            None
+impl<'a> VectorIter<'a> {
+    pub fn new(data: &'a Vector, stride: usize, len: usize, start: usize, end: usize) -> Self {
+        VectorIter {
+            data,
+            pos: start,
+            len,
+            stride,
+            end,
         }
+    }
+
+    pub fn new_rows(data: &'a Vector) -> Self {
+        Self::new(data, 0, data.cols(), 0, data.data.len())
+    }
+
+    pub fn new_col(data: &'a Vector, col: usize) -> Self {
+        let rows = data._rows();
+        Self::new(data, rows - 1, 1, col, data.data.len())
     }
 }
 
-pub struct ColIter<'a> {
-    data: &'a Vector,
-    pos: usize,
-    col: usize,
-    rows: usize,
-}
-
-impl<'a> Iterator for ColIter<'a> {
-    type Item = &'a Scalar;
+//TODO: Implement the rest of methods, and support exact sized iterators...
+impl<'a> Iterator for VectorIter<'a> {
+    type Item = &'a [Scalar];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.rows {
-            self.pos += 1;
-            Some(self.data.value(self.pos - 1, self.col))
+        if self.pos < self.end {
+            let start = self.pos;
+            let end = start + self.len;
+            self.pos = end + self.stride;
+
+            Some(&self.data.data[start..end])
         } else {
             None
         }

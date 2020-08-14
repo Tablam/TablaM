@@ -29,6 +29,6 @@ pub mod prelude {
     pub use crate::scalar::Scalar;
     pub use crate::schema::*;
     pub use crate::sum_type::Case;
-    pub use crate::types::{Column, ColumnAlias, DataType, NativeKind, Rel};
+    pub use crate::types::{Column, ColumnAlias, DataType, NativeKind, Rel, RelShape};
     pub use crate::vector::Vector;
 }

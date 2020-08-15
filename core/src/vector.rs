@@ -3,6 +3,7 @@ use core::convert::Into;
 use crate::for_impl::*;
 use crate::prelude::*;
 use crate::refcount::RefCount;
+use crate::row::fmt_row;
 
 /// Calculate the appropriated index in the flat array
 #[inline]
@@ -144,9 +145,7 @@ impl Vector {
     {
         let mut iter = xs.peekable();
         let cols = iter.peek().map(|x| x.len()).unwrap_or(0);
-        let data: Vec<Scalar> = iter
-            .flat_map(|x| x.iter().cloned().map(Into::into))
-            .collect();
+        let data: Vec<Scalar> = iter.flat_map(to_vec).collect();
         let shape = Shape::table(data.len() / cols, cols);
 
         Vector {
@@ -221,10 +220,6 @@ impl Rel for Vector {
 
     fn as_any(&self) -> &dyn Any {
         self
-    }
-
-    fn tuple(&self, pos: usize) -> Scalar {
-        self.data[pos].clone()
     }
 
     fn rel_shape(&self) -> RelShape {
@@ -303,12 +298,7 @@ impl fmt::Display for Vector {
         write!(f, "Vec[{};", self.kind())?;
         let total = self._rows();
         for (row_pos, row) in self.rows_iter().enumerate() {
-            for (pos, x) in row.iter().enumerate() {
-                write!(f, " {}", x)?;
-                if pos < row.len() - 1 {
-                    write!(f, ",")?;
-                }
-            }
+            fmt_row(&row, f)?;
             if row_pos < total - 1 {
                 write!(f, ";")?;
             }

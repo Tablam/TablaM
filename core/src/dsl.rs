@@ -1,16 +1,17 @@
 use crate::prelude::*;
+use crate::tree::Tree;
 
 pub fn field(name: &str, kind: DataType) -> Field {
     Field::new(name, kind)
 }
 
-pub fn schema(names: &[(&str, DataType)]) -> Schema {
+pub fn schema(names: &[(&str, DataType)], pk: Option<usize>) -> Schema {
     let fields = names
         .iter()
         .map(|(name, kind)| Field::new(name, kind.clone()))
         .collect();
 
-    Schema::new(fields)
+    Schema::new(fields, pk)
 }
 
 pub fn schema_single(name: &str, kind: DataType) -> Schema {
@@ -21,12 +22,23 @@ pub fn schema_it(kind: DataType) -> Schema {
     schema_single("it", kind)
 }
 
+pub fn schema_kv(key: DataType, value: DataType) -> Schema {
+    schema(&[("key", key), ("value", value)], Some(0))
+}
+
 pub fn colp(pos: usize) -> Column {
     Column::Pos(pos)
 }
 
 pub fn coln(name: &str) -> Column {
     Column::Name(name.to_string())
+}
+
+pub fn to_vec<T>(x: &[T]) -> Vec<Scalar>
+where
+    T: Into<Scalar> + Clone,
+{
+    x.iter().cloned().map(Into::into).collect()
 }
 
 pub fn array<T>(x: &[T]) -> Vector
@@ -36,11 +48,18 @@ where
     Vector::from_slice(x, schema_it(T::kind()))
 }
 
-pub fn narray<'a, T: 'a>(x: impl Iterator<Item = &'a [T]>) -> Vector
+pub fn narray<'a, T: 'a>(xs: impl Iterator<Item = &'a [T]>) -> Vector
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
-    Vector::from_iter(x, schema_it(T::kind()))
+    Vector::from_iter(xs, schema_it(T::kind()))
+}
+
+pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    Tree::from_iter(xs, schema)
 }
 
 pub fn int(x: i64) -> Scalar {

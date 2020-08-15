@@ -1,8 +1,10 @@
 pub mod dsl;
 pub mod refcount;
+pub mod row;
 pub mod scalar;
 pub mod schema;
 pub mod sum_type;
+pub mod tree;
 pub mod types;
 pub mod vector;
 
@@ -26,9 +28,11 @@ pub mod prelude {
     pub use rust_decimal::Decimal;
 
     pub use crate::dsl::*;
+    pub use crate::row::RowPk;
     pub use crate::scalar::Scalar;
     pub use crate::schema::*;
     pub use crate::sum_type::Case;
+    pub use crate::tree::Tree;
     pub use crate::types::{Column, ColumnAlias, DataType, NativeKind, Rel, RelShape};
     pub use crate::vector::Vector;
 }

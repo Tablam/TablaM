@@ -231,8 +231,6 @@ pub trait Rel: Debug {
 
     fn as_any(&self) -> &dyn Any;
 
-    fn tuple(&self, pos: usize) -> Scalar;
-
     fn rel_shape(&self) -> RelShape;
     fn rel_hash(&self, hasher: &mut dyn Hasher);
     fn rel_eq(&self, other: &dyn Rel) -> bool;

@@ -12,11 +12,6 @@ pub struct Field {
     pub kind: DataType,
 }
 
-#[derive(Debug, Clone, PartialOrd, Ord)]
-pub struct Schema {
-    pub columns: Vec<Field>,
-}
-
 impl Field {
     pub fn new(name: &str, kind: DataType) -> Self {
         Field {
@@ -38,14 +33,20 @@ impl Field {
     }
 }
 
+#[derive(Debug, Clone, PartialOrd, Ord)]
+pub struct Schema {
+    pub pk: Option<usize>,
+    pub fields: Vec<Field>,
+}
+
 impl Schema {
-    pub fn new(fields: Vec<Field>) -> Self {
-        Schema { columns: fields }
+    pub fn new(fields: Vec<Field>, pk: Option<usize>) -> Self {
+        Schema { pk, fields }
     }
 
     pub fn new_single(name: &str, kind: DataType) -> Self {
         let field = Field::new(name, kind);
-        Self::new(vec![field])
+        Self::new(vec![field], None)
     }
 
     pub fn scalar_field(kind: DataType) -> Self {
@@ -59,25 +60,25 @@ impl Schema {
             names.push(Field::new_owned(pos.to_string(), kind.clone()));
         }
 
-        Self::new(names)
+        Self::new(names, None)
     }
 
     pub fn named(&self, name: &str) -> Option<(usize, &Field)> {
-        self.columns
+        self.fields
             .iter()
             .enumerate()
             .find(|&(_, field)| field.name == name)
     }
 
     pub fn len(&self) -> usize {
-        self.columns.len()
+        self.fields.len()
     }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     pub fn as_slice(&self) -> Vec<&str> {
-        self.columns.iter().map(|x| x.name.as_ref()).collect()
+        self.fields.iter().map(|x| x.name.as_ref()).collect()
     }
 
     ///Recover the column position from the relative ColumnName
@@ -101,7 +102,7 @@ impl Schema {
 
         for name in of.iter() {
             let pick = match name {
-                Column::Pos(x) => self.columns[*x].clone(),
+                Column::Pos(x) => self.fields[*x].clone(),
                 Column::Name(x) => {
                     let (_pos, f) = self.named(x).unwrap();
                     f.clone()
@@ -109,12 +110,12 @@ impl Schema {
             };
             names.push(pick);
         }
-        Self::new(names)
+        Self::new(names, None)
     }
 
     pub fn join(&self, other: &Self) -> Vec<usize> {
         let mut fields = Vec::new();
-        for (i, col) in other.columns.iter().enumerate() {
+        for (i, col) in other.fields.iter().enumerate() {
             if self.exist(&col.name) {
                 continue;
             } else {
@@ -129,9 +130,9 @@ impl Schema {
     pub fn only(&self, position: &[usize]) -> Self {
         let mut fields = Vec::with_capacity(position.len());
         for pos in position {
-            fields.push(self.columns[*pos].clone());
+            fields.push(self.fields[*pos].clone());
         }
-        Self::new(fields)
+        Self::new(fields, None)
     }
 
     pub fn except(&self, remove: &[usize]) -> Pos {
@@ -156,7 +157,7 @@ impl Schema {
     }
 
     pub fn exist(&self, field: &str) -> bool {
-        let mut find = self.columns.iter().filter(|x| x.name == field);
+        let mut find = self.fields.iter().filter(|x| x.name == field);
 
         find.next().is_some()
     }
@@ -164,8 +165,8 @@ impl Schema {
     pub fn extend(&self, right: &Schema) -> Self {
         let count = self.len() + right.len();
         let mut fields = Vec::with_capacity(count);
-        let mut left = self.columns.clone();
-        let mut _right = right.columns.clone();
+        let mut left = self.fields.clone();
+        let mut _right = right.fields.clone();
 
         fields.append(&mut left);
         let mut cont = 0;
@@ -180,11 +181,11 @@ impl Schema {
             }
         }
 
-        Self::new(fields)
+        Self::new(fields, None)
     }
 
     pub fn rename(&self, change: &[ColumnAlias]) -> Self {
-        let mut names = self.columns.clone();
+        let mut names = self.fields.clone();
 
         for col in change {
             let pos = self.resolve_pos(&col.from);
@@ -192,7 +193,7 @@ impl Schema {
             names[pos] = Field::new(&col.to, old);
         }
 
-        Self::new(names)
+        Self::new(names, None)
     }
 
     pub fn project(&self, select: &ProjectDef) -> Pos {
@@ -203,23 +204,27 @@ impl Schema {
     }
 
     pub fn kind(&self) -> Vec<DataType> {
-        self.columns.iter().map(|x| x.kind.clone()).collect()
+        self.fields.iter().map(|x| x.kind.clone()).collect()
     }
+}
+
+pub(crate) fn check_pk(schema: &Schema) -> usize {
+    schema.pk.expect("Relation need a pk")
 }
 
 impl Index<usize> for Schema {
     type Output = Field;
 
     fn index(&self, pos: usize) -> &Field {
-        &self.columns[pos]
+        &self.fields[pos]
     }
 }
 
 impl PartialEq for Schema {
     fn eq(&self, other: &Schema) -> bool {
-        if self.columns.len() == other.columns.len() {
-            let mut a = self.columns.clone();
-            let mut b = other.columns.clone();
+        if self.fields.len() == other.fields.len() {
+            let mut a = self.fields.clone();
+            let mut b = other.fields.clone();
             a.sort();
             b.sort();
             a == b
@@ -233,7 +238,7 @@ impl Eq for Schema {}
 
 impl Hash for Schema {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let mut a = self.columns.clone();
+        let mut a = self.fields.clone();
         a.sort();
         a.hash(state);
     }
@@ -248,8 +253,14 @@ impl fmt::Display for Field {
 impl fmt::Display for Schema {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for i in 0..self.len() {
-            let item = &self.columns[i];
-            if i > 0 {
+            let item = &self.fields[i];
+            if Some(i) == self.pk {
+                if i > 0 {
+                    write!(f, ", pk {}", item)?;
+                } else {
+                    write!(f, "pk {}", item)?;
+                }
+            } else if i > 0 {
                 write!(f, ", {}", item)?;
             } else {
                 write!(f, "{}", item)?;

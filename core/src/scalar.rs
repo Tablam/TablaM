@@ -34,6 +34,8 @@ pub enum Scalar {
     Sum(Box<Case>),
     //Collections
     Vector(Box<Vector>),
+    //Lazy computation
+    //Seq(Seq<'static>),
 }
 
 impl Scalar {
@@ -52,6 +54,7 @@ impl Scalar {
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
             Scalar::Vector(x) => x.kind(),
+            //Scalar::Seq(x) => {x.kind()}
         }
     }
 }

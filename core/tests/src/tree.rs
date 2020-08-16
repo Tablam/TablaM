@@ -1,12 +1,8 @@
 use tablam::prelude::*;
 
-fn _schema() -> Schema {
-    schema_kv(DataType::I64, DataType::I64)
-}
-
 #[test]
 fn test_empty() {
-    let rel = Tree::empty(_schema());
+    let rel = Tree::empty(schema_kv(DataType::I64, DataType::I64));
     assert_eq!(rel.rel_shape(), RelShape::Table);
     assert_eq!(rel.len(), 0);
     assert_eq!(rel.rows(), Some(0));
@@ -21,7 +17,7 @@ fn test_empty() {
 
 #[test]
 fn test_tree() {
-    let rel = tree(_schema(), [1, 2, 3, 4, 5, 6].chunks(2));
+    let rel = tree_kv(&[1, 2, 3, 4, 5, 6]);
     assert_eq!(rel.rel_shape(), RelShape::Table);
     assert_eq!(rel.len(), 6);
     assert_eq!(rel.rows(), Some(3));
@@ -39,7 +35,7 @@ fn test_tree() {
 
 #[test]
 fn test_iter() {
-    let rel = tree(_schema(), [1, 2].chunks(2));
+    let rel = tree_kv(&[1, 2]);
 
     let first = rel.rows_iter().next();
     assert_eq!(Some([int(1), int(2)].as_ref()), first);

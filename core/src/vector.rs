@@ -139,7 +139,7 @@ impl Vector {
         }
     }
 
-    pub fn from_iter<'a, T: 'a>(xs: impl Iterator<Item = &'a [T]>, schema: Schema) -> Self
+    pub fn from_iter<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Self
     where
         T: Into<Scalar> + Clone,
     {

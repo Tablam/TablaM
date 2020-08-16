@@ -34,6 +34,13 @@ pub fn coln(name: &str) -> Column {
     Column::Name(name.to_string())
 }
 
+pub fn qcol(pos: usize) -> Comparable {
+    Comparable::Column(pos)
+}
+pub fn qscalar<T: Into<Scalar>>(x: T) -> Comparable {
+    Comparable::Scalar(x.into())
+}
+
 pub fn to_vec<T>(x: &[T]) -> Vec<Scalar>
 where
     T: Into<Scalar> + Clone,
@@ -52,14 +59,23 @@ pub fn narray<'a, T: 'a>(xs: impl Iterator<Item = &'a [T]>) -> Vector
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
-    Vector::from_iter(xs, schema_it(T::kind()))
+    Vector::from_iter(schema_it(T::kind()), xs)
 }
 
 pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
-    Tree::from_iter(xs, schema)
+    Tree::from_iter(schema, xs)
+}
+
+pub fn tree_kv<T>(data: &[T]) -> Tree
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    let schema = schema_kv(T::kind(), T::kind());
+    let xs = data.chunks(2);
+    Tree::from_iter(schema, xs)
 }
 
 pub fn int(x: i64) -> Scalar {

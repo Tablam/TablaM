@@ -98,6 +98,10 @@ pub enum Query {
     #[display(fmt = "?where {}", _0)]
     Filter(CompareOp),
     Project(Project),
+    #[display(fmt = "?limit {}", _0)]
+    Limit(usize),
+    #[display(fmt = "?skip {}", _0)]
+    Skip(usize),
 }
 
 pub struct QueryResult<'a> {
@@ -180,6 +184,18 @@ impl QueryOp {
         self.project(ProjectDef::Deselect(pos.to_vec()))
     }
 
+    pub fn limit(mut self, rows: usize) -> Self {
+        let q = Query::Limit(rows);
+        self.query.push(q);
+        self
+    }
+
+    pub fn skip(mut self, rows: usize) -> Self {
+        let q = Query::Skip(rows);
+        self.query.push(q);
+        self
+    }
+
     pub fn execute<'a>(self, iter: impl Iterator<Item = Tuple> + 'a) -> QueryResult<'a> {
         let mut result = Box::new(iter) as Iter<'a>;
         let mut schema = self.schema;
@@ -198,6 +214,14 @@ impl QueryOp {
                     schema = schema.only(&cols);
                     schema.pick_new_pk(pk);
                     let iter = result.map(move |x| select(&x, &cols));
+                    Box::new(iter)
+                }
+                Query::Limit(rows) => {
+                    let iter = result.take(rows);
+                    Box::new(iter)
+                }
+                Query::Skip(rows) => {
+                    let iter = result.skip(rows);
                     Box::new(iter)
                 }
             }

@@ -10,13 +10,40 @@ use crate::scalar::Scalar;
 use crate::schema::Schema;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct KindFlat(Vec<DataType>);
+
+impl fmt::Display for KindFlat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "")?;
+        for (pos, x) in self.0.iter().enumerate() {
+            if pos < self.0.len() - 1 {
+                write!(f, "{}, ", x)?;
+            } else {
+                write!(f, "{}", x)?;
+            }
+        }
+        write!(f, "")
+    }
+}
+
+impl From<Vec<DataType>> for KindFlat {
+    fn from(x: Vec<DataType>) -> Self {
+        KindFlat(x)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KindRel(Vec<DataType>);
 
 impl fmt::Display for KindRel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[|")?;
-        for x in &self.0 {
-            write!(f, "{}", x)?;
+        for (pos, x) in self.0.iter().enumerate() {
+            if pos < self.0.len() - 1 {
+                write!(f, "{}, ", x)?;
+            } else {
+                write!(f, "{}", x)?;
+            }
         }
         write!(f, "|]")
     }
@@ -36,8 +63,11 @@ pub enum DataType {
     Bit,
     Bool,
     // Numeric
+    #[display(fmt = "Int")]
     I64,
+    #[display(fmt = "Float")]
     F64,
+    #[display(fmt = "Dec")]
     Decimal,
     // Dates
     Time,
@@ -45,14 +75,16 @@ pub enum DataType {
     DateTime,
     // Text
     Char,
+    #[display(fmt = "Str")]
     UTF8,
     // For list, dynamic
+    #[display(fmt = "Any")]
     ANY,
     // Complex
     #[display(fmt = "Enum({})", _0)]
     Sum(Box<DataType>),
-    #[display(fmt = "Vec({})", _0)]
-    Vec(Box<DataType>),
+    #[display(fmt = "{}", _0)]
+    Vec(KindFlat),
     #[display(fmt = "Tree({})", _0)]
     Tree(KindRel),
     #[display(fmt = "Map({})", _0)]

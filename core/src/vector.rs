@@ -198,7 +198,7 @@ impl Rel for Vector {
         if kinds.len() == 1 {
             kinds[0].clone()
         } else {
-            DataType::Map(kinds.into())
+            DataType::Vec(kinds.into())
         }
     }
 

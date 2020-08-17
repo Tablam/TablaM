@@ -12,7 +12,7 @@ fn test_scalar() {
     assert_eq!(rel.row(0), &[int(1)]);
     assert_eq!(rel.col(0), scalar(1));
 
-    assert_eq!(&format!("{}", rel), "Vec[I64; 1]");
+    assert_eq!(&format!("{}", rel), "Vec[Int; 1]");
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn test_vec() {
     assert_eq!(rel.row(0), &[int(1)]);
     assert_eq!(rel.col(0), rel);
 
-    assert_eq!(&format!("{}", rel), "Vec[I64; 1; 2; 3]");
+    assert_eq!(&format!("{}", rel), "Vec[Int; 1; 2; 3]");
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn test_table() {
     assert_eq!(rel.row(0), &[int(1), int(2), int(3)]);
     assert_eq!(rel.row(1), &[int(4), int(5), int(6)]);
 
-    assert_eq!(&format!("{}", rel), "Vec[I64; 1, 2, 3; 4, 5, 6]");
+    assert_eq!(&format!("{}", rel), "Vec[Int; 1, 2, 3; 4, 5, 6]");
 }
 
 #[test]

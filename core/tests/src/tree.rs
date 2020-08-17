@@ -12,7 +12,7 @@ fn test_empty() {
         DataType::Tree(vec![DataType::I64, DataType::I64].into())
     );
 
-    assert_eq!(&format!("{}", rel), "Tree[pk key:I64, value:I64;]");
+    assert_eq!(&format!("{}", rel), "Tree[pk key:Int, value:Int;]");
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn test_tree() {
 
     assert_eq!(
         &format!("{}", rel),
-        "Tree[pk key:I64, value:I64; 1, 2; 3, 4; 5, 6]"
+        "Tree[pk key:Int, value:Int; 1, 2; 3, 4; 5, 6]"
     );
 }
 

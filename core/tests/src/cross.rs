@@ -11,7 +11,7 @@ fn test_vec() {
     let rel = Vector::from_iter(q.schema, q.iter);
     assert_eq!(
         &format!("{}", rel),
-        "Vec[I64; 1, 'a'; 1, 'b'; 1, 'c'; 2, 'a'; 2, 'b'; 2, 'c'; 3, 'a'; 3, 'b'; 3, 'c']"
+        "Vec[Int, Str; 1, 'a'; 1, 'b'; 1, 'c'; 2, 'a'; 2, 'b'; 2, 'c'; 3, 'a'; 3, 'b'; 3, 'c']"
     );
 }
 
@@ -26,6 +26,6 @@ fn test_tree() {
     let rel = Tree::from_iter(q.schema, q.iter);
     assert_eq!(
         &format!("{}", rel),
-        "Tree[pk key:I64, value:UTF8, key_2:F64, value_2:Bool; 1, 'a', 4, true; 1, 'a', 5, false; 2, 'b', 4, true; 2, 'b', 5, false]"
+        "Tree[pk key:Int, value:Str, key_2:Float, value_2:Bool; 1, 'a', 4, true; 1, 'a', 5, false; 2, 'b', 4, true; 2, 'b', 5, false]"
     );
 }

@@ -4,6 +4,8 @@ use crate::for_impl::*;
 use crate::joins;
 use crate::joins::Join;
 use crate::prelude::*;
+use crate::scalar::select;
+use crate::types::ProjectDef;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum CmOp {
@@ -87,9 +89,15 @@ impl CompareOp {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+pub struct Project {
+    cols: ProjectDef,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum Query {
     #[display(fmt = "?where {}", _0)]
     Filter(CompareOp),
+    Project(Project),
 }
 
 pub struct QueryResult<'a> {
@@ -158,9 +166,23 @@ impl QueryOp {
         self.filter(CmOp::GreaterEq, lhs, rhs)
     }
 
+    pub fn project(mut self, cols: ProjectDef) -> Self {
+        let q = Query::Project(Project { cols });
+        self.query.push(q);
+        self
+    }
+
+    pub fn select(self, pos: &[Column]) -> Self {
+        self.project(ProjectDef::Select(pos.to_vec()))
+    }
+
+    pub fn deselect(self, pos: &[Column]) -> Self {
+        self.project(ProjectDef::Deselect(pos.to_vec()))
+    }
+
     pub fn execute<'a>(self, iter: impl Iterator<Item = Tuple> + 'a) -> QueryResult<'a> {
         let mut result = Box::new(iter) as Iter<'a>;
-        let schema = self.schema;
+        let mut schema = self.schema;
         for q in self.query {
             result = match q {
                 Query::Filter(cmp) => {
@@ -168,6 +190,14 @@ impl QueryOp {
                         let apply = cmp.get_fn();
                         (apply)(row, &cmp.lhs, &cmp.rhs)
                     });
+                    Box::new(iter)
+                }
+                Query::Project(columns) => {
+                    let pk = schema.pk_field();
+                    let cols = schema.project(&columns.cols);
+                    schema = schema.only(&cols);
+                    schema.pick_new_pk(pk);
+                    let iter = result.map(move |x| select(&x, &cols));
                     Box::new(iter)
                 }
             }

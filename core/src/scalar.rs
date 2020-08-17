@@ -6,7 +6,7 @@ use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
 use crate::sum_type::Case;
-use crate::types::{DataType, NativeKind, Rel};
+use crate::types::{DataType, NativeKind, Rel, Tuple};
 use crate::vector::Vector;
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -61,6 +61,18 @@ impl Scalar {
             Scalar::Vector(x) => x.kind(),
             //Scalar::Seq(x) => {x.kind()}
         }
+    }
+}
+
+pub fn select(of: &[Scalar], cols: &[usize]) -> Tuple {
+    if cols.is_empty() {
+        vec![]
+    } else {
+        let mut cells = Vec::with_capacity(cols.len());
+        for p in cols {
+            cells.push(of[*p].clone());
+        }
+        cells
     }
 }
 

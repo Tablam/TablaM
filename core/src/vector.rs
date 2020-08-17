@@ -145,8 +145,16 @@ impl Vector {
     {
         let mut iter = xs.peekable();
         let cols = iter.peek().map(|x| x.len()).unwrap_or(0);
+        if cols != 0 {
+            assert_eq!(
+                schema.len(),
+                cols,
+                "The schema columns not match the data in rows"
+            );
+        }
+
         let data: Vec<Scalar> = iter.flat_map(|x| to_vec(&x)).collect();
-        let shape = Shape::table(data.len() / cols, cols);
+        let shape = Shape::table(if cols > 0 { data.len() / cols } else { 0 }, cols);
 
         Vector {
             data: RefCount::new(data),
@@ -170,7 +178,11 @@ impl Vector {
     }
 
     fn _rows(&self) -> usize {
-        self.data.len() / self.shape.cols
+        if self.shape.cols > 0 {
+            self.data.len() / self.shape.cols
+        } else {
+            0
+        }
     }
 
     pub fn row(&self, row: usize) -> &[Scalar] {
@@ -295,14 +307,18 @@ impl<'a> Iterator for VectorIter<'a> {
 
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Vec[{};", self.kind())?;
-        let total = self._rows();
-        for (row_pos, row) in self.rows_iter().enumerate() {
-            fmt_row(&row, f)?;
-            if row_pos < total - 1 {
-                write!(f, ";")?;
+        if self.cols() > 0 {
+            write!(f, "Vec[{};", self.kind())?;
+            let total = self._rows();
+            for (row_pos, row) in self.rows_iter().enumerate() {
+                fmt_row(&row, f)?;
+                if row_pos < total - 1 {
+                    write!(f, ";")?;
+                }
             }
+            write!(f, "]")
+        } else {
+            write!(f, "Vec[]")
         }
-        write!(f, "]")
     }
 }

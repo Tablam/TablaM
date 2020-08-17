@@ -1,5 +1,7 @@
 use tablam::prelude::*;
 
+use crate::utils::*;
+
 #[test]
 fn test_display() {
     let rel = array(&[1, 2, 3]);
@@ -24,21 +26,13 @@ fn test_vec() {
     let rel = array(&[1, 2, 3]);
     let q = rel.query().not_eq(qcol(0), qscalar(1));
 
-    let q = q.execute(rel.rows_iter());
-    let rel = Vector::from_iter(q.schema, q.iter);
-    assert_eq!(&format!("{}", rel), "Vec[Int; 2; 3]");
+    check_query_vec(&rel, q, "Vec[Int; 2; 3]");
 }
 
 #[test]
 fn test_tree() {
     let rel = tree_kv(&[1, 2, 3, 4, 5, 6]);
-
     let q = rel.query().not_eq(qcol(0), qscalar(1));
 
-    let q = q.execute(rel.rows_iter());
-    let rel = Tree::from_iter(q.schema, q.iter);
-    assert_eq!(
-        &format!("{}", rel),
-        "Tree[pk key:Int, value:Int; 3, 4; 5, 6]"
-    );
+    check_query_tree(&rel, q, "Tree[pk key:Int, value:Int; 3, 4; 5, 6]");
 }

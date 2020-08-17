@@ -82,9 +82,11 @@ impl Schema {
         self.fields.iter().map(|x| x.name.as_ref()).collect()
     }
 
-    pub fn pk_field(&self) -> Option<&Field> {
+    pub fn pk_field(&self) -> Option<Field> {
         if let Some(pos) = self.pk {
-            self.fields.get(self.resolve_pos(&Column::Pos(pos)))
+            self.fields
+                .get(self.resolve_pos(&Column::Pos(pos)))
+                .cloned()
         } else {
             None
         }
@@ -133,6 +135,16 @@ impl Schema {
         }
 
         fields
+    }
+
+    pub fn pick_new_pk(&mut self, old: Option<Field>) {
+        if let Some(pk) = old {
+            if let Some((pos, _)) = self.named(&pk.name) {
+                self.pk = Some(pos);
+            } else {
+                self.pk = Some(0);
+            }
+        }
     }
 
     /// Helper for select/projection

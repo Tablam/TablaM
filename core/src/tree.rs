@@ -96,14 +96,18 @@ impl Rel for Tree {
 
 impl fmt::Display for Tree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Tree[{};", self.schema)?;
-        let total = self._rows();
-        for (row_pos, row) in self.data.iter().enumerate() {
-            write!(f, "{}", row)?;
-            if row_pos < total - 1 {
-                write!(f, ";")?;
+        if self.cols() > 0 {
+            write!(f, "Tree[{};", self.schema)?;
+            let total = self._rows();
+            for (row_pos, row) in self.data.iter().enumerate() {
+                write!(f, "{}", row)?;
+                if row_pos < total - 1 {
+                    write!(f, ";")?;
+                }
             }
+            write!(f, "]")
+        } else {
+            write!(f, "Tree[]")
         }
-        write!(f, "]")
     }
 }

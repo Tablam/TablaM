@@ -55,11 +55,21 @@ where
     Vector::from_slice(x, schema_it(T::kind()))
 }
 
-pub fn narray<'a, T: 'a>(xs: impl Iterator<Item = &'a [T]>) -> Vector
+pub fn narray<'a, T: 'a>(columns: usize, xs: impl Iterator<Item = &'a [T]>) -> Vector
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
-    Vector::from_iter(schema_it(T::kind()), xs.map(to_vec))
+    let schema = if columns == 0 {
+        schema_it(T::kind())
+    } else {
+        Schema::new(
+            (0..columns)
+                .map(|i| Field::new(&format!("col_{}", i), T::kind()))
+                .collect(),
+            None,
+        )
+    };
+    Vector::from_iter(schema, xs.map(to_vec))
 }
 
 pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree

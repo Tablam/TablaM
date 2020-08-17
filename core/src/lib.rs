@@ -30,7 +30,7 @@ pub mod prelude {
     pub use rust_decimal::Decimal;
 
     pub use crate::dsl::*;
-    pub use crate::query::{Comparable, QueryOp};
+    pub use crate::query::{Comparable, JoinOp, QueryOp};
     pub use crate::row::RowPk;
     pub use crate::scalar::Scalar;
     pub use crate::schema::*;

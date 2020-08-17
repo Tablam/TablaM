@@ -9,20 +9,35 @@ use crate::query::QueryOp;
 use crate::scalar::Scalar;
 use crate::schema::Schema;
 
+pub fn format_list<I>(
+    list: impl IntoIterator<Item = I>,
+    total: usize,
+    start: &str,
+    end: &str,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result
+where
+    I: fmt::Display,
+{
+    write!(f, "{}", start)?;
+
+    for (pos, x) in list.into_iter().enumerate() {
+        if pos < total - 1 {
+            write!(f, "{}, ", x)?;
+        } else {
+            write!(f, "{}", x)?;
+        }
+    }
+
+    write!(f, "{}", end)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KindFlat(Vec<DataType>);
 
 impl fmt::Display for KindFlat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "")?;
-        for (pos, x) in self.0.iter().enumerate() {
-            if pos < self.0.len() - 1 {
-                write!(f, "{}, ", x)?;
-            } else {
-                write!(f, "{}", x)?;
-            }
-        }
-        write!(f, "")
+        format_list(&self.0, self.0.len(), "", "", f)
     }
 }
 
@@ -134,6 +149,22 @@ pub enum ProjectDef {
     Deselect(Vec<Column>),
 }
 
+impl fmt::Display for ProjectDef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let cols = match self {
+            ProjectDef::Select(cols) => {
+                write!(f, "?select ")?;
+                cols
+            }
+            ProjectDef::Deselect(cols) => {
+                write!(f, "?deselect ")?;
+                cols
+            }
+        };
+        format_list(cols, cols.len(), "", "", f)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct ColumnAlias {
     pub from: Column,
@@ -154,9 +185,11 @@ impl ColumnAlias {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum Column {
+    #[display(fmt = "#{}", _0)]
     Pos(usize),
+    #[display(fmt = "#{}", _0)]
     Name(String),
 }
 

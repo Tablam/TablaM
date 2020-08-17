@@ -9,8 +9,6 @@ fn test_mem_size() {
 #[test]
 fn sum_type() {
     let s = Case::some(1i64.into());
-    dbg!(&s);
-    println!("{}", &s);
     assert_eq!(Some(Scalar::I64(1)), Option::from(s));
 }
 

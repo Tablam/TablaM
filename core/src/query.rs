@@ -193,11 +193,12 @@ impl JoinOp {
         rhs: impl Iterator<Item = Tuple> + 'a,
     ) -> QueryResultOwned<'a> {
         match self {
-            JoinOp::Join(join, ls, _rs) => match join {
+            JoinOp::Join(join, ls, rs) => match join {
                 Join::Cross => {
-                    //schema = ls.join(rs);
+                    let schema = ls.extend(&rs);
+
                     let iter = joins::cross(lhs, rhs);
-                    QueryResultOwned::new(ls, Box::new(iter))
+                    QueryResultOwned::new(schema, Box::new(iter))
                 }
                 _ => unimplemented!(),
             },

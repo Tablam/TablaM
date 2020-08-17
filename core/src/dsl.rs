@@ -78,6 +78,18 @@ where
     Tree::from_iter(schema, xs)
 }
 
+pub fn tree_kv2<K, V>(data: &[(K, V)]) -> Tree
+where
+    K: Into<Scalar> + Clone + NativeKind,
+    V: Into<Scalar> + Clone + NativeKind,
+{
+    let schema = schema_kv(K::kind(), V::kind());
+    let xs = data
+        .iter()
+        .map(|(k, v)| vec![k.clone().into(), v.clone().into()]);
+    Tree::from_iter(schema, xs)
+}
+
 pub fn int(x: i64) -> Scalar {
     x.into()
 }

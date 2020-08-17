@@ -5,6 +5,7 @@ use std::ops::Index;
 use bit_vec::BitVec;
 
 use crate::types::*;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Field {
@@ -79,6 +80,14 @@ impl Schema {
 
     pub fn as_slice(&self) -> Vec<&str> {
         self.fields.iter().map(|x| x.name.as_ref()).collect()
+    }
+
+    pub fn pk_field(&self) -> Option<&Field> {
+        if let Some(pos) = self.pk {
+            self.fields.get(self.resolve_pos(&Column::Pos(pos)))
+        } else {
+            None
+        }
     }
 
     ///Recover the column position from the relative ColumnName
@@ -163,25 +172,26 @@ impl Schema {
     }
 
     pub fn extend(&self, right: &Schema) -> Self {
-        let count = self.len() + right.len();
-        let mut fields = Vec::with_capacity(count);
-        let mut left = self.fields.clone();
-        let mut _right = right.fields.clone();
+        let mut fields = Vec::with_capacity(self.len() + right.len());
+        fields.append(&mut self.fields.clone());
 
-        fields.append(&mut left);
-        let mut cont = 0;
+        let mut find: HashMap<String, usize> =
+            self.fields.iter().map(|x| (x.name.clone(), 2)).collect();
+
         //Avoid duplicated field names...
-        for f in _right {
-            if self.exist(&f.name) {
+        for f in right.fields.clone() {
+            if find.contains_key(&f.name) {
+                let cont = find[&f.name];
+                find.insert(f.name.clone(), cont + 1);
+
                 let name = format!("{}_{}", f.name, cont);
                 fields.push(Field::new(&name, f.kind));
-                cont += 1;
             } else {
                 fields.push(f);
             }
         }
 
-        Self::new(fields, None)
+        Self::new(fields, self.pk)
     }
 
     pub fn rename(&self, change: &[ColumnAlias]) -> Self {

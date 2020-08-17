@@ -84,11 +84,18 @@ kind_native!(i64, I64);
 kind_native!(bool, Bool);
 kind_native!(Decimal, Decimal);
 kind_native!(R64, F64);
+kind_native!(f64, F64);
 kind_native!(String, UTF8);
 
 impl From<i32> for Scalar {
     fn from(x: i32) -> Self {
         Scalar::I64(x as i64)
+    }
+}
+
+impl From<f64> for Scalar {
+    fn from(x: f64) -> Self {
+        Scalar::F64(x.into())
     }
 }
 

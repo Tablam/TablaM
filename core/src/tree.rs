@@ -25,12 +25,12 @@ impl Tree {
         }
     }
 
-    pub fn from_iter<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Self
+    pub fn from_iter<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = Vec<T>>) -> Self
     where
         T: Into<Scalar> + Clone,
     {
         let pk = check_pk(&schema);
-        let data: BTreeSet<_> = xs.map(|x| RowPk::new(pk, to_vec(x))).collect();
+        let data: BTreeSet<_> = xs.map(|x| RowPk::new(pk, to_vec(&x))).collect();
 
         Self::new(schema, data)
     }
@@ -39,12 +39,12 @@ impl Tree {
         self.data.len()
     }
 
-    pub fn rows_iter(&self) -> impl Iterator<Item = &[Scalar]> {
-        self.data.iter().map(|x| x.data.as_slice())
+    pub fn rows_iter(&self) -> impl Iterator<Item = Tuple> + '_ {
+        self.data.iter().map(|x| x.data.clone())
     }
 
-    pub fn col_iter(&self, col: usize) -> impl Iterator<Item = &[Scalar]> {
-        self.data.iter().map(move |x| &x.data[col..col + 1])
+    pub fn col_iter(&self, col: usize) -> impl Iterator<Item = Tuple> + '_ {
+        self.data.iter().map(move |x| x.data[col..col + 1].to_vec())
     }
 }
 

@@ -139,13 +139,13 @@ impl Vector {
         }
     }
 
-    pub fn from_iter<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Self
+    pub fn from_iter<T>(schema: Schema, xs: impl Iterator<Item = Vec<T>>) -> Self
     where
         T: Into<Scalar> + Clone,
     {
         let mut iter = xs.peekable();
         let cols = iter.peek().map(|x| x.len()).unwrap_or(0);
-        let data: Vec<Scalar> = iter.flat_map(to_vec).collect();
+        let data: Vec<Scalar> = iter.flat_map(|x| to_vec(&x)).collect();
         let shape = Shape::table(data.len() / cols, cols);
 
         Vector {
@@ -278,7 +278,7 @@ impl<'a> VectorIter<'a> {
 
 //TODO: Implement the rest of methods, and support exact sized iterators...
 impl<'a> Iterator for VectorIter<'a> {
-    type Item = &'a [Scalar];
+    type Item = Tuple;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos < self.end {
@@ -286,7 +286,7 @@ impl<'a> Iterator for VectorIter<'a> {
             let end = start + self.len;
             self.pos = end + self.stride;
 
-            Some(&self.data.data[start..end])
+            Some(self.data.data[start..end].to_vec())
         } else {
             None
         }

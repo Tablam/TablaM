@@ -38,8 +38,8 @@ fn test_iter() {
     let rel = tree_kv(&[1, 2]);
 
     let first = rel.rows_iter().next();
-    assert_eq!(Some([int(1), int(2)].as_ref()), first);
+    assert_eq!(Some([int(1), int(2)].to_vec()), first);
 
     let first = rel.col_iter(1).next();
-    assert_eq!(Some([int(2)].as_ref()), first);
+    assert_eq!(Some([int(2)].to_vec()), first);
 }

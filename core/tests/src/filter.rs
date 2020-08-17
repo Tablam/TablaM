@@ -24,8 +24,8 @@ fn test_vec() {
     let rel = array(&[1, 2, 3]);
     let q = rel.query().not_eq(qcol(0), qscalar(1));
 
-    let (schema, xs) = q.compile(rel.rows_iter());
-    let rel = Vector::from_iter(schema, xs);
+    let q = q.execute(rel.rows_iter());
+    let rel = Vector::from_iter(q.schema, q.iter);
     assert_eq!(&format!("{}", rel), "Vec[I64; 2; 3]");
 }
 
@@ -35,8 +35,8 @@ fn test_tree() {
 
     let q = rel.query().not_eq(qcol(0), qscalar(1));
 
-    let (schema, xs) = q.compile(rel.rows_iter());
-    let rel = Tree::from_iter(schema, xs);
+    let q = q.execute(rel.rows_iter());
+    let rel = Tree::from_iter(q.schema, q.iter);
     assert_eq!(
         &format!("{}", rel),
         "Tree[pk key:I64, value:I64; 3, 4; 5, 6]"

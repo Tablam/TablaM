@@ -59,14 +59,14 @@ pub fn narray<'a, T: 'a>(xs: impl Iterator<Item = &'a [T]>) -> Vector
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
-    Vector::from_iter(schema_it(T::kind()), xs)
+    Vector::from_iter(schema_it(T::kind()), xs.map(to_vec))
 }
 
 pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
-    Tree::from_iter(schema, xs)
+    Tree::from_iter(schema, xs.map(|x| to_vec(x)))
 }
 
 pub fn tree_kv<T>(data: &[T]) -> Tree
@@ -74,7 +74,7 @@ where
     T: Into<Scalar> + Clone + NativeKind,
 {
     let schema = schema_kv(T::kind(), T::kind());
-    let xs = data.chunks(2);
+    let xs = data.chunks(2).map(|x| to_vec(x));
     Tree::from_iter(schema, xs)
 }
 

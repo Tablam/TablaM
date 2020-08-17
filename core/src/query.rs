@@ -1,6 +1,8 @@
 use derive_more::Display;
 
 use crate::for_impl::*;
+use crate::joins;
+use crate::joins::Join;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
@@ -90,6 +92,28 @@ pub enum Query {
     Filter(CompareOp),
 }
 
+pub struct QueryResult<'a> {
+    pub schema: Schema,
+    pub iter: Iter<'a>,
+}
+
+impl<'a> QueryResult<'a> {
+    pub fn new(schema: Schema, iter: Iter<'a>) -> Self {
+        QueryResult { schema, iter }
+    }
+}
+
+pub struct QueryResultOwned<'a> {
+    pub schema: Schema,
+    pub iter: IterOwned<'a>,
+}
+
+impl<'a> QueryResultOwned<'a> {
+    pub fn new(schema: Schema, iter: IterOwned<'a>) -> Self {
+        QueryResultOwned { schema, iter }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct QueryOp {
     schema: Schema,
@@ -134,11 +158,8 @@ impl QueryOp {
         self.filter(CmOp::GreaterEq, lhs, rhs)
     }
 
-    pub fn compile<'a>(
-        self,
-        iter: impl Iterator<Item = &'a [Scalar]> + 'a,
-    ) -> (Schema, impl Iterator<Item = &'a [Scalar]>) {
-        let mut result = Box::new(iter) as Box<Iter<'a>>;
+    pub fn execute<'a>(self, iter: impl Iterator<Item = Tuple> + 'a) -> QueryResult<'a> {
+        let mut result = Box::new(iter) as Iter<'a>;
         let schema = self.schema;
         for q in self.query {
             result = match q {
@@ -151,11 +172,44 @@ impl QueryOp {
                 }
             }
         }
-        (schema, result)
+        QueryResult::new(schema, result)
     }
 }
 
-type Iter<'a> = dyn Iterator<Item = &'a [Scalar]> + 'a;
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+pub enum JoinOp {
+    #[display(fmt = "{} {} {}", _0, _1, _2)]
+    Join(Join, Schema, Schema),
+}
+
+impl JoinOp {
+    pub fn cross(lhs: Schema, rhs: Schema) -> Self {
+        JoinOp::Join(Join::Cross, lhs, rhs)
+    }
+
+    pub fn execute<'a>(
+        self,
+        lhs: impl Iterator<Item = Tuple> + 'a,
+        rhs: impl Iterator<Item = Tuple> + 'a,
+    ) -> QueryResultOwned<'a> {
+        match self {
+            JoinOp::Join(join, ls, _rs) => match join {
+                Join::Cross => {
+                    //schema = ls.join(rs);
+                    let iter = joins::cross(lhs, rhs);
+                    QueryResultOwned::new(ls, Box::new(iter))
+                }
+                _ => unimplemented!(),
+            },
+        }
+    }
+}
+
+pub type Iter<'a> = Box<dyn Iterator<Item = Tuple> + 'a>;
+pub type IterOwned<'a> = Box<dyn Iterator<Item = Vec<Scalar>> + 'a>;
+
+pub type Chain<'a> = Box<dyn Fn(Iter<'a>) -> Iter<'a> + 'a>;
+pub type Combinator<'a> = Box<dyn Fn(Iter, Iter) -> Iter<'a> + 'a>;
 
 impl fmt::Display for QueryOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

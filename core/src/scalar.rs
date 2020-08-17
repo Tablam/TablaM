@@ -24,11 +24,16 @@ pub enum Scalar {
     F64(R64),
     Decimal(Decimal),
     //Date
+    #[display(fmt = "t'{}'", _0)]
     Time(Time),
+    #[display(fmt = "d'{}'", _0)]
     Date(Date),
+    #[display(fmt = "dt'{}'", _0)]
     DateTime(DateTime),
     //Strings
+    #[display(fmt = "'{}'", _0)]
     Char(char),
+    #[display(fmt = "'{}'", _0)]
     UTF8(Rc<String>),
     //Sum types
     Sum(Box<Case>),
@@ -59,9 +64,6 @@ impl Scalar {
     }
 }
 
-//Type Alias...
-pub type Col = Vec<Scalar>;
-
 macro_rules! kind_native {
     ($native:ident, $kind:ident) => {
         impl NativeKind for $native {
@@ -70,6 +72,12 @@ macro_rules! kind_native {
             }
         }
     };
+}
+
+impl NativeKind for &str {
+    fn kind() -> DataType {
+        DataType::UTF8
+    }
 }
 
 kind_native!(i64, I64);

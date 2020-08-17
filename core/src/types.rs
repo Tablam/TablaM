@@ -255,7 +255,8 @@ impl ToHash for dyn Rel {
 
 //Type Alias...
 pub type Pos = Vec<usize>;
+pub type Tuple = Vec<Scalar>;
 pub type BoolExpr = dyn Fn(&dyn Rel) -> bool;
 pub type MapExpr = dyn Fn(&dyn Rel) -> Box<dyn Rel>;
-pub type Iter<'a> = dyn Iterator<Item = &'a [Scalar]> + 'a;
+pub type Iter<'a> = dyn Iterator<Item = Tuple> + 'a;
 pub type Iter2 = dyn Iterator<Item = Vec<Scalar>>;

@@ -1,4 +1,5 @@
 pub mod dsl;
+pub mod joins;
 pub mod query;
 pub mod refcount;
 pub mod row;
@@ -35,6 +36,6 @@ pub mod prelude {
     pub use crate::schema::*;
     pub use crate::sum_type::Case;
     pub use crate::tree::Tree;
-    pub use crate::types::{Column, ColumnAlias, DataType, NativeKind, Rel, RelShape};
+    pub use crate::types::{Column, ColumnAlias, DataType, NativeKind, Rel, RelShape, Tuple};
     pub use crate::vector::Vector;
 }

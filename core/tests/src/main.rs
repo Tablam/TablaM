@@ -4,5 +4,6 @@ mod filter;
 mod limits;
 mod select;
 mod tree;
+mod union;
 mod utils;
 mod vector;

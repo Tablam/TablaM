@@ -1,4 +1,5 @@
 pub mod dsl;
+pub mod errors;
 pub mod joins;
 pub mod query;
 pub mod refcount;
@@ -30,6 +31,7 @@ pub mod prelude {
     pub use rust_decimal::Decimal;
 
     pub use crate::dsl::*;
+    pub use crate::errors::RelError;
     pub use crate::query::{Comparable, JoinOp, QueryOp};
     pub use crate::row::RowPk;
     pub use crate::scalar::Scalar;

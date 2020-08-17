@@ -234,11 +234,21 @@ impl QueryOp {
 pub enum JoinOp {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Join(Join, Schema, Schema),
+    #[display(fmt = "union {} {}", _0, _1)]
+    Union(Schema, Schema),
 }
 
 impl JoinOp {
     pub fn cross(lhs: Schema, rhs: Schema) -> Self {
         JoinOp::Join(Join::Cross, lhs, rhs)
+    }
+
+    pub fn union(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
+        if lhs == rhs {
+            Ok(JoinOp::Union(lhs, rhs))
+        } else {
+            Err(RelError::SchemaNotMatchExact)
+        }
     }
 
     pub fn execute<'a>(
@@ -256,6 +266,10 @@ impl JoinOp {
                 }
                 _ => unimplemented!(),
             },
+            JoinOp::Union(ls, _) => {
+                let iter = lhs.chain(rhs);
+                QueryResultOwned::new(ls, Box::new(iter))
+            }
         }
     }
 }

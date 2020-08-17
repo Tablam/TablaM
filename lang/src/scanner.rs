@@ -1,21 +1,27 @@
 use std::iter::Peekable;
+
+use logos::{Lexer, Logos, Skip, Span};
+
 use tablam::decorum::R64;
 use tablam::rust_decimal::Decimal;
 
-use logos::{Lexer, Logos, Skip};
-
 pub struct ExtrasLexer {
     current_line: usize,
+    current_initial_column: usize,
 }
 
 impl Default for ExtrasLexer {
     fn default() -> Self {
-        ExtrasLexer { current_line: 1 }
+        ExtrasLexer {
+            current_line: 1,
+            current_initial_column: 0,
+        }
     }
 }
 
 fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
     lexer.extras.current_line += 1;
+    lexer.extras.current_initial_column = lexer.span().end;
     Skip
 }
 
@@ -23,7 +29,8 @@ fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
 pub struct TokenData<T> {
     pub value: Option<T>,
     pub line: usize,
-    pub range_column: logos::Span,
+    pub range_column: Span,
+    pub line_range_column: Span,
 }
 
 fn parse_token_data_without_suffix<T>(
@@ -71,9 +78,16 @@ where
 }
 
 fn extract_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>> {
+    let columns = lexer.span();
+    let start_column = columns.start - lexer.extras.current_initial_column;
+    let end_column = (columns.end - columns.start) + start_column;
     Some(TokenData::<T> {
         line: lexer.extras.current_line,
-        range_column: lexer.span(),
+        line_range_column: Span {
+            start: start_column,
+            end: end_column,
+        },
+        range_column: columns,
         value: None,
     })
 }

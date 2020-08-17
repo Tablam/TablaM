@@ -1,5 +1,7 @@
 mod basic;
 mod cross;
+mod diff;
+mod distinct;
 mod filter;
 mod limits;
 mod select;

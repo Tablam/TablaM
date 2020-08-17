@@ -28,6 +28,7 @@ mod for_impl {
 
 pub mod prelude {
     pub use decorum::R64;
+    pub use itertools;
     pub use rust_decimal::Decimal;
 
     pub use crate::dsl::*;

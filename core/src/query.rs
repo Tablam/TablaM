@@ -1,4 +1,5 @@
 use derive_more::Display;
+use itertools::Itertools;
 
 use crate::for_impl::*;
 use crate::joins;
@@ -102,6 +103,8 @@ pub enum Query {
     Limit(usize),
     #[display(fmt = "?skip {}", _0)]
     Skip(usize),
+    #[display(fmt = "?distinct")]
+    Distinct,
 }
 
 pub struct QueryResult<'a> {
@@ -196,6 +199,12 @@ impl QueryOp {
         self
     }
 
+    pub fn distinct(mut self) -> Self {
+        let q = Query::Distinct;
+        self.query.push(q);
+        self
+    }
+
     pub fn execute<'a>(self, iter: impl Iterator<Item = Tuple> + 'a) -> QueryResult<'a> {
         let mut result = Box::new(iter) as Iter<'a>;
         let mut schema = self.schema;
@@ -224,6 +233,10 @@ impl QueryOp {
                     let iter = result.skip(rows);
                     Box::new(iter)
                 }
+                Query::Distinct => {
+                    let iter = result.unique();
+                    Box::new(iter)
+                }
             }
         }
         QueryResult::new(schema, result)
@@ -236,6 +249,8 @@ pub enum JoinOp {
     Join(Join, Schema, Schema),
     #[display(fmt = "union {} {}", _0, _1)]
     Union(Schema, Schema),
+    #[display(fmt = "diff {} {}", _0, _1)]
+    Diff(Schema, Schema),
 }
 
 impl JoinOp {
@@ -246,6 +261,14 @@ impl JoinOp {
     pub fn union(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
         if lhs == rhs {
             Ok(JoinOp::Union(lhs, rhs))
+        } else {
+            Err(RelError::SchemaNotMatchExact)
+        }
+    }
+
+    pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
+        if lhs == rhs {
+            Ok(JoinOp::Diff(lhs, rhs))
         } else {
             Err(RelError::SchemaNotMatchExact)
         }
@@ -268,6 +291,10 @@ impl JoinOp {
             },
             JoinOp::Union(ls, _) => {
                 let iter = lhs.chain(rhs);
+                QueryResultOwned::new(ls, Box::new(iter))
+            }
+            JoinOp::Diff(ls, _) => {
+                let iter = joins::difference(lhs, rhs);
                 QueryResultOwned::new(ls, Box::new(iter))
             }
         }

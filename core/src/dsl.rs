@@ -83,6 +83,7 @@ pub fn tree_kv<T>(data: &[T]) -> Tree
 where
     T: Into<Scalar> + Clone + NativeKind,
 {
+    assert_eq!(data.len() % 2, 0, "Must be a even number");
     let schema = schema_kv(T::kind(), T::kind());
     let xs = data.chunks(2).map(|x| to_vec(x));
     Tree::from_iter(schema, xs)

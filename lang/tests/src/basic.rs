@@ -265,7 +265,7 @@ fn test_syntax_v1() {
 
 #[test]
 fn test_scanner() {
-    let mut scanner = Scanner::new("let int := 1 \nlet float := 1.1f \nlet money := 10d \nvar payment := 150.5d \npayment += money");
+    let mut scanner = Scanner::new("let true_value := true \n let false_value := false \n  \n var result := true_value = false_value \n result := result <> true \n result := not result = false \n let flag := result or false_value \n let complex_flag := (result and true_value) or flag");
     while let Some(token) = scanner.peek() {
         dbg!(token);
         scanner.accept();

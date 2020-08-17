@@ -117,9 +117,17 @@ pub enum Token {
     //Operators
     #[token(":=", |lex| extract_token_data::<String>(lex))]
     Assignment(TokenData<String>),
+    #[token("=", |lex| extract_token_data::<String>(lex))]
+    Equal(TokenData<String>),
+    #[token("<>", |lex| extract_token_data::<String>(lex))]
+    NotEqual(TokenData<String>),
+    #[token("not", |lex| extract_token_data::<String>(lex))]
+    Not(TokenData<String>),
+    #[token("and", |lex| extract_token_data::<String>(lex))]
+    And(TokenData<String>),
+    #[token("or", |lex| extract_token_data::<String>(lex))]
+    Or(TokenData<String>),
     /*
-    #[token("=")]
-    Equal,
     #[token(":")]
     Start,
     #[token("+")]
@@ -127,6 +135,12 @@ pub enum Token {
     */
     #[token("+=", |lex| extract_token_data::<String>(lex))]
     PlusEqual(TokenData<String>),
+
+    //Grouping
+    #[token("(", |lex| extract_token_data::<String>(lex))]
+    LeftParentheses(TokenData<String>),
+    #[token(")", |lex| extract_token_data::<String>(lex))]
+    RightParentheses(TokenData<String>),
 
     #[token("\n", increase_current_line)]
     #[regex(r" ", logos::skip)]

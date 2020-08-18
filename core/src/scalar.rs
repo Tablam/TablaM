@@ -6,7 +6,7 @@ use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
 use crate::sum_type::Case;
-use crate::types::{DataType, NativeKind};
+use crate::types::{DataType, NativeKind, Rel, Tuple};
 use crate::vector::Vector;
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -24,16 +24,23 @@ pub enum Scalar {
     F64(R64),
     Decimal(Decimal),
     //Date
+    #[display(fmt = "t'{}'", _0)]
     Time(Time),
+    #[display(fmt = "d'{}'", _0)]
     Date(Date),
+    #[display(fmt = "dt'{}'", _0)]
     DateTime(DateTime),
     //Strings
+    #[display(fmt = "'{}'", _0)]
     Char(char),
+    #[display(fmt = "'{}'", _0)]
     UTF8(Rc<String>),
     //Sum types
     Sum(Box<Case>),
     //Collections
     Vector(Box<Vector>),
+    //Lazy computation
+    //Seq(Seq<'static>),
 }
 
 impl Scalar {
@@ -51,13 +58,30 @@ impl Scalar {
             Scalar::Time(_) => DataType::Time,
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
-            Scalar::Vector(x) => DataType::Vec(Box::new(x.kind.clone())),
+            Scalar::Vector(x) => x.kind(),
         }
+    }
+
+    pub fn repeat(&self, times: usize) -> Tuple {
+        (0..times).map(|_| self.clone()).collect()
     }
 }
 
-//Type Alias...
-pub type Col = Vec<Scalar>;
+pub fn select(of: &[Scalar], cols: &[usize]) -> Tuple {
+    if cols.is_empty() {
+        vec![]
+    } else {
+        let mut cells = Vec::with_capacity(cols.len());
+        for p in cols {
+            cells.push(of[*p].clone());
+        }
+        cells
+    }
+}
+
+pub(crate) fn combine(lhs: &[Scalar], rhs: &[Scalar]) -> Tuple {
+    lhs.iter().chain(rhs.iter()).cloned().collect()
+}
 
 macro_rules! kind_native {
     ($native:ident, $kind:ident) => {
@@ -69,14 +93,28 @@ macro_rules! kind_native {
     };
 }
 
+impl NativeKind for &str {
+    fn kind() -> DataType {
+        DataType::UTF8
+    }
+}
+
+kind_native!(i64, I64);
 kind_native!(bool, Bool);
 kind_native!(Decimal, Decimal);
 kind_native!(R64, F64);
+kind_native!(f64, F64);
 kind_native!(String, UTF8);
 
 impl From<i32> for Scalar {
     fn from(x: i32) -> Self {
         Scalar::I64(x as i64)
+    }
+}
+
+impl From<f64> for Scalar {
+    fn from(x: f64) -> Self {
+        Scalar::F64(x.into())
     }
 }
 
@@ -95,5 +133,11 @@ impl From<Box<Scalar>> for Scalar {
 impl From<Case> for Scalar {
     fn from(x: Case) -> Self {
         Scalar::Sum(Box::new(x))
+    }
+}
+
+impl From<Vector> for Scalar {
+    fn from(x: Vector) -> Self {
+        Scalar::Vector(Box::new(x))
     }
 }

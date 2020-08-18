@@ -7,7 +7,7 @@ fn test_vec() {
     let rhs = array(&[4, 5, 6]);
     let q = JoinOp::union(lhs.schema.clone(), rhs.schema.clone()).unwrap();
 
-    check_join_vec(&lhs, &rhs, q, "Vec[Int; 1; 2; 3; 4; 5; 6]");
+    check_join_vec(&lhs, &rhs, q, "Vec[it:Int; 1; 2; 3; 4; 5; 6]");
 }
 
 #[test]

@@ -202,7 +202,7 @@ impl Vector {
 
 impl Rel for Vector {
     fn type_name(&self) -> &str {
-        "Vector"
+        "Vec"
     }
 
     fn kind(&self) -> DataType {
@@ -308,7 +308,7 @@ impl<'a> Iterator for VectorIter<'a> {
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.cols() > 0 {
-            write!(f, "Vec[{};", self.kind())?;
+            write!(f, "Vec[{};", self.schema)?;
             let total = self._rows();
             for (row_pos, row) in self.rows_iter().enumerate() {
                 fmt_row(&row, f)?;

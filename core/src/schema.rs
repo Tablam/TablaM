@@ -1,11 +1,9 @@
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
 
-use bit_vec::BitVec;
-
 use crate::types::*;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Field {
@@ -54,16 +52,6 @@ impl Schema {
         Self::new_single("it", kind)
     }
 
-    pub fn generate(types: &[DataType]) -> Self {
-        let mut names = Vec::with_capacity(types.len());
-
-        for (pos, kind) in types.iter().enumerate() {
-            names.push(Field::new_owned(pos.to_string(), kind.clone()));
-        }
-
-        Self::new(names, None)
-    }
-
     pub fn named(&self, name: &str) -> Option<(usize, &Field)> {
         self.fields
             .iter()
@@ -78,10 +66,6 @@ impl Schema {
         self.len() == 0
     }
 
-    pub fn as_slice(&self) -> Vec<&str> {
-        self.fields.iter().map(|x| x.name.as_ref()).collect()
-    }
-
     pub fn pk_field(&self) -> Option<Field> {
         if let Some(pos) = self.pk {
             self.fields
@@ -89,6 +73,21 @@ impl Schema {
                 .cloned()
         } else {
             None
+        }
+    }
+
+    pub fn resolve_name(&self, of: &Column) -> (usize, Field) {
+        match of {
+            Column::Pos(x) => (*x, self.fields[*x].clone()),
+            Column::Name(x) => {
+                let (pos, f) = self.named(x).unwrap();
+                (pos, f.clone())
+            }
+            Column::Alias(x) => {
+                let (pos, mut f) = self.resolve_name(&x.from);
+                f.name = x.to.clone();
+                (pos, f)
+            }
         }
     }
 
@@ -100,41 +99,12 @@ impl Schema {
                 let (pos, _f) = self.named(x).unwrap();
                 pos
             }
+            Column::Alias(x) => self.resolve_pos(&x.from),
         }
     }
 
     pub fn resolve_pos_many(&self, of: &[Column]) -> Pos {
         of.iter().map(|x| self.resolve_pos(x)).collect()
-    }
-
-    ///Recover the column names from a list of relative ColumnName
-    pub fn resolve_names(&self, of: &[Column]) -> Schema {
-        let mut names = Vec::with_capacity(of.len());
-
-        for name in of.iter() {
-            let pick = match name {
-                Column::Pos(x) => self.fields[*x].clone(),
-                Column::Name(x) => {
-                    let (_pos, f) = self.named(x).unwrap();
-                    f.clone()
-                }
-            };
-            names.push(pick);
-        }
-        Self::new(names, None)
-    }
-
-    pub fn join(&self, other: &Self) -> Vec<usize> {
-        let mut fields = Vec::new();
-        for (i, col) in other.fields.iter().enumerate() {
-            if self.exist(&col.name) {
-                continue;
-            } else {
-                fields.push(i);
-            }
-        }
-
-        fields
     }
 
     pub fn pick_new_pk(&mut self, old: Option<Field>) {
@@ -145,42 +115,6 @@ impl Schema {
                 self.pk = Some(0);
             }
         }
-    }
-
-    /// Helper for select/projection
-    pub fn only(&self, position: &[usize]) -> Self {
-        let mut fields = Vec::with_capacity(position.len());
-        for pos in position {
-            fields.push(self.fields[*pos].clone());
-        }
-        Self::new(fields, None)
-    }
-
-    pub fn except(&self, remove: &[usize]) -> Pos {
-        let mut all = BitVec::from_elem(self.len(), true);
-        let mut pos = Vec::with_capacity(self.len());
-
-        for i in remove {
-            all.set(*i, false);
-        }
-
-        for (i, ok) in all.iter().enumerate() {
-            if ok {
-                pos.push(i);
-            }
-        }
-        pos
-    }
-
-    pub fn deselect(&self, remove: &[usize]) -> Self {
-        let deselect = self.except(remove);
-        self.only(deselect.as_slice())
-    }
-
-    pub fn exist(&self, field: &str) -> bool {
-        let mut find = self.fields.iter().filter(|x| x.name == field);
-
-        find.next().is_some()
     }
 
     pub fn extend(&self, right: &Schema) -> Self {
@@ -206,23 +140,42 @@ impl Schema {
         Self::new(fields, self.pk)
     }
 
-    pub fn rename(&self, change: &[ColumnAlias]) -> Self {
-        let mut names = self.fields.clone();
+    pub fn project(&self, select: &ProjectDef) -> (Schema, Pos) {
+        let pk = self.pk_field();
+        let mut selected: Vec<Field> = Vec::new();
+        let mut pos = Vec::new();
+        let resolved = select.columns().iter().map(|f| self.resolve_name(f));
+        let total = select.columns().len();
+        let mut to_select = HashSet::with_capacity(total);
+        let mut fields = Vec::with_capacity(total);
 
-        for col in change {
-            let pos = self.resolve_pos(&col.from);
-            let old = names[pos].kind.clone();
-            names[pos] = Field::new(&col.to, old);
+        for (pos, f) in resolved {
+            to_select.insert(pos);
+            fields.push(f);
         }
 
-        Self::new(names, None)
-    }
-
-    pub fn project(&self, select: &ProjectDef) -> Pos {
         match select {
-            ProjectDef::Select(pos) => self.resolve_pos_many(&pos),
-            ProjectDef::Deselect(pos) => self.except(&self.resolve_pos_many(&pos)),
-        }
+            ProjectDef::Select(_) => {
+                for (i, _) in self.fields.iter().enumerate() {
+                    if to_select.contains(&i) {
+                        selected.push(fields[i].clone());
+                        pos.push(i);
+                    }
+                }
+            }
+            ProjectDef::Deselect(_) => {
+                for (i, f) in self.fields.iter().enumerate() {
+                    if !to_select.contains(&i) {
+                        selected.push(f.clone());
+                        pos.push(i);
+                    }
+                }
+            }
+        };
+
+        let mut schema = Schema::new(selected, None);
+        schema.pick_new_pk(pk);
+        (schema, pos)
     }
 
     pub fn kind(&self) -> Vec<DataType> {

@@ -19,7 +19,7 @@ pub fn schema_single(name: &str, kind: DataType) -> Schema {
 }
 
 pub fn schema_it(kind: DataType) -> Schema {
-    schema_single("it", kind)
+    Schema::scalar_field(kind)
 }
 
 pub fn schema_kv(key: DataType, value: DataType) -> Schema {
@@ -29,9 +29,15 @@ pub fn schema_kv(key: DataType, value: DataType) -> Schema {
 pub fn colp(pos: usize) -> Column {
     Column::Pos(pos)
 }
+pub fn colp_as(pos: usize, alias: &str) -> Column {
+    Column::Alias(Box::from(ColumnAlias::new(colp(pos), alias)))
+}
 
 pub fn coln(name: &str) -> Column {
     Column::Name(name.to_string())
+}
+pub fn coln_as(name: &str, alias: &str) -> Column {
+    Column::Alias(Box::from(ColumnAlias::new(coln(name), alias)))
 }
 
 pub fn qcol(pos: usize) -> Comparable {

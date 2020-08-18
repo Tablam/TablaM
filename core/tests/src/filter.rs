@@ -26,7 +26,7 @@ fn test_vec() {
     let rel = array(&[1, 2, 3]);
     let q = rel.query().not_eq(qcol(0), qscalar(1));
 
-    check_query_vec(&rel, q, "Vec[Int; 2; 3]");
+    check_query_vec(&rel, q, "Vec[it:Int; 2; 3]");
 }
 
 #[test]

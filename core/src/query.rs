@@ -218,10 +218,9 @@ impl QueryOp {
                     Box::new(iter)
                 }
                 Query::Project(columns) => {
-                    let pk = schema.pk_field();
-                    let cols = schema.project(&columns.cols);
-                    schema = schema.only(&cols);
-                    schema.pick_new_pk(pk);
+                    let (new, cols) = schema.project(&columns.cols);
+                    //dbg!(&schema, &new);
+                    schema = new;
                     let iter = result.map(move |x| select(&x, &cols));
                     Box::new(iter)
                 }

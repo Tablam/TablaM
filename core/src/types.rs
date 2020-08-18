@@ -149,6 +149,15 @@ pub enum ProjectDef {
     Deselect(Vec<Column>),
 }
 
+impl ProjectDef {
+    pub(crate) fn columns(&self) -> &[Column] {
+        match self {
+            ProjectDef::Select(x) => x,
+            ProjectDef::Deselect(x) => x,
+        }
+    }
+}
+
 impl fmt::Display for ProjectDef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let cols = match self {
@@ -165,23 +174,27 @@ impl fmt::Display for ProjectDef {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+#[display(fmt = "{} as {}", from, to)]
 pub struct ColumnAlias {
     pub from: Column,
     pub to: String,
 }
 
 impl ColumnAlias {
-    pub fn new(from: Column, to: String) -> Self {
-        ColumnAlias { from, to }
+    pub fn new(from: Column, to: &str) -> Self {
+        ColumnAlias {
+            from,
+            to: to.into(),
+        }
     }
 
     pub fn rename_pos(from: usize, to: &str) -> Self {
-        Self::new(Column::Pos(from), to.into())
+        Self::new(Column::Pos(from), to)
     }
 
     pub fn rename_name(from: &str, to: &str) -> Self {
-        Self::new(Column::Name(from.into()), to.into())
+        Self::new(Column::Name(from.into()), to)
     }
 }
 
@@ -191,6 +204,8 @@ pub enum Column {
     Pos(usize),
     #[display(fmt = "#{}", _0)]
     Name(String),
+    #[display(fmt = "#{}", _0)]
+    Alias(Box<ColumnAlias>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -7,7 +7,7 @@ fn test_vec() {
     let rel = array(&[2, 2, 3]);
     let q = rel.query().distinct();
 
-    check_query_vec(&rel, q, "Vec[Int; 2; 3]");
+    check_query_vec(&rel, q, "Vec[it:Int; 2; 3]");
 }
 
 #[test]

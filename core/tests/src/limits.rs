@@ -7,13 +7,13 @@ fn test_vec() {
     let rel = array(&[1, 2, 3]);
 
     let q = rel.query().limit(1);
-    check_query_vec(&rel, q, "Vec[Int; 1]");
+    check_query_vec(&rel, q, "Vec[it:Int; 1]");
 
     let q = rel.query().skip(1);
-    check_query_vec(&rel, q, "Vec[Int; 2; 3]");
+    check_query_vec(&rel, q, "Vec[it:Int; 2; 3]");
 
     let q = rel.query().skip(1).limit(1);
-    check_query_vec(&rel, q, "Vec[Int; 2]");
+    check_query_vec(&rel, q, "Vec[it:Int; 2]");
 }
 
 #[test]

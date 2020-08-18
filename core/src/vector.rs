@@ -223,7 +223,7 @@ impl Rel for Vector {
     }
 
     fn cols(&self) -> usize {
-        self.shape.cols
+        self.schema.len()
     }
 
     fn rows(&self) -> Option<usize> {

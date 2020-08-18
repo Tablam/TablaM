@@ -250,6 +250,8 @@ pub enum JoinOp {
     Union(Schema, Schema),
     #[display(fmt = "diff {} {}", _0, _1)]
     Diff(Schema, Schema),
+    #[display(fmt = "union {} {}", _0, _1)]
+    Intersect(Schema, Schema),
 }
 
 impl JoinOp {
@@ -268,6 +270,14 @@ impl JoinOp {
     pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
         if lhs == rhs {
             Ok(JoinOp::Diff(lhs, rhs))
+        } else {
+            Err(RelError::SchemaNotMatchExact)
+        }
+    }
+
+    pub fn intersect(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
+        if lhs == rhs {
+            Ok(JoinOp::Intersect(lhs, rhs))
         } else {
             Err(RelError::SchemaNotMatchExact)
         }
@@ -294,6 +304,10 @@ impl JoinOp {
             }
             JoinOp::Diff(ls, _) => {
                 let iter = joins::difference(lhs, rhs);
+                QueryResultOwned::new(ls, Box::new(iter))
+            }
+            JoinOp::Intersect(ls, _) => {
+                let iter = joins::intersect(lhs, rhs);
                 QueryResultOwned::new(ls, Box::new(iter))
             }
         }

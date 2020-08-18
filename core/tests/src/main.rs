@@ -3,6 +3,7 @@ mod cross;
 mod diff;
 mod distinct;
 mod filter;
+mod intersect;
 mod limits;
 mod select;
 mod tree;

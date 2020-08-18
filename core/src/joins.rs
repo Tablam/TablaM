@@ -64,3 +64,18 @@ pub fn difference<'a, 'b>(
     })
     .into_iter()
 }
+
+pub fn intersect<'a, 'b>(
+    lhs: impl Iterator<Item = Tuple> + 'a,
+    rhs: impl Iterator<Item = Tuple> + 'b,
+) -> impl Iterator<Item = Tuple> {
+    Gen::new(|co| async move {
+        let rhs: HashSet<_> = rhs.collect();
+        for a in lhs {
+            if rhs.contains(&a) {
+                co.yield_(a).await;
+            }
+        }
+    })
+    .into_iter()
+}

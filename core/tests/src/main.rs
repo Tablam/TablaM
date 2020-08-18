@@ -4,6 +4,7 @@ mod diff;
 mod distinct;
 mod filter;
 mod intersect;
+mod join_left;
 mod limits;
 mod select;
 mod tree;

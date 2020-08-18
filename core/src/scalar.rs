@@ -59,8 +59,11 @@ impl Scalar {
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
             Scalar::Vector(x) => x.kind(),
-            //Scalar::Seq(x) => {x.kind()}
         }
+    }
+
+    pub fn repeat(&self, times: usize) -> Tuple {
+        (0..times).map(|_| self.clone()).collect()
     }
 }
 
@@ -74,6 +77,10 @@ pub fn select(of: &[Scalar], cols: &[usize]) -> Tuple {
         }
         cells
     }
+}
+
+pub(crate) fn combine(lhs: &[Scalar], rhs: &[Scalar]) -> Tuple {
+    lhs.iter().chain(rhs.iter()).cloned().collect()
 }
 
 macro_rules! kind_native {

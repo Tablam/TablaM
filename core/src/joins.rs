@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+
 use derive_more::Display;
 use genawaiter::rc::Gen;
 
 use crate::prelude::*;
-use std::collections::HashSet;
+use crate::scalar::combine;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum Join {
@@ -42,8 +44,27 @@ pub fn cross<'a, 'b>(
         for a in lhs {
             for b in &rhs {
                 // dbg!(&a, b);
-                let row: Vec<_> = a.iter().chain(b.iter()).cloned().collect();
-                co.yield_(row).await;
+
+                co.yield_(combine(&a, &b)).await;
+            }
+        }
+    })
+    .into_iter()
+}
+
+pub fn left_join<'a, 'b>(
+    lhs: impl Iterator<Item = Tuple> + 'a,
+    rhs: impl Iterator<Item = Tuple> + 'b,
+    fields_rhs: usize,
+) -> impl Iterator<Item = Tuple> {
+    Gen::new(|co| async move {
+        let rhs: HashSet<_> = rhs.collect();
+        for a in lhs {
+            if let Some(b) = rhs.get(&a) {
+                co.yield_(combine(&a, &b)).await;
+            } else {
+                co.yield_(combine(&a, &Scalar::None.repeat(fields_rhs)))
+                    .await;
             }
         }
     })

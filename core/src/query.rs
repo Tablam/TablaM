@@ -258,6 +258,9 @@ impl JoinOp {
     pub fn cross(lhs: Schema, rhs: Schema) -> Self {
         JoinOp::Join(Join::Cross, lhs, rhs)
     }
+    pub fn join_left(lhs: Schema, rhs: Schema) -> Self {
+        JoinOp::Join(Join::Left, lhs, rhs)
+    }
 
     pub fn union(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
         if lhs == rhs {
@@ -294,6 +297,12 @@ impl JoinOp {
                     let schema = ls.extend(&rs);
 
                     let iter = joins::cross(lhs, rhs);
+                    QueryResultOwned::new(schema, Box::new(iter))
+                }
+                Join::Left => {
+                    let schema = ls.extend(&rs);
+
+                    let iter = joins::left_join(lhs, rhs, rs.len());
                     QueryResultOwned::new(schema, Box::new(iter))
                 }
                 _ => unimplemented!(),

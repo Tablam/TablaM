@@ -52,15 +52,7 @@ pub struct KindRel(Vec<DataType>);
 
 impl fmt::Display for KindRel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[|")?;
-        for (pos, x) in self.0.iter().enumerate() {
-            if pos < self.0.len() - 1 {
-                write!(f, "{}, ", x)?;
-            } else {
-                write!(f, "{}", x)?;
-            }
-        }
-        write!(f, "|]")
+        format_list(&self.0, self.0.len(), "[|", "|]", f)
     }
 }
 

@@ -1,10 +1,8 @@
-use crate::scalar::Scalar;
 use derive_more::{Display, From};
-use std::collections::HashMap;
 
 #[derive(Debug, Display, From)]
 pub enum Error {
-    #[display(fmt = "Schemas names & types not match")]
+    #[display(fmt = "The schemas must match exactly (field count, names & types)")]
     SchemaNotMatchExact,
     #[display(fmt = "IO Error: {}", _0)]
     IOError(std::io::Error),

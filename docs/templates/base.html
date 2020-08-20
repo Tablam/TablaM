@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="{% if lang %}{{ lang }}{% else %}es{% endif %}" id="home" class="{% block color_fondo %}bg-gray-100{% endblock color_fondo %}">
+
+<head>
+    <title>TablaM{% block title %}{% endblock title %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta property="og:title" content="TablaM">
+    <meta name="author" content="El malabarista">
+    <meta name="description" content="The practical relational programing language for data-oriented applications">
+    <meta property="og:description" content="The practical relational programing language for data-oriented applications">
+    <link rel="canonical" href="https://www.elmalabarista.com">
+    <meta property="og:url" content="https://www.tablam.com">
+    <meta property="og:site_name" content="TablaM">
+    <meta property="og:image" content="/img/logo_malab.png">
+    <link href="/img/favicon-32.png" rel="shortcut icon" type="image/png">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body class="flex flex-wrap {% block body %}{% endblock body %}">
+  <header class="w-full">
+        <nav class="bg-white shadow text-xl">
+            <div class="mx-auto px-6 py-3 md:flex">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <a href="#" class="text-gray-800 text-xl font-bold hover:text-gray-700 md:text-2xl">TablaM</a>
+                    </div>                
+                </div>
+
+                <div class="w-full flex items-center justify-between block">
+                    <div class="flex flex-col -mx-4 px-2 py-3 md:flex-row md:mx-0 md:py-0">
+                        <a href="/" class="py-1 px-2 
+                        underline
+                        text-gray-800 rounded 
+                        hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Home</a>
+                        <a href="/install" class="py-1 px-2 
+                        underline
+                        text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Install</a>
+                        <a href="/tutorial" class="py-1 px-2 
+                        underline
+                        text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Tutorial</a>
+                    </div>                    
+                </div>
+            </div>
+        </nav>    
+  </header>
+  <aside class="w-full sm:w-1/5 p-6 bg-gray-800 text-gray-100 shadow">
+    {% set section = get_section(path="_index.md", metadata_only=true) %}
+    <h2 class="text-xl font-bold">Index:</h2>
+    <nav class="list-posts">
+        {% for page in section.pages %}
+            <article class="font-thin">
+                <h3 class="post__title"><a href="{{ page.permalink }}">{{ page.title }}</a></h3>
+            </article>
+        {% endfor %}
+    </nav>
+  </aside>
+  <content class="w-full sm:w-4/5 p-6">
+  {% block content %}
+  {% endblock content %}      
+  </content>
+
+    <footer class="w-full flex flex-col justify-between items-center px-6 py-2 bg-gray-900 sm:flex-row shadow">
+        <a href="/" class="text-xl font-bold text-gray-100 hover:text-gray-400">TablaM</a>
+        
+        <p class="py-2 text-gray-100 sm:py-0">All rights reserved</p>
+
+        <div class="flex -mx-2">
+            <a href="https://github.com/Tablam/TablaM" class="mx-2 text-gray-100 hover:text-gray-400" aria-label="GitHub">
+                Code on <span class="underline">GitHub</span>
+            </a>
+        </div>
+    </footer>  
+</body>
+</html>

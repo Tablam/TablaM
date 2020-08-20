@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::rc::Rc;
 
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, PartialOrd, Eq, Ord)]
 pub struct RefCount<T> {
     v: Rc<RefCell<T>>,
 }
@@ -43,6 +43,7 @@ impl<T: fmt::Debug> fmt::Debug for RefCount<T> {
     }
 }
 
+//TODO: Look if this is ok...
 impl<'a, T> Deref for RefCount<T> {
     type Target = T;
 
@@ -51,9 +52,14 @@ impl<'a, T> Deref for RefCount<T> {
         unsafe { self.as_ptr().as_ref().unwrap() }
     }
 }
+impl<T: PartialEq> PartialEq for RefCount<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.deref() == other.deref()
+    }
+}
 
 impl<T> Hash for RefCount<T> {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        unimplemented!()
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_ptr().hash(state)
     }
 }

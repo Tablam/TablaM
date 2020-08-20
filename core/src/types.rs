@@ -1,13 +1,51 @@
 use std::any::Any;
 use std::cmp::Ordering;
-use std::fmt::Debug;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use derive_more::Display;
 
+use crate::query::QueryOp;
 use crate::scalar::Scalar;
 use crate::schema::Schema;
-use std::fmt;
+
+pub fn format_list<I>(
+    list: impl IntoIterator<Item = I>,
+    total: usize,
+    start: &str,
+    end: &str,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result
+where
+    I: fmt::Display,
+{
+    write!(f, "{}", start)?;
+
+    for (pos, x) in list.into_iter().enumerate() {
+        if pos < total - 1 {
+            write!(f, "{}, ", x)?;
+        } else {
+            write!(f, "{}", x)?;
+        }
+    }
+
+    write!(f, "{}", end)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct KindFlat(Vec<DataType>);
+
+impl fmt::Display for KindFlat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_list(&self.0, self.0.len(), "", "", f)
+    }
+}
+
+impl From<Vec<DataType>> for KindFlat {
+    fn from(x: Vec<DataType>) -> Self {
+        KindFlat(x)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KindRel(Vec<DataType>);
@@ -15,8 +53,12 @@ pub struct KindRel(Vec<DataType>);
 impl fmt::Display for KindRel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[|")?;
-        for x in &self.0 {
-            write!(f, "{}", x)?;
+        for (pos, x) in self.0.iter().enumerate() {
+            if pos < self.0.len() - 1 {
+                write!(f, "{}, ", x)?;
+            } else {
+                write!(f, "{}", x)?;
+            }
         }
         write!(f, "|]")
     }
@@ -36,8 +78,11 @@ pub enum DataType {
     Bit,
     Bool,
     // Numeric
+    #[display(fmt = "Int")]
     I64,
+    #[display(fmt = "Float")]
     F64,
+    #[display(fmt = "Dec")]
     Decimal,
     // Dates
     Time,
@@ -45,18 +90,22 @@ pub enum DataType {
     DateTime,
     // Text
     Char,
+    #[display(fmt = "Str")]
     UTF8,
     // For list, dynamic
+    #[display(fmt = "Any")]
     ANY,
     // Complex
     #[display(fmt = "Enum({})", _0)]
     Sum(Box<DataType>),
-    #[display(fmt = "Vec({})", _0)]
-    Vec(Box<DataType>),
+    #[display(fmt = "{}", _0)]
+    Vec(KindFlat),
     #[display(fmt = "Tree({})", _0)]
     Tree(KindRel),
     #[display(fmt = "Map({})", _0)]
     Map(KindRel),
+    #[display(fmt = "Seq({})", _0)]
+    Seq(KindRel),
     // Planed: Blob
 }
 
@@ -73,16 +122,6 @@ pub enum LogicOp {
     And,
     Or,
     Not,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub enum CompareOp {
-    Eq,
-    NotEq,
-    Less,
-    LessEq,
-    Greater,
-    GreaterEq,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -110,35 +149,70 @@ pub enum ProjectDef {
     Deselect(Vec<Column>),
 }
 
-pub enum KeyValue {
-    Key,
-    Value,
+impl ProjectDef {
+    pub(crate) fn columns(&self) -> &[Column] {
+        match self {
+            ProjectDef::Select(x) => x,
+            ProjectDef::Deselect(x) => x,
+        }
+    }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+impl fmt::Display for ProjectDef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let cols = match self {
+            ProjectDef::Select(cols) => {
+                write!(f, "?select ")?;
+                cols
+            }
+            ProjectDef::Deselect(cols) => {
+                write!(f, "?deselect ")?;
+                cols
+            }
+        };
+        format_list(cols, cols.len(), "", "", f)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+#[display(fmt = "{} as {}", from, to)]
 pub struct ColumnAlias {
     pub from: Column,
     pub to: String,
 }
 
 impl ColumnAlias {
-    pub fn new(from: Column, to: String) -> Self {
-        ColumnAlias { from, to }
+    pub fn new(from: Column, to: &str) -> Self {
+        ColumnAlias {
+            from,
+            to: to.into(),
+        }
     }
 
     pub fn rename_pos(from: usize, to: &str) -> Self {
-        Self::new(Column::Pos(from), to.into())
+        Self::new(Column::Pos(from), to)
     }
 
     pub fn rename_name(from: &str, to: &str) -> Self {
-        Self::new(Column::Name(from.into()), to.into())
+        Self::new(Column::Name(from.into()), to)
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum Column {
+    #[display(fmt = "#{}", _0)]
     Pos(usize),
+    #[display(fmt = "#{}", _0)]
     Name(String),
+    #[display(fmt = "#{}", _0)]
+    Alias(Box<ColumnAlias>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RelShape {
+    Scalar,
+    Vec,
+    Table,
 }
 
 pub trait ToHash {
@@ -184,7 +258,7 @@ pub fn is_t<T: 'static>(of: &dyn Rel) -> bool {
 
 pub fn cmp_eq<T: 'static>(of: &T, other: &dyn Rel) -> bool
 where
-    T: PartialEq + Debug,
+    T: PartialEq + fmt::Debug,
 {
     //dbg!(&of.type_id(), &other.as_any().type_id());
     let y = other.as_any();
@@ -207,7 +281,7 @@ where
     }
 }
 
-pub trait Rel: Debug {
+pub trait Rel: fmt::Debug {
     fn type_name(&self) -> &str;
 
     fn kind(&self) -> DataType;
@@ -219,16 +293,19 @@ pub trait Rel: Debug {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+    fn cols(&self) -> usize;
+    fn rows(&self) -> Option<usize>;
 
     fn as_any(&self) -> &dyn Any;
 
-    fn tuple(&self, pos: usize) -> Scalar;
-
+    fn rel_shape(&self) -> RelShape;
     fn rel_hash(&self, hasher: &mut dyn Hasher);
     fn rel_eq(&self, other: &dyn Rel) -> bool;
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering;
 
-    //fn as_iter(&self) -> Seq<'_>;
+    fn query(&self) -> QueryOp {
+        QueryOp::new(self.schema())
+    }
 }
 
 impl PartialEq for dyn Rel {
@@ -258,6 +335,8 @@ impl ToHash for dyn Rel {
 
 //Type Alias...
 pub type Pos = Vec<usize>;
+pub type Tuple = Vec<Scalar>;
 pub type BoolExpr = dyn Fn(&dyn Rel) -> bool;
 pub type MapExpr = dyn Fn(&dyn Rel) -> Box<dyn Rel>;
-pub type Iter<'a> = dyn Iterator<Item = Scalar> + 'a;
+pub type Iter<'a> = dyn Iterator<Item = Tuple> + 'a;
+pub type Iter2 = dyn Iterator<Item = Vec<Scalar>>;

@@ -3,6 +3,7 @@ use std::iter::Peekable;
 use logos::{Lexer, Logos, Skip, Span};
 
 use tablam::decorum::R64;
+use tablam::derive_more::{Display, From};
 use tablam::rust_decimal::Decimal;
 
 pub struct ExtrasLexer {
@@ -25,7 +26,14 @@ fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
     Skip
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Display)]
+#[display(
+    fmt = "{:?}: at {} ({:?}:{:?})",
+    value,
+    line,
+    range_column,
+    line_range_column
+)]
 pub struct TokenData<T> {
     pub value: Option<T>,
     pub line: usize,
@@ -92,8 +100,9 @@ fn extract_token_data<T>(lexer: &mut Lexer<Token>) -> Option<TokenData<T>> {
     })
 }
 
-#[derive(Logos, Debug, Clone, PartialEq)]
+#[derive(Logos, Debug, Clone, PartialEq, Display)]
 #[logos(extras = ExtrasLexer)]
+#[display(fmt = "{}")]
 pub enum Token {
     //Definition keywords
     #[token("let", |lex| extract_token_data::<String>(lex))]

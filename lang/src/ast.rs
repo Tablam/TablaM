@@ -1,11 +1,26 @@
 use std::collections::HashMap;
+use std::rc::Rc;
+
+use logos::Span;
+
+use tablam::derive_more::{Display, From};
 use tablam::prelude::*;
 
 use crate::scanner::{Scanner, Token, TokenData};
-use logos::Span;
-use std::rc::Rc;
 
 pub type Identifier = String;
+
+#[derive(Debug, Display, From)]
+pub enum Error {
+    #[display(fmt = "Unexpected token.)")]
+    Unexpected,
+    #[display(fmt = "Unclosed group.")]
+    UnclosedGroup,
+    #[display(fmt = "Unexpected EOF")]
+    Eof,
+}
+
+pub type Result = std::result::Result<Expression, Error>;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -13,6 +28,7 @@ pub enum Expression {
     Variable(Identifier, Box<Expression>),
     Immutable(Identifier, Box<Expression>),
     BinaryOp(BinaryOperator),
+    Block(Vec<Expression>),
     Error(String),
 }
 
@@ -67,7 +83,7 @@ impl Environment {
 }
 
 trait Evaluable {
-    fn eval(&self, env: &mut Environment) -> Result<Expression, String>;
+    fn eval(&self, env: &mut Environment) -> Result;
 }
 
 #[derive(Debug, Clone)]
@@ -114,149 +130,129 @@ impl<'source> Parser<'source> {
         }
     }
 
-    pub fn parse(&mut self) -> Vec<Expression> {
+    pub fn parse(&mut self) -> Result {
         let ast = self.parse_ast(0);
 
         ast
     }
 
-    fn parse_ast(&mut self, min_bindpower: u8) -> Vec<Expression> {
-        let mut result = Vec::new();
-        let op = self.scanner.peek();
+    fn parse_let(&mut self) -> Result {
+        self.accept();
+        if let Some(Token::Variable(data)) = self.peek() {
+            let lhs = data.value.clone().unwrap();
+            self.accept();
+            if let Some(Token::Assignment(_)) = self.peek() {
+                self.accept();
+                return self.parse_ast(0);
+            }
+        };
+
+        Err(Error::Unexpected)
+    }
+
+    fn accept(&mut self) -> Option<Token> {
+        self.scanner.accept()
+    }
+    fn peek(&mut self) -> Option<&Token> {
+        self.scanner.peek()
+    }
+
+    fn parse_ast(&mut self, min_bindpower: u8) -> Result {
+        let op = self.peek();
         let mut lhs = match op {
             Some(Token::Integer(data)) => Expression::Value(Scalar::I64(data.value.unwrap())),
-                Some(Token::Float(data))  => Expression::Value(Scalar::F64(data.value.unwrap())),
+            Some(Token::Float(data)) => Expression::Value(Scalar::F64(data.value.unwrap())),
             Some(Token::Decimal(data)) => Expression::Value(Scalar::Decimal(data.value.unwrap())),
-            variable_kind@ Some(Token::Var(_)) |  variable_kind@ Some(Token::Let(_)) => {
-                dbg!(op);
-                self.scanner.accept();
-                let lhs = match self.scanner.peek(){
-                    Some(Token::Variable(data)) => {
-                        let lhs = data.value.unwrap();
-                        self.scanner.accept();
-
-                        let rhs = match self.scanner.peek() {
-                            Some(Token::Assignment(_)) => {
-                                let  (_, bind_power) = self.prefix_binding_power(self.scanner.peek().unwrap());
-                                self.scanner.accept();
-                                self.parse_ast(bind_power).pop().unwrap()
-                            }
-                            Some(wrong_token) => self.search_next_expression(wrong_token, "Assignment operator expected"),
-                             None => Expression::Error("Unexpected final".to_string())
-                        };
-
-                        Expression::Variable(lhs, Box::new(rhs))
-                    },
-                    Some(wrong_token) => self.search_next_expression(wrong_token, "Identifier expected"),
-                    None => Expression::Error("Unexpected final".to_string())
-                };
-
-                lhs
+            variable_kind @ Some(Token::Var(_)) | variable_kind @ Some(Token::Let(_)) => {
+                self.parse_let()?
             }
             t => panic!("bad token: {:?}", t),
         };
 
-        loop {
-            let op = match lexer.peek() {
-                Token::Eof => break,
-                Token::Op(op) => op,
-                t => panic!("bad token: {:?}", t),
-            };
-
-            if let Some((l_bp, ())) = postfix_binding_power(op) {
-                8645
-                if l_bp < min_bp {
+        while let Some(token) = self.peek() {
+            if let Some((l_bp, ())) = Self::postfix_binding_power(token) {
+                if l_bp < min_bindpower {
                     break;
                 }
-                lexer.next();
+                let token = self.accept();
 
-                lhs = if op == '[' {
-                    let rhs = expr_bp(lexer, 0);
-                    assert_eq!(lexer.next(), Token::Op(']'));
-                    S::Cons(op, vec![lhs, rhs])
-                } else {
-                    S::Cons(op, vec![lhs])
+                lhs = match token {
+                    Some(Token::LeftParentheses(_)) => {
+                        let rhs = self.parse_ast(0)?;
+                        if let Some(Token::RightParentheses(_)) = self.peek() {
+                            //Expression::Block(vec![lhs.clone(), lhs])
+                            unimplemented!();
+                        } else {
+                            return Err(Error::UnclosedGroup);
+                        }
+                    }
+                    _ => continue,
                 };
-                continue;
             }
 
-            if let Some((l_bp, r_bp)) = infix_binding_power(op) {
-                if l_bp < min_bp {
+            if let Some((l_bp, r_bp)) = Self::infix_binding_power(token) {
+                if l_bp < min_bindpower {
                     break;
                 }
-                lexer.next();
+                self.accept();
+                let rhs = self.parse_ast(0);
 
-                lhs = if op == '?' {
-                    let mhs = expr_bp(lexer, 0);
-                    assert_eq!(lexer.next(), Token::Op(':'));
-                    let rhs = expr_bp(lexer, r_bp);
-                    S::Cons(op, vec![lhs, mhs, rhs])
-                } else {
-                    let rhs = expr_bp(lexer, r_bp);
-                    S::Cons(op, vec![lhs, rhs])
-                };
+                lhs = Expression::Block(vec![lhs, rhs?]);
                 continue;
             }
 
             break;
         }
 
-
-        result
+        Ok(lhs)
     }
 
-    fn search_next_expression(&mut self, wrong_token:&Token, error:&str) -> Expression{
-
+    fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Result {
         //TODO: extract info from wrong_token
-        let  data = TokenData{value: Some("dummyValue"), line:1, range_column: Span{start: 1, end: 2},
-        line_range_column: Span{start:1, end: 2}};
-        let feedback = Expression::Error(format!("{} at line {}, column {} : {}", error.to_string(), data.line,
-        data.line_range_column.start, data.line_range_column.end));
+        let data = TokenData {
+            value: Some("dummyValue".to_string()),
+            line: 1,
+            range_column: Span { start: 1, end: 2 },
+            line_range_column: Span { start: 1, end: 2 },
+        };
+        let feedback = Error::Unexpected;
 
-        loop{
+        loop {
             if let Some(op) = self.scanner.peek() {
                 match op {
                     Token::Let(_) | Token::Var(_) => break,
-                    _ => {self.scanner.accept();}
+                    _ => {
+                        self.scanner.accept();
+                    }
                 }
             }
         }
 
-        feedback
+        Err(feedback)
     }
 
-    fn prefix_binding_power(&self, token: &Token) -> ((), u8) {
+    fn prefix_binding_power(token: &Token) -> ((), u8) {
         match token {
             Token::Let(_) | Token::Var(_) => ((), 15),
             _ => panic!("bad op: {:?}", token),
         }
     }
 
-    fn infix_binding_power(token: Token) -> Option<(u8, u8)> {
+    fn postfix_binding_power(token: &Token) -> Option<(u8, ())> {
         let res = match token {
-
-            /*Token::Not(_) => (4,3),
-            Token::Equal(_)
-            | Token::Greater(_)
-            | Token::GreaterEqual(_)
-            | Token::Less(_)
-            | Token::LessEqual(_)
-            | Token::NotEqual(_) => (8, 6),*/
-            Token:: => (4, 3),
-            '+' | '-' => (5, 6),
-            '*' | '/' => (7, 8),
-            '.' => (14, 13),
-            Token::Assignment(_) => (14, 13),
+            Token::RightParentheses(_) => (11, ()),
             _ => return None,
         };
         Some(res)
     }
-}
 
-impl<'source> Iterator for Parser<'source> {
-    type Item = Vec<Expression>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(self.parse())
+    fn infix_binding_power(token: &Token) -> Option<(u8, u8)> {
+        let res = match token {
+            Token::Equal(_) => (2, 1),
+            Token::NotEqual(_) => (4, 3),
+            Token::Plus(_) | Token::Minus(_) => (5, 6),
+            _ => return None,
+        };
+        Some(res)
     }
 }

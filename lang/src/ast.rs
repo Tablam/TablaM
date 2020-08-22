@@ -2,19 +2,24 @@ use std::collections::HashMap;
 use tablam::prelude::*;
 
 use crate::scanner::{Scanner, Token, TokenData};
+use logos::Span;
+use std::rc::Rc;
+
+pub type Identifier = String;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
     Value(Scalar),
-    Variable(String, Scalar),
-    //BinaryOp(BinaryOperator),
+    Variable(Identifier, Box<Expression>),
+    Immutable(Identifier, Box<Expression>),
+    BinaryOp(BinaryOperator),
     Error(String),
 }
 
 #[derive(Debug, Clone)]
 pub struct Environment {
-    vars: HashMap<String, Expression>,
-    functions: HashMap<String, Expression>,
+    vars: HashMap<Identifier, Expression>,
+    functions: HashMap<Identifier, Expression>,
     parent: Option<Box<Environment>>,
 }
 
@@ -40,7 +45,7 @@ impl Environment {
         match self.vars.get(name) {
             Some(variable) => Some(variable),
             None => match &self.parent {
-                Some(env) => env.find_var(name),
+                Some(env) => env.find_variable(name),
                 None => None,
             },
         }
@@ -50,7 +55,7 @@ impl Environment {
         match self.functions.get(k) {
             Some(function) => Some(function),
             None => match &self.parent {
-                Some(env) => env.find_fun(k),
+                Some(env) => env.find_function(k),
                 None => None,
             },
         }
@@ -65,7 +70,7 @@ trait Evaluable {
     fn eval(&self, env: &mut Environment) -> Result<Expression, String>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BinaryOperator {
     operator: Token,
     left: Box<Expression>,
@@ -109,39 +114,142 @@ impl<'source> Parser<'source> {
         }
     }
 
-    fn parse(&mut self) -> Vec<Expression> {
-        let mut line = Vec::new();
-        loop {
-            if let Some(token) = self.scanner.peek() {
-                match token {
-                    Token::Let(data) => {
-                        if { data.line > self.current_line } {
-                            break;
-                        }
+    pub fn parse(&mut self) -> Vec<Expression> {
+        let ast = self.parse_ast(0);
 
+        ast
+    }
+
+    fn parse_ast(&mut self, min_bindpower: u8) -> Vec<Expression> {
+        let mut result = Vec::new();
+        let op = self.scanner.peek();
+        let mut lhs = match op {
+            Some(Token::Integer(data)) => Expression::Value(Scalar::I64(data.value.unwrap())),
+                Some(Token::Float(data))  => Expression::Value(Scalar::F64(data.value.unwrap())),
+            Some(Token::Decimal(data)) => Expression::Value(Scalar::Decimal(data.value.unwrap())),
+            variable_kind@ Some(Token::Var(_)) |  variable_kind@ Some(Token::Let(_)) => {
+                dbg!(op);
+                self.scanner.accept();
+                let lhs = match self.scanner.peek(){
+                    Some(Token::Variable(data)) => {
+                        let lhs = data.value.unwrap();
                         self.scanner.accept();
-                        let result = self.consume(Token::Variable(TokenData { line: 0 }), "");
-                    }
-                    _ => continue,
+
+                        let rhs = match self.scanner.peek() {
+                            Some(Token::Assignment(_)) => {
+                                let  (_, bind_power) = self.prefix_binding_power(self.scanner.peek().unwrap());
+                                self.scanner.accept();
+                                self.parse_ast(bind_power).pop().unwrap()
+                            }
+                            Some(wrong_token) => self.search_next_expression(wrong_token, "Assignment operator expected"),
+                             None => Expression::Error("Unexpected final".to_string())
+                        };
+
+                        Expression::Variable(lhs, Box::new(rhs))
+                    },
+                    Some(wrong_token) => self.search_next_expression(wrong_token, "Identifier expected"),
+                    None => Expression::Error("Unexpected final".to_string())
+                };
+
+                lhs
+            }
+            t => panic!("bad token: {:?}", t),
+        };
+
+        loop {
+            let op = match lexer.peek() {
+                Token::Eof => break,
+                Token::Op(op) => op,
+                t => panic!("bad token: {:?}", t),
+            };
+
+            if let Some((l_bp, ())) = postfix_binding_power(op) {
+                8645
+                if l_bp < min_bp {
+                    break;
                 }
+                lexer.next();
+
+                lhs = if op == '[' {
+                    let rhs = expr_bp(lexer, 0);
+                    assert_eq!(lexer.next(), Token::Op(']'));
+                    S::Cons(op, vec![lhs, rhs])
+                } else {
+                    S::Cons(op, vec![lhs])
+                };
+                continue;
+            }
+
+            if let Some((l_bp, r_bp)) = infix_binding_power(op) {
+                if l_bp < min_bp {
+                    break;
+                }
+                lexer.next();
+
+                lhs = if op == '?' {
+                    let mhs = expr_bp(lexer, 0);
+                    assert_eq!(lexer.next(), Token::Op(':'));
+                    let rhs = expr_bp(lexer, r_bp);
+                    S::Cons(op, vec![lhs, mhs, rhs])
+                } else {
+                    let rhs = expr_bp(lexer, r_bp);
+                    S::Cons(op, vec![lhs, rhs])
+                };
+                continue;
             }
 
             break;
         }
-        line
+
+
+        result
     }
 
-    fn consume<T>(&mut self, expected: Token, error: &str) -> Option<Expression> {
-        if let Some(token) = self.scanner.peek() {
-            let result = match token {
-                expected => None,
-                _ => Some(Expression::Error(error.to_string())),
-            };
+    fn search_next_expression(&mut self, wrong_token:&Token, error:&str) -> Expression{
 
-            return result;
+        //TODO: extract info from wrong_token
+        let  data = TokenData{value: Some("dummyValue"), line:1, range_column: Span{start: 1, end: 2},
+        line_range_column: Span{start:1, end: 2}};
+        let feedback = Expression::Error(format!("{} at line {}, column {} : {}", error.to_string(), data.line,
+        data.line_range_column.start, data.line_range_column.end));
+
+        loop{
+            if let Some(op) = self.scanner.peek() {
+                match op {
+                    Token::Let(_) | Token::Var(_) => break,
+                    _ => {self.scanner.accept();}
+                }
+            }
         }
 
-        None
+        feedback
+    }
+
+    fn prefix_binding_power(&self, token: &Token) -> ((), u8) {
+        match token {
+            Token::Let(_) | Token::Var(_) => ((), 15),
+            _ => panic!("bad op: {:?}", token),
+        }
+    }
+
+    fn infix_binding_power(token: Token) -> Option<(u8, u8)> {
+        let res = match token {
+
+            /*Token::Not(_) => (4,3),
+            Token::Equal(_)
+            | Token::Greater(_)
+            | Token::GreaterEqual(_)
+            | Token::Less(_)
+            | Token::LessEqual(_)
+            | Token::NotEqual(_) => (8, 6),*/
+            Token:: => (4, 3),
+            '+' | '-' => (5, 6),
+            '*' | '/' => (7, 8),
+            '.' => (14, 13),
+            Token::Assignment(_) => (14, 13),
+            _ => return None,
+        };
+        Some(res)
     }
 }
 

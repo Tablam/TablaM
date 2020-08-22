@@ -1,6 +1,8 @@
 use tablam::prelude::*;
 
+use crate::basic::PRODUCTS_CSV;
 use crate::utils::*;
+use tablam::io::File;
 
 #[test]
 fn test_vec() {
@@ -45,4 +47,22 @@ fn test_tree() {
 
     let q = rel.query().deselect(&[colp(0)]);
     check_query_tree(&rel, q, "Tree[pk value:Int; 2; 4; 6]");
+}
+
+#[test]
+fn test_file() {
+    let mut temp = std::env::temp_dir().to_path_buf();
+    temp.push("sample.csv");
+    let mut rel = File::new(temp, true, true, true).unwrap();
+    rel.write_string(PRODUCTS_CSV).unwrap();
+    rel.seek_start(0).unwrap();
+
+    let q = rel.query().select(&[colp(0)]).limit(1);
+    let q = q.execute(rel.rows_iter());
+
+    let v = Vector::from_iter(q.schema, q.iter);
+    assert_eq!(
+        &format!("{}", v),
+        "Vec[it:Str; 'id,ref,name,category,price,qty,tax,date']"
+    );
 }

@@ -124,6 +124,12 @@ impl From<&str> for Scalar {
     }
 }
 
+impl From<String> for Scalar {
+    fn from(x: String) -> Self {
+        Scalar::UTF8(Rc::new(x))
+    }
+}
+
 impl From<Box<Scalar>> for Scalar {
     fn from(x: Box<Scalar>) -> Self {
         *x

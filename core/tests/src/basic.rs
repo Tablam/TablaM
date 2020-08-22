@@ -1,5 +1,7 @@
 use tablam::prelude::*;
 
+pub static PRODUCTS_CSV: &str = include_str!("../../../data/products.csv");
+
 #[test]
 fn test_mem_size() {
     //Just a sanity check to not blow up the memory!

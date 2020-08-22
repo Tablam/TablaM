@@ -1,5 +1,7 @@
 pub mod dsl;
 pub mod errors;
+pub mod function;
+pub mod io;
 pub mod joins;
 pub mod query;
 pub mod refcount;
@@ -15,6 +17,8 @@ pub extern crate bit_vec;
 pub extern crate chrono;
 pub extern crate decorum;
 pub extern crate rust_decimal;
+#[macro_use]
+pub extern crate derivative;
 
 mod for_impl {
     pub use std::any::Any;
@@ -32,7 +36,8 @@ pub mod prelude {
     pub use rust_decimal::Decimal;
 
     pub use crate::dsl::*;
-    pub use crate::errors::Error;
+    pub use crate::errors::{Error, Result};
+    pub use crate::io;
     pub use crate::query::{Comparable, JoinOp, QueryOp};
     pub use crate::row::RowPk;
     pub use crate::scalar::Scalar;

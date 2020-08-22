@@ -131,7 +131,7 @@ impl<'a> QueryResultOwned<'a> {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct QueryOp {
-    schema: Schema,
+    pub schema: Schema,
     query: Vec<Query>,
 }
 
@@ -262,7 +262,7 @@ impl JoinOp {
         JoinOp::Join(Join::Left, lhs, rhs)
     }
 
-    pub fn union(lhs: Schema, rhs: Schema) -> Result<Self, Error> {
+    pub fn union(lhs: Schema, rhs: Schema) -> Result<Self> {
         if lhs == rhs {
             Ok(JoinOp::Union(lhs, rhs))
         } else {
@@ -270,7 +270,7 @@ impl JoinOp {
         }
     }
 
-    pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self, Error> {
+    pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self> {
         if lhs == rhs {
             Ok(JoinOp::Diff(lhs, rhs))
         } else {
@@ -278,7 +278,7 @@ impl JoinOp {
         }
     }
 
-    pub fn intersect(lhs: Schema, rhs: Schema) -> Result<Self, Error> {
+    pub fn intersect(lhs: Schema, rhs: Schema) -> Result<Self> {
         if lhs == rhs {
             Ok(JoinOp::Intersect(lhs, rhs))
         } else {

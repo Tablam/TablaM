@@ -262,27 +262,27 @@ impl JoinOp {
         JoinOp::Join(Join::Left, lhs, rhs)
     }
 
-    pub fn union(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
+    pub fn union(lhs: Schema, rhs: Schema) -> Result<Self, Error> {
         if lhs == rhs {
             Ok(JoinOp::Union(lhs, rhs))
         } else {
-            Err(RelError::SchemaNotMatchExact)
+            Err(Error::SchemaNotMatchExact)
         }
     }
 
-    pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
+    pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self, Error> {
         if lhs == rhs {
             Ok(JoinOp::Diff(lhs, rhs))
         } else {
-            Err(RelError::SchemaNotMatchExact)
+            Err(Error::SchemaNotMatchExact)
         }
     }
 
-    pub fn intersect(lhs: Schema, rhs: Schema) -> Result<Self, RelError> {
+    pub fn intersect(lhs: Schema, rhs: Schema) -> Result<Self, Error> {
         if lhs == rhs {
             Ok(JoinOp::Intersect(lhs, rhs))
         } else {
-            Err(RelError::SchemaNotMatchExact)
+            Err(Error::SchemaNotMatchExact)
         }
     }
 

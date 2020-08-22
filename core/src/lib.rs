@@ -32,7 +32,7 @@ pub mod prelude {
     pub use rust_decimal::Decimal;
 
     pub use crate::dsl::*;
-    pub use crate::errors::RelError;
+    pub use crate::errors::Error;
     pub use crate::query::{Comparable, JoinOp, QueryOp};
     pub use crate::row::RowPk;
     pub use crate::scalar::Scalar;

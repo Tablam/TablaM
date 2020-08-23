@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
 use tablam::derive_more::{Display, From};
-use tablam::prelude::*;
+use tablam::prelude::Scalar;
 
 use crate::lexer::{Token, TokenData};
 
 pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
-pub enum ParseError {
+pub enum Error {
     #[display(fmt = "Unexpected token.)")]
     Unexpected,
     #[display(fmt = "Unclosed group.")]
@@ -16,6 +16,8 @@ pub enum ParseError {
     #[display(fmt = "Unexpected EOF")]
     Eof,
 }
+
+pub type Return = std::result::Result<Expression, Error>;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -25,6 +27,8 @@ pub enum Expression {
     BinaryOp(BinaryOperation),
     Block(Vec<Expression>),
     Error(String),
+    Pass,
+    Eof,
 }
 
 #[derive(Debug, Clone)]

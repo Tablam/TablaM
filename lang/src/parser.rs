@@ -1,11 +1,7 @@
-use logos::Span;
-
 use crate::ast::*;
 use crate::lexer::*;
 use tablam::derive_more::{Display, From};
-use tablam::prelude::*;
-
-pub type Result = std::result::Result<Expression, ParseError>;
+use tablam::prelude::Scalar;
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,
@@ -32,7 +28,7 @@ impl<'source> Parser<'source> {
         self.scanner.peek_both()
     }
 
-    fn parse_let(&mut self) -> Result {
+    fn parse_let(&mut self) -> Return {
         if let Some(Token::Variable(name)) = self.peek() {
             let lhs = name;
             self.accept();
@@ -42,18 +38,18 @@ impl<'source> Parser<'source> {
             }
         };
 
-        Err(ParseError::Unexpected)
+        Err(Error::Unexpected)
     }
 
-    pub fn parse(&mut self) -> Result {
+    pub fn parse(&mut self) -> Return {
         let ast = self.parse_ast(0);
 
         ast
     }
 
-    fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Result {
+    fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Return {
         //TODO: extract info from wrong_token
-        let feedback = ParseError::Unexpected;
+        let feedback = Error::Unexpected;
 
         loop {
             if let Some(op) = self.scanner.peek() {
@@ -94,7 +90,7 @@ impl<'source> Parser<'source> {
         Some(res)
     }
 
-    fn parse_ast(&mut self, min_bindpower: u8) -> Result {
+    fn parse_ast(&mut self, min_bindpower: u8) -> Return {
         let op = self.accept();
         dbg!(&op);
         let mut lhs = match op {
@@ -123,7 +119,7 @@ impl<'source> Parser<'source> {
                             Expression::Block(vec![lhs, rhs])
                         //unimplemented!();
                         } else {
-                            return Err(ParseError::UnclosedGroup);
+                            return Err(Error::UnclosedGroup);
                         }
                     }
                     _ => continue,

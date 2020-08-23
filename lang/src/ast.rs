@@ -19,7 +19,7 @@ pub enum Error {
     Eof,
 }
 
-pub type Result = std::result::Result<Expression, Error>;
+pub type Return = std::result::Result<Expression, Error>;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -29,6 +29,8 @@ pub enum Expression {
     BinaryOp(BinaryOperator),
     Block(Vec<Expression>),
     Error(String),
+    Pass,
+    Eof,
 }
 
 #[derive(Debug, Clone)]
@@ -82,14 +84,14 @@ impl Environment {
 }
 
 trait Evaluable {
-    fn eval(&self, env: &mut Environment) -> Result;
+    fn eval(&self, env: &mut Environment) -> Return;
 }
 
 #[derive(Debug, Clone)]
 pub struct BinaryOperator {
-    operator: Token,
-    left: Box<Expression>,
-    right: Box<Expression>,
+    pub operator: Token,
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
 }
 
 /*impl Evaluable for BinaryOperator {
@@ -129,13 +131,13 @@ impl<'source> Parser<'source> {
         }
     }
 
-    pub fn parse(&mut self) -> Result {
+    pub fn parse(&mut self) -> Return {
         let ast = self.parse_ast(0);
 
         ast
     }
 
-    fn parse_let(&mut self) -> Result {
+    fn parse_let(&mut self) -> Return {
         self.accept();
         if let Some(Token::Variable(data)) = self.peek() {
             let lhs = data.value.clone().unwrap();
@@ -156,7 +158,7 @@ impl<'source> Parser<'source> {
         self.scanner.peek()
     }
 
-    fn parse_ast(&mut self, min_bindpower: u8) -> Result {
+    fn parse_ast(&mut self, min_bindpower: u8) -> Return {
         let op = self.peek();
         let mut lhs = match op {
             Some(Token::Integer(data)) => Expression::Value(Scalar::I64(data.value.unwrap())),
@@ -206,7 +208,7 @@ impl<'source> Parser<'source> {
         Ok(lhs)
     }
 
-    fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Result {
+    fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Return {
         //TODO: extract info from wrong_token
         let data = TokenData {
             value: Some("dummyValue".to_string()),

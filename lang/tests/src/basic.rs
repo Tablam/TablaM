@@ -4,7 +4,7 @@ use std::fmt;
 use std::ops::Range;
 use tablam::decorum::R64;
 use tablam::rust_decimal::prelude::*;
-use tablam_lang::lexer;
+use tablam_lang::parser::Parser;
 use tablam_lang::scanner::{Scanner, Token, TokenData};
 
 pub fn assert_lex<'a, Token>(
@@ -23,19 +23,6 @@ pub fn assert_lex<'a, Token>(
     }
 
     assert_eq!(lex.next(), None);
-}
-
-#[test]
-fn test_syntax_v_0() {
-    assert_lex(
-        "let int := 1",
-        &[
-            (lexer::Token::Let, "let", 0..3),
-            (lexer::Token::Variable("int".to_string()), "int", 4..7),
-            (lexer::Token::Assignment, ":=", 8..10),
-            (lexer::Token::Integer(1), "1", 11..12),
-        ],
-    );
 }
 
 #[test]
@@ -307,4 +294,22 @@ fn test_scanner() {
         dbg!(token);
         scanner.accept();
     }
+}
+
+#[test]
+fn test_parser() {
+    /*let mut parser = Parser::new("1");
+    let result = parser.parse();
+    dbg!(result); */
+    let input = "1+2";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    dbg!(input);
+    dbg!(result);
+
+    let input = "1+2-1";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    dbg!(input);
+    dbg!(result);
 }

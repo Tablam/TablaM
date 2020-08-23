@@ -237,8 +237,8 @@ impl<'source> Scanner<'source> {
         Scanner { tokens: lexer }
     }
 
-    pub fn peek(&mut self) -> Option<&Token> {
-        self.tokens.peek()
+    pub fn peek(&mut self) -> Option<Token> {
+        self.tokens.peek().cloned()
     }
 
     pub fn accept(&mut self) -> Option<Token> {

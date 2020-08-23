@@ -206,12 +206,12 @@ impl<'source> Scanner<'source> {
         Scanner { tokens }
     }
 
-    pub fn peek_both(&mut self) -> Option<&(Token, TokenData)> {
-        self.tokens.peek()
+    pub fn peek_both(&mut self) -> Option<(Token, TokenData)> {
+        self.tokens.peek().cloned()
     }
 
-    pub fn peek(&mut self) -> Option<&Token> {
-        self.tokens.peek().map(|(x, _)| x)
+    pub fn peek(&mut self) -> Option<Token> {
+        self.tokens.peek().cloned().map(|(x, _)| x)
     }
 
     pub fn accept(&mut self) -> Option<(Token, TokenData)> {

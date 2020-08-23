@@ -3,7 +3,7 @@ use std::iter::Peekable;
 use logos::{Lexer, Logos, Skip, Span};
 
 use tablam::decorum::R64;
-use tablam::derive_more::{Display, From};
+use tablam::derive_more::Display;
 use tablam::rust_decimal::Decimal;
 
 pub struct ExtrasLexer {

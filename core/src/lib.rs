@@ -19,7 +19,6 @@ pub extern crate decorum;
 pub extern crate rust_decimal;
 #[macro_use]
 pub extern crate derivative;
-#[macro_use]
 pub extern crate derive_more;
 
 mod for_impl {

@@ -57,7 +57,7 @@ impl Shape {
         Shape {
             cols,
             rows,
-            stride: rows,
+            stride: if cols == 1 { 1 } else { rows },
             start: 0,
             end: rows * cols,
         }
@@ -67,7 +67,7 @@ impl Shape {
         let mut shape = *self;
         shape.start = col;
         shape.cols = 1;
-        shape.stride = self.rows;
+        shape.stride = 1;
         shape
     }
 
@@ -160,6 +160,22 @@ impl Vector {
             data: RefCount::new(data),
             schema,
             shape,
+        }
+    }
+
+    pub fn fold_fn<F>(&self, initial: &Scalar, apply: F) -> Result<Self>
+    where
+        F: Fn(&Scalar, &Scalar) -> Result<Scalar>,
+    {
+        if self.rel_shape() != RelShape::Table {
+            let mut data: Vec<Scalar> = Vec::with_capacity(self._rows());
+            for x in self.data.iter() {
+                data.push(apply(initial, x)?);
+            }
+
+            Ok(Self::new_vector(data, self.kind()))
+        } else {
+            Err(Error::RankNotMatch)
         }
     }
 

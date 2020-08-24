@@ -33,6 +33,12 @@ impl Console {
     }
 }
 
+impl Default for io::Console {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Display, Derivative, From)]
 #[display(fmt = "{:?}", path)]
 #[derivative(Hash, PartialEq, PartialOrd, Ord, Eq)]

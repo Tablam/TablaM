@@ -5,6 +5,7 @@ use decorum::R64;
 use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
+use crate::errors;
 use crate::sum_type::Case;
 use crate::types::{DataType, NativeKind, Rel, Tuple};
 use crate::vector::Vector;
@@ -146,4 +147,65 @@ impl From<Vector> for Scalar {
     fn from(x: Vector) -> Self {
         Scalar::Vector(Box::new(x))
     }
+}
+
+macro_rules! convert {
+    ($kind:ident, $bound:path) => {
+        impl From<Scalar> for $kind {
+            fn from(i: Scalar) -> Self {
+                match i {
+                    $bound(x) => x,
+                    _ => unreachable!("{:?}", i),
+                }
+            }
+        }
+
+        impl<'a> From<&'a Scalar> for $kind {
+            fn from(i: &'a Scalar) -> Self {
+                match i {
+                    $bound(x) => x.clone(),
+                    _ => unreachable!("{:?}", i),
+                }
+            }
+        }
+    };
+}
+
+convert!(bool, Scalar::Bool);
+convert!(i64, Scalar::I64);
+convert!(R64, Scalar::F64);
+convert!(Decimal, Scalar::Decimal);
+
+impl From<Scalar> for String {
+    fn from(i: Scalar) -> Self {
+        match i {
+            Scalar::UTF8(x) => x.to_string(),
+            _ => unreachable!("{:?}", i),
+        }
+    }
+}
+
+/// Provide support for broadcast a function over scalars and vectors
+pub fn fold_fn2<F>(x: &Scalar, y: &Scalar, apply: F) -> errors::Result<Scalar>
+where
+    F: Fn(&Scalar, &Scalar) -> errors::Result<Scalar>,
+{
+    let data = match (x, y) {
+        (Scalar::Vector(a), Scalar::Vector(b)) => {
+            if a.shape != b.shape {
+                return Err(errors::Error::RankNotMatch);
+            }
+            let mut data = Vec::with_capacity(a.data.len());
+
+            for (lhs, rhs) in a.data.iter().zip(b.data.iter()) {
+                data.push(apply(lhs, rhs)?);
+            }
+
+            Ok(Vector::new_vector(data, a.kind()))
+        }
+        (_, Scalar::Vector(data)) => data.fold_fn(x, apply),
+        (Scalar::Vector(data), _) => data.fold_fn(y, apply),
+        _ => return Err(errors::Error::RankNotMatch),
+    }?;
+    Ok(data.into())
 }

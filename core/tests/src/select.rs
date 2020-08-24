@@ -2,7 +2,7 @@ use tablam::prelude::*;
 
 use crate::basic::PRODUCTS_CSV;
 use crate::utils::*;
-use tablam::io::File;
+use tablam::stdlib::io::File;
 
 #[test]
 fn test_vec() {

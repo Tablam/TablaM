@@ -42,9 +42,7 @@ impl<'source> Parser<'source> {
     }
 
     pub fn parse(&mut self) -> Return {
-        let ast = self.parse_ast(0);
-
-        ast
+        self.parse_ast(0)
     }
 
     /*fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Return {

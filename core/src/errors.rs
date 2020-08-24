@@ -22,6 +22,8 @@ pub enum Error {
     FileIOError(FileError),
     #[display(fmt = "File Error: {}", _0)]
     FileError(std::io::Error, String),
+    RankNotMatch,
+    InvalidTypeMath,
 }
 
 impl Error {

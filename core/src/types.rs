@@ -62,6 +62,14 @@ impl From<Vec<DataType>> for KindRel {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
+pub enum KindGroup {
+    Numbers,
+    Strings,
+    Dates,
+    Other,
+}
+
 //NOTE: This define a total order, so it matter what is the order of the enum!
 //The overall sorting order is defined as:
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
@@ -99,6 +107,22 @@ pub enum DataType {
     #[display(fmt = "Seq({})", _0)]
     Seq(KindRel),
     // Planed: Blob
+}
+
+impl DataType {
+    pub fn kind_group(&self) -> KindGroup {
+        match self {
+            DataType::I64 => KindGroup::Numbers,
+            DataType::F64 => KindGroup::Numbers,
+            DataType::Decimal => KindGroup::Numbers,
+            DataType::Time => KindGroup::Dates,
+            DataType::Date => KindGroup::Dates,
+            DataType::DateTime => KindGroup::Dates,
+            DataType::Char => KindGroup::Strings,
+            DataType::UTF8 => KindGroup::Strings,
+            _ => KindGroup::Other,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]

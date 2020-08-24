@@ -1,13 +1,13 @@
 pub mod dsl;
 pub mod errors;
 pub mod function;
-pub mod io;
 pub mod joins;
 pub mod query;
 pub mod refcount;
 pub mod row;
 pub mod scalar;
 pub mod schema;
+pub mod stdlib;
 pub mod sum_type;
 pub mod tree;
 pub mod types;
@@ -38,13 +38,15 @@ pub mod prelude {
 
     pub use crate::dsl::*;
     pub use crate::errors::{Error, Result};
-    pub use crate::io;
     pub use crate::query::{Comparable, JoinOp, QueryOp};
     pub use crate::row::RowPk;
-    pub use crate::scalar::Scalar;
+    pub use crate::scalar::{fold_fn2, Scalar};
     pub use crate::schema::*;
+    pub use crate::stdlib::*;
     pub use crate::sum_type::Case;
     pub use crate::tree::Tree;
-    pub use crate::types::{Column, ColumnAlias, DataType, NativeKind, Rel, RelShape, Tuple};
+    pub use crate::types::{
+        Column, ColumnAlias, DataType, KindGroup, NativeKind, Rel, RelShape, Tuple,
+    };
     pub use crate::vector::Vector;
 }

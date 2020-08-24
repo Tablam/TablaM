@@ -188,7 +188,7 @@ impl From<Scalar> for String {
 /// Provide support for broadcast a function over scalars and vectors
 pub fn fold_fn2<F>(x: &Scalar, y: &Scalar, apply: F) -> errors::Result<Scalar>
 where
-    F: Fn(&Scalar, &Scalar) -> errors::Result<Scalar>,
+    F: Fn(&[&Scalar]) -> errors::Result<Scalar>,
 {
     let data = match (x, y) {
         (Scalar::Vector(a), Scalar::Vector(b)) => {
@@ -198,7 +198,7 @@ where
             let mut data = Vec::with_capacity(a.data.len());
 
             for (lhs, rhs) in a.data.iter().zip(b.data.iter()) {
-                data.push(apply(lhs, rhs)?);
+                data.push(apply(&[lhs, rhs])?);
             }
 
             Ok(Vector::new_vector(data, a.kind()))

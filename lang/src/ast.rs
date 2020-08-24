@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
-use crate::lexer::{Token, TokenData};
+use crate::lexer::Token;
 
 pub type Identifier = String;
 
@@ -19,19 +19,37 @@ pub enum Error {
 
 pub type Return = std::result::Result<Expression, Error>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Display)]
 pub enum Expression {
+    #[display(fmt = "{}", _0)]
     Value(Scalar),
+
+    #[display(fmt = "var {:} := {}", _0, _1)]
     Variable(Identifier, Box<Expression>),
+    #[display(fmt = " let {:} := {} ", _0, _1)]
     Immutable(Identifier, Box<Expression>),
+
+    #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
+
+    #[display(
+        fmt = "{}",
+        r#"_0.iter().map(|expr| expr.to_string())
+        .fold(String::new(), |mut previous, current| { 
+        previous.push_str(current.as_str()); previous.push('\n'); previous})"#
+    )]
     Block(Vec<Expression>),
+
+    #[display(fmt = "{}", _0)]
     Error(String),
+    #[display(fmt = " ")]
     Pass,
+    #[display(fmt = " ")]
     Eof,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Display)]
+#[display(fmt = "{} {} {}", left, operator, right)]
 pub struct BinaryOperation {
     pub operator: Token,
     pub left: Box<Expression>,

@@ -73,112 +73,157 @@ pub(crate) fn extract_token_data(lexer: &mut Lexer<Token>) -> TokenData {
 #[display(fmt = "{}")]
 pub enum Token {
     //Definition keywords
+    #[display(fmt = "let")]
     #[token("let")]
     Let,
+    #[display(fmt = "var")]
     #[token("var")]
     Var,
 
     //Identifiers
+    #[display(fmt = "{}", _0)]
     #[regex(r"[[:upper:]]+(?:_[[[:upper:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
     Constant(String),
+    #[display(fmt = "{}", _0)]
     #[regex(r"[[:upper:]](?:[[[:lower:]][[:digit:]]])+(?:_[[:upper:]][[[:lower:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
     Type(String),
+    #[display(fmt = "{}", _0)]
     #[regex(r"[[:lower:]][[[:lower:]][[:digit:]]]+(?:_[[[:lower:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
     Variable(String),
+    #[display(fmt = ":=")]
     #[token(":=")]
     Assignment,
+    #[display(fmt = ":")]
     #[token(":")]
     TypeDefiner,
 
     //Boolean
+    #[display(fmt = "true")]
     #[token("true")]
     True,
+    #[display(fmt = "false")]
     #[token("false")]
     False,
 
     //Bool operators
+    #[display(fmt = "=")]
     #[token("=")]
     Equal,
+    #[display(fmt = "<>")]
     #[token("<>")]
     NotEqual,
+    #[display(fmt = ">")]
     #[token(">")]
     Greater,
+    #[display(fmt = "<")]
     #[token("<")]
     Less,
+    #[display(fmt = ">=")]
     #[token(">=")]
     GreaterEqual,
+    #[display(fmt = "<=")]
     #[token("<=")]
     LessEqual,
+    #[display(fmt = "not")]
     #[token("not")]
     Not,
+    #[display(fmt = "and")]
     #[token("and")]
     And,
+    #[display(fmt = "or")]
     #[token("or")]
     Or,
 
     //Grouping
+    #[display(fmt = "(")]
     #[token("(")]
     LeftParentheses,
+    #[display(fmt = ")")]
     #[token(")")]
     RightParentheses,
 
     //Numbers
+    #[display(fmt = "{}", _0)]
     #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]
     Integer(i64),
+    #[display(fmt = "{}", _0)]
     #[regex(r"\d+\.*\d*f", |lex| parse_token_data_without_suffix::<R64>(lex, 1))]
     Float(R64),
+    #[display(fmt = "{}", _0)]
     #[regex(r"\d+\.*\d*d", |lex| parse_token_data_without_suffix::<Decimal>(lex, 1))]
     Decimal(Decimal),
 
     //Arithmetic operators
+    #[display(fmt = "+")]
     #[token("+")]
     Plus,
+    #[display(fmt = "-")]
     #[token("-")]
     Minus,
+    #[display(fmt = "*")]
     #[token("*")]
     Multiplication,
+    #[display(fmt = "/")]
     #[token("/")]
     Division,
+    #[display(fmt = "+=")]
     #[token("+=")]
     PlusEqual,
+    #[display(fmt = "-=")]
     #[token("-=")]
     MinusEqual,
+    #[display(fmt = "*=")]
     #[token("*=")]
     MultiplicationEqual,
+    #[display(fmt = "/=")]
     #[token("/=")]
     DivisionEqual,
 
     //Definitions
+    #[display(fmt = "do")]
     #[token("do")]
     Start,
+    #[display(fmt = "end")]
     #[token("end")]
     End,
 
     //Control flow
+    #[display(fmt = "if")]
     #[token("if")]
     If,
+    #[display(fmt = "else")]
     #[token("else")]
     Else,
+    #[display(fmt = "elif")]
     #[token("elif")]
     Elif,
+    #[display(fmt = "for")]
     #[token("for")]
     For,
+    #[display(fmt = "in")]
     #[token("in")]
     In,
+    #[display(fmt = "while")]
     #[token("while")]
     While,
+    #[display(fmt = "continue")]
     #[token("continue")]
     Continue,
+    #[display(fmt = "break")]
     #[token("break")]
     Break,
 
     //Functions
+    #[display(fmt = "func")]
     #[token("func")]
     Function,
+    #[display(fmt = ",")]
     #[token(",")]
     Separator,
+    #[display(fmt = "=>")]
     #[token("=>")]
     ReturnDefiner,
+    #[display(fmt = "return")]
     #[token("return")]
     Return,
 

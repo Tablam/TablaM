@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Result};
 
 use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
-use crate::lexer::{Token, TokenData};
+use crate::lexer::Token;
 
 pub type Identifier = String;
 
@@ -48,14 +47,6 @@ pub enum Expression {
     #[display(fmt = " ")]
     Eof,
 }
-/*
-impl Display for Expression {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Expression::BinaryOp(operation) => write!(f, "{}", operation.left),
-        }
-    }
-}*/
 
 #[derive(Debug, Clone, Display)]
 #[display(fmt = "{} {} {}", left, operator, right)]
@@ -74,15 +65,6 @@ pub struct Environment {
 
 impl Environment {
     pub fn new(parent: Option<Box<Environment>>) -> Self {
-        let t = Vec::<Expression>::new();
-        let a =
-            t.iter()
-                .map(|expr| expr.to_string())
-                .fold(String::new(), |mut previous, current| {
-                    previous.push_str(current.as_str());
-                    previous.push('\n');
-                    previous
-                });
         Environment {
             vars: HashMap::new(),
             functions: HashMap::new(),

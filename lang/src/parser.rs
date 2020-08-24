@@ -1,18 +1,19 @@
+#![allow(dead_code)]
+
 use crate::ast::*;
 use crate::lexer::*;
-use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,
-    environment: Environment,
+    _environment: Environment,
 }
 
 impl<'source> Parser<'source> {
     pub fn new(buffer: &'source str) -> Self {
         Parser {
             scanner: Scanner::new(buffer),
-            environment: Environment::new(None),
+            _environment: Environment::new(None),
         }
     }
 
@@ -30,12 +31,11 @@ impl<'source> Parser<'source> {
 
     fn parse_let(&mut self) -> Return {
         if let Some(Token::Variable(name)) = self.peek() {
-            let lhs = name;
             self.accept();
             if let Some(Token::Assignment) = self.peek() {
                 self.accept();
-                return self.parse_ast(0);
-            }
+                return Ok(Expression::Variable(name, Box::new(self.parse_ast(0)?)));
+            };
         };
 
         Err(Error::Unexpected)
@@ -47,23 +47,23 @@ impl<'source> Parser<'source> {
         ast
     }
 
-    fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Return {
-        //TODO: extract info from wrong_token
-        let feedback = Error::Unexpected;
+    /*fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Return {
+            let feedback = Error::Unexpected;
 
-        loop {
-            if let Some(op) = self.scanner.peek() {
-                match op {
-                    Token::Let | Token::Var => break,
-                    _ => {
-                        self.scanner.accept();
+            loop {
+                if let Some(op) = self.scanner.peek() {
+                    match op {
+                        Token::Let | Token::Var => break,
+                        _ => {
+                            self.scanner.accept();
+                        }
                     }
                 }
             }
-        }
 
-        Err(feedback)
-    }
+            Err(feedback)
+        }
+    */
 
     fn prefix_binding_power(token: &Token) -> ((), u8) {
         match token {
@@ -97,9 +97,7 @@ impl<'source> Parser<'source> {
             Some((Token::Integer(number), _)) => Expression::Value(Scalar::I64(number)),
             Some((Token::Float(number), _)) => Expression::Value(Scalar::F64(number)),
             Some((Token::Decimal(decimal), _)) => Expression::Value(Scalar::Decimal(decimal)),
-            variable_kind @ Some((Token::Var, _)) | variable_kind @ Some((Token::Let, _)) => {
-                self.parse_let()?
-            }
+            Some((Token::Var, _)) | Some((Token::Let, _)) => self.parse_let()?,
             t => panic!("bad token: {:?}", t),
         };
 

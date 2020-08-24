@@ -311,5 +311,6 @@ fn test_parser() {
     let mut parser = Parser::new(input);
     let result = parser.parse();
     dbg!(input);
-    dbg!(result);
+    //dbg!(&result);
+    dbg!(result.unwrap().to_string());
 }

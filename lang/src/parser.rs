@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::mem::discriminant;
+use std::rc::Rc;
 
 use crate::ast::*;
 use crate::lexer::*;
@@ -124,6 +125,7 @@ impl<'source> Parser<'source> {
             Some((Token::Integer(number), _)) => Expression::Value(Scalar::I64(number)),
             Some((Token::Float(number), _)) => Expression::Value(Scalar::F64(number)),
             Some((Token::Decimal(decimal), _)) => Expression::Value(Scalar::Decimal(decimal)),
+            Some((Token::String(text), _)) => Expression::Value(Scalar::UTF8(Rc::new(text))),
             Some((Token::Var, _)) => self.parse_var()?,
             Some((Token::Let, _)) => self.parse_let()?,
             Some((Token::Variable(name), _)) => Expression::Variable(name),

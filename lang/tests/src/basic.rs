@@ -49,6 +49,12 @@ fn test_syntax_v0() {
 }
 
 #[test]
+fn test_strings() {
+    assert_lex(r#""a""#, &[(Token::String("a".into()), r#""a""#, 0..3)]);
+    assert_lex("'a'", &[(Token::String("a".into()), "'a'", 0..3)]);
+}
+
+#[test]
 fn test_syntax_v1() {
     assert_lex(
         "let int := 1 \nlet float := 1.1f \nlet money := 10d \nvar payment := 150.5d \npayment += money",

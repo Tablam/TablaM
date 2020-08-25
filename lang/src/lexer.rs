@@ -54,6 +54,12 @@ where
     Some(parsed_value)
 }
 
+fn parse_token_quotes(lexer: &mut Lexer<Token>) -> Option<String> {
+    let parsed_value: String = lexer.slice().parse().unwrap();
+
+    Some(parsed_value[1..parsed_value.len() - 1].to_string())
+}
+
 pub(crate) fn extract_token_data(lexer: &mut Lexer<Token>) -> TokenData {
     let columns = lexer.span();
     let start_column = columns.start - lexer.extras.current_initial_column;
@@ -80,6 +86,14 @@ pub enum Token {
     #[token("var")]
     Var,
 
+    //Strings, capture with both single and double quote
+    #[display(fmt = "{}", _0)]
+    #[regex(r#""([^"\\]|\\t|\\u|\\n|\\")*"|'([^'\\]|\\t|\\u|\\n|\\')*'"#, |lex| parse_token_quotes(lex))]
+    String(String),
+    /*
+       #[regex(r#""""[\w\d\s[^\s"{}]]+""""#)]
+       Multiline,
+    */
     //Identifiers
     #[display(fmt = "{}", _0)]
     #[regex(r"[[:upper:]]+[_[[:upper:]][[:digit:]]]*", |lex| parse_token_data::<String>(lex))]
@@ -226,14 +240,6 @@ pub enum Token {
     #[display(fmt = "return")]
     #[token("return")]
     Return,
-
-    /*
-       //Strings
-       #[regex(r#""[\w\d\s[^\s"{}]]+""#)]
-       String,
-       #[regex(r#""""[\w\d\s[^\s"{}]]+""""#)]
-       Multiline,
-    */
     #[token("\n", increase_current_line)]
     #[regex(r"[ \t\f]+", logos::skip)]
     #[error]

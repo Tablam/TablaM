@@ -1,5 +1,6 @@
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
+use tablam_lang::eval::Program;
 
 fn print_welcome() {
     print!(
@@ -20,6 +21,8 @@ fn main() {
         println!("No previous history.");
     }
     print_welcome();
+    let mut program = Program::new();
+
     loop {
         let readline = rl.readline("\x1b[1;32m>\x1b[0m ");
         match readline {
@@ -29,6 +32,10 @@ fn main() {
                 line => {
                     rl.add_history_entry(line);
                     println!("Line: {}", line);
+                    match program.execute_str(line) {
+                        Ok(expr) => println!("{}", expr),
+                        Err(err) => eprintln!("Error: {}", err),
+                    }
                 }
             },
             Err(ReadlineError::Interrupted) => {

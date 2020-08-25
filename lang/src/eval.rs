@@ -7,6 +7,16 @@ pub struct Program {
 }
 
 impl Program {
+    pub fn new() -> Self {
+        Program {
+            env: Environment::new(None),
+        }
+    }
+
+    pub fn execute_str(&mut self, _source: &str) -> Return {
+        Ok(Expression::Pass)
+    }
+
     pub fn eval_expr(&mut self, expr: Expression) -> Return {
         let expr = match expr {
             Expression::Pass => expr,
@@ -27,6 +37,12 @@ impl Program {
             last = self.eval_expr(expr)?
         }
         Ok(last)
+    }
+}
+
+impl Default for Program {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -42,9 +42,9 @@ pub enum Expression {
 
     #[display(fmt = "{}", _0)]
     Error(String),
-    #[display(fmt = " ")]
+    #[display(fmt = "pass")]
     Pass,
-    #[display(fmt = " ")]
+    #[display(fmt = "eof")]
     Eof,
 }
 

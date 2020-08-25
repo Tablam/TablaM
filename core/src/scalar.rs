@@ -205,7 +205,7 @@ where
         }
         (_, Scalar::Vector(data)) => data.fold_fn(x, apply),
         (Scalar::Vector(data), _) => data.fold_fn(y, apply),
-        _ => return Err(errors::Error::RankNotMatch),
+        _ => return Err(errors::Error::TypeMismatchBinOp(x.kind(), y.kind())),
     }?;
     Ok(data.into())
 }

@@ -11,7 +11,7 @@ macro_rules! math_op {
             if x.kind().kind_group() != KindGroup::Numbers
                 || y.kind().kind_group() != KindGroup::Numbers
             {
-                return Err(Error::InvalidTypeMath);
+                return Err(Error::TypeMismatchBinOp(x.kind(), y.kind()));
             }
 
             match (x, y) {

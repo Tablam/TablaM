@@ -48,7 +48,7 @@ fn test_invalid_op() {
     let a = 1.into();
     let b = "a".into();
     match math::math_add(&[&a, &b]) {
-        Err(Error::InvalidTypeMath) => (),
+        Err(Error::TypeMismatchBinOp(_, _)) => (),
         _ => assert!(false, "Fail to report err"),
     }
 }

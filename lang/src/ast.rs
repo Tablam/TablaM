@@ -3,17 +3,23 @@ use std::collections::HashMap;
 use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
-use crate::lexer::Token;
+use crate::lexer::{Token, TokenData};
 
 pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
+#[display(fmt = "Syntax error => {}")]
 pub enum Error {
-    #[display(fmt = "Unexpected token.)")]
-    Unexpected,
-    #[display(fmt = "Unclosed group.")]
-    UnclosedGroup,
-    #[display(fmt = "Unexpected EOF")]
+    #[display(
+        fmt = "Unexpected token. It found: {}, it was expected: {}. ({})",
+        _0,
+        _1,
+        _2
+    )]
+    Unexpected(Token, Token, TokenData),
+    #[display(fmt = "Unclosed group. It was expected: {}. ({})", _0, _1)]
+    UnclosedGroup(Token, TokenData),
+    #[display(fmt = "Unexpected EOF.")]
     Eof,
 }
 
@@ -24,9 +30,12 @@ pub enum Expression {
     #[display(fmt = "{}", _0)]
     Value(Scalar),
 
+    #[display(fmt = "{}", _0)]
+    Variable(Identifier),
+
     #[display(fmt = "var {:} := {}", _0, _1)]
-    Variable(Identifier, Box<Expression>),
-    #[display(fmt = " let {:} := {} ", _0, _1)]
+    Mutable(Identifier, Box<Expression>),
+    #[display(fmt = "let {:} := {}", _0, _1)]
     Immutable(Identifier, Box<Expression>),
 
     #[display(fmt = "{}", _0)]

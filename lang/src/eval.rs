@@ -12,7 +12,7 @@ impl Program {
             Expression::Pass => expr,
             Expression::Value(_) => expr,
             Expression::Eof => return Ok(expr),
-            Expression::Variable(name, value) => {
+            Expression::Mutable(name, value) => {
                 self.env.add_variable(name, *value);
                 Expression::Pass
             }

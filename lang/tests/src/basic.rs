@@ -170,4 +170,12 @@ fn test_parser() {
         result.expect("not getting expression").to_string(),
         String::from("let t := b")
     );
+
+    let input = "let t := b + 1";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let t := b + 1")
+    );
 }

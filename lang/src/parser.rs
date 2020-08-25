@@ -86,14 +86,15 @@ impl<'source> Parser<'source> {
 
     fn prefix_binding_power(token: &Token) -> ((), u8) {
         match token {
-            Token::Let | Token::Var => ((), 15),
+            Token::Minus => ((), 11),
+            Token::Not => ((), 12),
             _ => panic!("bad op: {:?}", token),
         }
     }
 
     fn postfix_binding_power(token: &Token) -> Option<(u8, ())> {
         let res = match token {
-            Token::RightParentheses => (11, ()),
+            Token::RightParentheses => (13, ()),
             _ => return None,
         };
         Some(res)
@@ -101,9 +102,16 @@ impl<'source> Parser<'source> {
 
     fn infix_binding_power(token: &Token) -> Option<(u8, u8)> {
         let res = match token {
-            Token::Equal => (2, 1),
-            Token::NotEqual => (4, 3),
-            Token::Plus | Token::Minus => (5, 6),
+            Token::Or => (1, 2),
+            Token::And => (3, 4),
+            Token::Equal
+            | Token::NotEqual
+            | Token::Greater
+            | Token::GreaterEqual
+            | Token::Less
+            | Token::LessEqual => (6, 5),
+            Token::Plus | Token::Minus => (7, 8),
+            Token::Multiplication | Token::Division => (9, 10),
             _ => return None,
         };
         Some(res)
@@ -151,12 +159,25 @@ impl<'source> Parser<'source> {
                 self.accept();
                 let rhs = self.parse_ast(r_bp)?;
 
-                lhs = Expression::BinaryOp(BinaryOperation {
-                    operator: token,
-                    left: Box::new(lhs),
-                    right: Box::new(rhs),
-                });
-                //lhs = Expression::Block(vec![lhs, rhs?]);
+                if token.is_binary_operator() {
+                    lhs = Expression::BinaryOp(BinaryOperation {
+                        operator: token,
+                        left: Box::new(lhs),
+                        right: Box::new(rhs),
+                    });
+                    continue;
+                }
+
+                if token.is_comparison_operator() {
+                    lhs = Expression::ComparisonOp(BinaryOperation {
+                        operator: token,
+                        left: Box::new(lhs),
+                        right: Box::new(rhs),
+                    });
+                    continue;
+                }
+
+                lhs = Expression::Block(vec![lhs, rhs]);
                 continue;
             }
 

@@ -30,20 +30,25 @@ pub type Return = std::result::Result<Expression, Error>;
 
 #[derive(Debug, Clone, Display)]
 pub enum Expression {
+    //Values
     #[display(fmt = "{}", _0)]
     Value(Scalar),
-
     #[display(fmt = "{}", _0)]
     Variable(Identifier),
 
+    //Variable definitions
     #[display(fmt = "var {:} := {}", _0, _1)]
     Mutable(Identifier, Box<Expression>),
     #[display(fmt = "let {:} := {}", _0, _1)]
     Immutable(Identifier, Box<Expression>),
+
     #[display(fmt = "{}", _0)]
     Function(Function),
+
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
+    #[display(fmt = "{}", _0)]
+    ComparisonOp(BinaryOperation),
 
     #[display(
         fmt = "{}",

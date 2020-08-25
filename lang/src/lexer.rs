@@ -240,6 +240,30 @@ pub enum Token {
     Error,
 }
 
+impl Token {
+    pub fn is_binary_operator(&self) -> bool {
+        self == &Token::Plus
+            || self == &Token::PlusEqual
+            || self == &Token::Minus
+            || self == &Token::MinusEqual
+            || self == &Token::Multiplication
+            || self == &Token::MultiplicationEqual
+            || self == &Token::Division
+            || self == &Token::DivisionEqual
+    }
+
+    pub fn is_comparison_operator(&self) -> bool {
+        self == &Token::Equal
+            || self == &Token::NotEqual
+            || self == &Token::Greater
+            || self == &Token::GreaterEqual
+            || self == &Token::Less
+            || self == &Token::LessEqual
+            || self == &Token::And
+            || self == &Token::Or
+    }
+}
+
 pub struct Scanner<'source> {
     tokens: Peekable<DataIter<'source>>,
 }

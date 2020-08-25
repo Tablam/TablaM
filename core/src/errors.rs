@@ -24,6 +24,8 @@ pub enum Error {
     FileError(std::io::Error, String),
     RankNotMatch,
     InvalidTypeMath,
+    #[display(fmt = "The function was called with {} params when need {}", _0, _1)]
+    ParamCount(usize, usize),
 }
 
 impl Error {

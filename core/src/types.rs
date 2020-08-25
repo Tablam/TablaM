@@ -96,6 +96,8 @@ pub enum DataType {
     #[display(fmt = "Any")]
     ANY,
     // Complex
+    #[display(fmt = "{}...", _0)]
+    Variadic(Box<DataType>),
     #[display(fmt = "Enum({})", _0)]
     Sum(Box<DataType>),
     #[display(fmt = "{}", _0)]

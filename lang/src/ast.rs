@@ -4,12 +4,15 @@ use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
 use crate::lexer::{Token, TokenData};
+use tablam::function::Function;
 
 pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
 #[display(fmt = "Syntax error => {}")]
 pub enum Error {
+    #[display(fmt = "{}", _0)]
+    CoreError(tablam::errors::Error),
     #[display(
         fmt = "Unexpected token. It found: {}, it was expected: {}. ({})",
         _0,
@@ -37,7 +40,8 @@ pub enum Expression {
     Mutable(Identifier, Box<Expression>),
     #[display(fmt = "let {:} := {}", _0, _1)]
     Immutable(Identifier, Box<Expression>),
-
+    #[display(fmt = "{}", _0)]
+    Function(Function),
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
 
@@ -51,9 +55,9 @@ pub enum Expression {
 
     #[display(fmt = "{}", _0)]
     Error(String),
-    #[display(fmt = " ")]
+    #[display(fmt = "pass")]
     Pass,
-    #[display(fmt = " ")]
+    #[display(fmt = "eof")]
     Eof,
 }
 
@@ -99,9 +103,15 @@ impl Environment {
         }
     }
 
-    pub fn find_function(&self, k: &str) -> Option<&Expression> {
+    pub fn find_function(&self, k: &str) -> Option<Function> {
         match self.functions.get(k) {
-            Some(function) => Some(function),
+            Some(function) => {
+                if let Expression::Function(f) = function {
+                    Some(f.clone())
+                } else {
+                    None
+                }
+            }
             None => match &self.parent {
                 Some(env) => env.find_function(k),
                 None => None,

@@ -3,5 +3,6 @@
 **/*.rs.bk
 docs/node_modules
 yarn.lock
+history.txt
 docs/public
 main.css

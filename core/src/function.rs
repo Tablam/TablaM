@@ -24,6 +24,13 @@ impl Param {
             kind,
         }
     }
+
+    pub fn kind(kind: DataType) -> Self {
+        Param {
+            name: "".to_string(),
+            kind,
+        }
+    }
 }
 
 #[derive(Clone, From)]
@@ -50,6 +57,12 @@ impl Function {
         let ret = Param::new("", kind);
 
         Self::new(name, &[lhs, rhs], &[ret], f)
+    }
+
+    pub fn new_single(name: &str, param: Param, ret: DataType, f: Box<RelFun>) -> Self {
+        let ret = Param::new("", ret);
+
+        Self::new(name, &[param], &[ret], f)
     }
 
     pub fn call(&self, params: &[&Scalar]) -> Result<Scalar> {

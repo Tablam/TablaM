@@ -1,5 +1,7 @@
+use crate::function::Function;
 use crate::scalar::Scalar;
 
+pub mod basic;
 pub mod io;
 pub mod math;
 
@@ -10,4 +12,13 @@ where
     Scalar: From<T>,
 {
     op(x, y).into()
+}
+
+pub fn std_functions() -> Vec<Function> {
+    let mut funs = Vec::new();
+
+    funs.extend_from_slice(&basic::basic_functions());
+    funs.extend_from_slice(&math::math_functions());
+
+    funs
 }

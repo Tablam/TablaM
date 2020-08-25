@@ -4,11 +4,14 @@ use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
 use crate::lexer::Token;
+use tablam::function::Function;
 
 pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
 pub enum Error {
+    #[display(fmt = "{}", _0)]
+    CoreError(tablam::errors::Error),
     #[display(fmt = "Unexpected token.)")]
     Unexpected,
     #[display(fmt = "Unclosed group.")]
@@ -28,7 +31,8 @@ pub enum Expression {
     Variable(Identifier, Box<Expression>),
     #[display(fmt = " let {:} := {} ", _0, _1)]
     Immutable(Identifier, Box<Expression>),
-
+    #[display(fmt = "{}", _0)]
+    Function(Function),
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
 
@@ -90,9 +94,15 @@ impl Environment {
         }
     }
 
-    pub fn find_function(&self, k: &str) -> Option<&Expression> {
+    pub fn find_function(&self, k: &str) -> Option<Function> {
         match self.functions.get(k) {
-            Some(function) => Some(function),
+            Some(function) => {
+                if let Expression::Function(f) = function {
+                    Some(f.clone())
+                } else {
+                    None
+                }
+            }
             None => match &self.parent {
                 Some(env) => env.find_function(k),
                 None => None,

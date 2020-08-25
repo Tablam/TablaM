@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use tablam::prelude::*;
 
+use crate::parser::Parser;
 use crate::prelude::*;
 
 pub struct Program {
@@ -30,14 +31,20 @@ impl Program {
         self.env.borrow_mut()
     }
 
-    pub fn execute_str(&self, _source: &str) -> Return {
-        Ok(Expression::Pass)
+    pub fn execute_str(&self, source: &str) -> Return {
+        let mut parser = Parser::new(source);
+        self.eval_expr(parser.parse()?)
     }
 
-    pub fn eval_value<'a>(&self, expr: &'a Expression) -> ReturnT<&'a Scalar> {
+    pub fn eval_value(&self, expr: &Expression) -> ReturnT<Scalar> {
         match expr {
-            Expression::Value(x) => Ok(x),
-            _ => unreachable!(),
+            Expression::Value(x) => Ok(x.clone()),
+            Expression::Variable(name) => {
+                let expr = self.env().find_variable(name.as_str())?.clone();
+                let expr = &self.eval_expr(expr)?;
+                self.eval_value(expr)
+            }
+            err => unreachable!("{}", err),
         }
     }
 
@@ -50,20 +57,26 @@ impl Program {
                 self.env_mut().add_variable(name, *value);
                 Expression::Pass
             }
-            Expression::BinaryOp(op) => match op.operator {
-                Token::Plus => {
-                    let f = self
-                        .env()
-                        .find_function("math.add_Int_Int")
-                        .expect("Fail std");
+            Expression::Immutable(name, value) => {
+                self.env_mut().add_variable(name, *value);
+                Expression::Pass
+            }
+            Expression::Variable(name) => self.env().find_variable(name.as_str())?.clone(),
+            Expression::BinaryOp(op) => {
+                let name = match op.operator {
+                    Token::Plus => "math.add_Int_Int",
+                    Token::Minus => "math.minus_Int_Int",
+                    Token::Multiplication => "math.mul_Int_Int",
+                    Token::Division => "math.div_Int_Int",
+                    _ => unreachable!(),
+                };
+                let f = self.env().find_function(name).expect("Fail std");
 
-                    let lhs = self.eval_value(&op.left)?;
-                    let rhs = self.eval_value(&op.right)?;
+                let lhs = self.eval_value(&op.left)?;
+                let rhs = self.eval_value(&op.right)?;
 
-                    Expression::Value(f.call(&[lhs, rhs])?)
-                }
-                _ => unimplemented!(),
-            },
+                Expression::Value(f.call(&[&lhs, &rhs])?)
+            }
             _x => unimplemented!(),
         };
         Ok(expr)

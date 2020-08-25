@@ -3,20 +3,26 @@ use std::collections::HashMap;
 use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
-use crate::lexer::Token;
+use crate::lexer::{Token, TokenData};
 use tablam::function::Function;
 
 pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
+#[display(fmt = "Syntax error => {}")]
 pub enum Error {
     #[display(fmt = "{}", _0)]
     CoreError(tablam::errors::Error),
-    #[display(fmt = "Unexpected token.)")]
-    Unexpected,
-    #[display(fmt = "Unclosed group.")]
-    UnclosedGroup,
-    #[display(fmt = "Unexpected EOF")]
+    #[display(
+        fmt = "Unexpected token. It found: {}, it was expected: {}. ({})",
+        _0,
+        _1,
+        _2
+    )]
+    Unexpected(Token, Token, TokenData),
+    #[display(fmt = "Unclosed group. It was expected: {}. ({})", _0, _1)]
+    UnclosedGroup(Token, TokenData),
+    #[display(fmt = "Unexpected EOF.")]
     Eof,
 }
 
@@ -24,17 +30,25 @@ pub type Return = std::result::Result<Expression, Error>;
 
 #[derive(Debug, Clone, Display)]
 pub enum Expression {
+    //Values
     #[display(fmt = "{}", _0)]
     Value(Scalar),
+    #[display(fmt = "{}", _0)]
+    Variable(Identifier),
 
+    //Variable definitions
     #[display(fmt = "var {:} := {}", _0, _1)]
-    Variable(Identifier, Box<Expression>),
-    #[display(fmt = " let {:} := {} ", _0, _1)]
+    Mutable(Identifier, Box<Expression>),
+    #[display(fmt = "let {:} := {}", _0, _1)]
     Immutable(Identifier, Box<Expression>),
+
     #[display(fmt = "{}", _0)]
     Function(Function),
+
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
+    #[display(fmt = "{}", _0)]
+    ComparisonOp(BinaryOperation),
 
     #[display(
         fmt = "{}",

@@ -122,18 +122,60 @@ fn test_parser() {
     let input = "1";
     let mut parser = Parser::new(input);
     let result = parser.parse();
-    dbg!(input);
-    dbg!(result.unwrap().to_string());
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("1")
+    );
 
     let input = "1+2";
     let mut parser = Parser::new(input);
     let result = parser.parse();
-    dbg!(input);
-    dbg!(result.unwrap().to_string());
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("1 + 2")
+    );
 
     let input = "1+2-1";
     let mut parser = Parser::new(input);
     let result = parser.parse();
-    dbg!(input);
-    dbg!(result.unwrap().to_string());
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("1 + 2 - 1")
+    );
+
+    let input = "let t := 1";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let t := 1")
+    );
+
+    let input = "var y = 1d";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result
+            .expect_err("erroneous assignment operator.")
+            .to_string(),
+        String::from(
+            "Syntax error => Unexpected token. It found: =, it was expected: :=. (Line 1 |6..7|)"
+        )
+    );
+
+    let input = "let t := b";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let t := b")
+    );
+
+    let input = "let t := b + 1";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let t := b + 1")
+    );
 }

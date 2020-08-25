@@ -5,7 +5,7 @@ use tablam::derive_more::Display;
 use tablam::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Display)]
-#[display(fmt = "Line {} ({:?}:{:?})", line, range_column, line_range_column)]
+#[display(fmt = "Line {} |{:?}|", line, line_range_column)]
 pub struct TokenData {
     pub line: usize,
     pub range_column: Span,
@@ -82,13 +82,13 @@ pub enum Token {
 
     //Identifiers
     #[display(fmt = "{}", _0)]
-    #[regex(r"[[:upper:]]+(?:_[[[:upper:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
+    #[regex(r"[[:upper:]]+[_[[:upper:]][[:digit:]]]*", |lex| parse_token_data::<String>(lex))]
     Constant(String),
     #[display(fmt = "{}", _0)]
-    #[regex(r"[[:upper:]](?:[[[:lower:]][[:digit:]]])+(?:_[[:upper:]][[[:lower:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
+    #[regex(r"[[:upper:]](?:[[[:lower:]][[:digit:]]]+[[:upper:]]*)+", |lex| parse_token_data::<String>(lex))]
     Type(String),
     #[display(fmt = "{}", _0)]
-    #[regex(r"[[:lower:]][[[:lower:]][[:digit:]]]+(?:_[[[:lower:]][[:digit:]]]+)*", |lex| parse_token_data::<String>(lex))]
+    #[regex(r"[[:lower:]][_[[:lower:]][[:digit:]]]*", |lex| parse_token_data::<String>(lex))]
     Variable(String),
     #[display(fmt = ":=")]
     #[token(":=")]
@@ -238,6 +238,30 @@ pub enum Token {
     #[regex(r"[ \t\f]+", logos::skip)]
     #[error]
     Error,
+}
+
+impl Token {
+    pub fn is_binary_operator(&self) -> bool {
+        self == &Token::Plus
+            || self == &Token::PlusEqual
+            || self == &Token::Minus
+            || self == &Token::MinusEqual
+            || self == &Token::Multiplication
+            || self == &Token::MultiplicationEqual
+            || self == &Token::Division
+            || self == &Token::DivisionEqual
+    }
+
+    pub fn is_comparison_operator(&self) -> bool {
+        self == &Token::Equal
+            || self == &Token::NotEqual
+            || self == &Token::Greater
+            || self == &Token::GreaterEqual
+            || self == &Token::Less
+            || self == &Token::LessEqual
+            || self == &Token::And
+            || self == &Token::Or
+    }
 }
 
 pub struct Scanner<'source> {

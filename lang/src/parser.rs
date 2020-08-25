@@ -1,19 +1,19 @@
 #![allow(dead_code)]
 
+use std::mem::discriminant;
+
 use crate::ast::*;
 use crate::lexer::*;
 use tablam::prelude::Scalar;
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,
-    _environment: Environment,
 }
 
 impl<'source> Parser<'source> {
     pub fn new(buffer: &'source str) -> Self {
         Parser {
             scanner: Scanner::new(buffer),
-            _environment: Environment::new(None),
         }
     }
 
@@ -29,50 +29,72 @@ impl<'source> Parser<'source> {
         self.scanner.peek_both()
     }
 
-    fn parse_let(&mut self) -> Return {
-        if let Some(Token::Variable(name)) = self.peek() {
-            self.accept();
-            if let Some(Token::Assignment) = self.peek() {
-                self.accept();
-                return Ok(Expression::Variable(name, Box::new(self.parse_ast(0)?)));
-            };
-        };
-
-        Err(Error::Unexpected)
-    }
-
     pub fn parse(&mut self) -> Return {
         self.parse_ast(0)
     }
 
-    /*fn search_next_expression(&mut self, wrong_token: &Token, error: &str) -> Return {
-            let feedback = Error::Unexpected;
-
-            loop {
-                if let Some(op) = self.scanner.peek() {
-                    match op {
-                        Token::Let | Token::Var => break,
-                        _ => {
-                            self.scanner.accept();
-                        }
-                    }
-                }
-            }
-
-            Err(feedback)
+    fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+        if let Some((found, data)) = self.peek_both() {
+            return if discriminant(&found) == discriminant(&expected) {
+                self.accept();
+                Ok(found)
+            } else {
+                let feedback = Error::Unexpected(found, expected, data);
+                Err(feedback)
+            };
         }
-    */
+
+        Err(Error::Eof)
+    }
+
+    fn accept_and_check_next(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+        let result = self.check_next_token(expected);
+        match result {
+            Ok(token) => Ok(token),
+            Err(error) => {
+                self.accept();
+                Err(error)
+            }
+        }
+    }
+
+    fn match_at_least_one(&mut self, conditions: Vec<Token>) -> std::result::Result<Token, Error> {
+        let mut result = Err(Error::Eof);
+        for expected in conditions {
+            result = self.check_next_token(expected);
+            match &result {
+                Err(_) => continue,
+                Ok(_) => return result,
+            }
+        }
+
+        result
+    }
+
+    fn continue_until_expression(&mut self, conditions: Vec<Token>) -> Return {
+        let mut result;
+        for expected in conditions {
+            result = self.check_next_token(expected);
+            match result {
+                Err(error) => return Err(error),
+                Ok(_) => continue,
+            }
+        }
+
+        self.parse_ast(0)
+    }
 
     fn prefix_binding_power(token: &Token) -> ((), u8) {
         match token {
-            Token::Let | Token::Var => ((), 15),
+            Token::Minus => ((), 11),
+            Token::Not => ((), 12),
             _ => panic!("bad op: {:?}", token),
         }
     }
 
     fn postfix_binding_power(token: &Token) -> Option<(u8, ())> {
         let res = match token {
-            Token::RightParentheses => (11, ()),
+            Token::RightParentheses => (13, ()),
             _ => return None,
         };
         Some(res)
@@ -80,9 +102,16 @@ impl<'source> Parser<'source> {
 
     fn infix_binding_power(token: &Token) -> Option<(u8, u8)> {
         let res = match token {
-            Token::Equal => (2, 1),
-            Token::NotEqual => (4, 3),
-            Token::Plus | Token::Minus => (5, 6),
+            Token::Or => (1, 2),
+            Token::And => (3, 4),
+            Token::Equal
+            | Token::NotEqual
+            | Token::Greater
+            | Token::GreaterEqual
+            | Token::Less
+            | Token::LessEqual => (6, 5),
+            Token::Plus | Token::Minus => (7, 8),
+            Token::Multiplication | Token::Division => (9, 10),
             _ => return None,
         };
         Some(res)
@@ -90,17 +119,19 @@ impl<'source> Parser<'source> {
 
     fn parse_ast(&mut self, min_bindpower: u8) -> Return {
         let op = self.accept();
-        dbg!(&op);
+        //dbg!(&op);
         let mut lhs = match op {
             Some((Token::Integer(number), _)) => Expression::Value(Scalar::I64(number)),
             Some((Token::Float(number), _)) => Expression::Value(Scalar::F64(number)),
             Some((Token::Decimal(decimal), _)) => Expression::Value(Scalar::Decimal(decimal)),
-            Some((Token::Var, _)) | Some((Token::Let, _)) => self.parse_let()?,
+            Some((Token::Var, _)) => self.parse_var()?,
+            Some((Token::Let, _)) => self.parse_let()?,
+            Some((Token::Variable(name), _)) => Expression::Variable(name),
             t => panic!("bad token: {:?}", t),
         };
 
-        while let Some(token) = self.peek() {
-            dbg!(&token);
+        while let Some((token, data)) = self.peek_both() {
+            //dbg!(&token);
 
             if let Some((l_bp, ())) = Self::postfix_binding_power(&token) {
                 if l_bp < min_bindpower {
@@ -113,9 +144,8 @@ impl<'source> Parser<'source> {
                         let rhs = self.parse_ast(0)?;
                         if let Some(Token::RightParentheses) = self.peek() {
                             Expression::Block(vec![lhs, rhs])
-                        //unimplemented!();
                         } else {
-                            return Err(Error::UnclosedGroup);
+                            return Err(Error::UnclosedGroup(Token::LeftParentheses, data));
                         }
                     }
                     _ => continue,
@@ -129,12 +159,25 @@ impl<'source> Parser<'source> {
                 self.accept();
                 let rhs = self.parse_ast(r_bp)?;
 
-                lhs = Expression::BinaryOp(BinaryOperation {
-                    operator: token,
-                    left: Box::new(lhs),
-                    right: Box::new(rhs),
-                });
-                //lhs = Expression::Block(vec![lhs, rhs?]);
+                if token.is_binary_operator() {
+                    lhs = Expression::BinaryOp(BinaryOperation {
+                        operator: token,
+                        left: Box::new(lhs),
+                        right: Box::new(rhs),
+                    });
+                    continue;
+                }
+
+                if token.is_comparison_operator() {
+                    lhs = Expression::ComparisonOp(BinaryOperation {
+                        operator: token,
+                        left: Box::new(lhs),
+                        right: Box::new(rhs),
+                    });
+                    continue;
+                }
+
+                lhs = Expression::Block(vec![lhs, rhs]);
                 continue;
             }
 
@@ -142,5 +185,31 @@ impl<'source> Parser<'source> {
         }
 
         Ok(lhs)
+    }
+
+    fn parse_var(&mut self) -> Return {
+        let mut result = self.check_next_token(Token::Variable("".to_string()));
+        if let Ok(Token::Variable(name)) = result {
+            result = self.check_next_token(Token::Assignment);
+            if let Ok(_) = result {
+                return Ok(Expression::Mutable(name, Box::new(self.parse_ast(0)?)));
+            }
+        }
+
+        Err(result.err().unwrap())
+    }
+
+    fn parse_let(&mut self) -> Return {
+        let dummy = String::from("");
+        let mut result =
+            self.match_at_least_one(vec![Token::Variable(dummy.clone()), Token::Constant(dummy)]);
+        if let Ok(Token::Variable(name)) | Ok(Token::Constant(name)) = result {
+            result = self.check_next_token(Token::Assignment);
+            if let Ok(_) = result {
+                return Ok(Expression::Immutable(name, Box::new(self.parse_ast(0)?)));
+            }
+        }
+
+        Err(result.err().unwrap())
     }
 }

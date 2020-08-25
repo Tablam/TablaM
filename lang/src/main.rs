@@ -21,7 +21,7 @@ fn main() {
         println!("No previous history.");
     }
     print_welcome();
-    let mut program = Program::new();
+    let program = Program::new();
 
     loop {
         let readline = rl.readline("\x1b[1;32m>\x1b[0m ");

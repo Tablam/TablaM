@@ -191,7 +191,7 @@ impl<'source> Parser<'source> {
         let mut result = self.check_next_token(Token::Variable("".to_string()));
         if let Ok(Token::Variable(name)) = result {
             result = self.check_next_token(Token::Assignment);
-            if let Ok(_) = result {
+            if result.is_ok() {
                 return Ok(Expression::Mutable(name, Box::new(self.parse_ast(0)?)));
             }
         }
@@ -205,7 +205,7 @@ impl<'source> Parser<'source> {
             self.match_at_least_one(vec![Token::Variable(dummy.clone()), Token::Constant(dummy)]);
         if let Ok(Token::Variable(name)) | Ok(Token::Constant(name)) = result {
             result = self.check_next_token(Token::Assignment);
-            if let Ok(_) = result {
+            if result.is_ok() {
                 return Ok(Expression::Immutable(name, Box::new(self.parse_ast(0)?)));
             }
         }

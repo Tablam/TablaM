@@ -22,11 +22,14 @@ pub enum Error {
     Unexpected(Token, Token, TokenData),
     #[display(fmt = "Unclosed group. It was expected: {}. ({})", _0, _1)]
     UnclosedGroup(Token, TokenData),
+    #[display(fmt = "Variable '{}' not found in scope", _0)]
+    VariableNotFound(String),
     #[display(fmt = "Unexpected EOF.")]
     Eof,
 }
 
 pub type Return = std::result::Result<Expression, Error>;
+pub type ReturnT<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Display)]
 pub enum Expression {
@@ -98,12 +101,12 @@ impl Environment {
         self.functions.insert(name, def);
     }
 
-    pub fn find_variable(&self, name: &str) -> Option<&Expression> {
+    pub fn find_variable(&self, name: &str) -> Result<&Expression, Error> {
         match self.vars.get(name) {
-            Some(variable) => Some(variable),
+            Some(variable) => Ok(variable),
             None => match &self.parent {
                 Some(env) => env.find_variable(name),
-                None => None,
+                None => Err(Error::VariableNotFound(name.to_string())),
             },
         }
     }

@@ -41,10 +41,10 @@ pub fn math_functions() -> Vec<Function> {
     let mut fun = Vec::with_capacity(4 * 3);
 
     for kind in &[DataType::I64, DataType::F64, DataType::Decimal] {
-        fun.push(math_fn("math.add", kind.clone(), math_add));
-        fun.push(math_fn("math.minus", kind.clone(), math_minus));
-        fun.push(math_fn("math.mul", kind.clone(), math_mul));
-        fun.push(math_fn("math.div", kind.clone(), math_div));
+        fun.push(math_fn("add", kind.clone(), math_add));
+        fun.push(math_fn("minus", kind.clone(), math_minus));
+        fun.push(math_fn("mul", kind.clone(), math_mul));
+        fun.push(math_fn("div", kind.clone(), math_div));
     }
     fun
 }

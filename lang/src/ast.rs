@@ -11,8 +11,10 @@ pub type Identifier = String;
 #[derive(Debug, Display, From)]
 #[display(fmt = "Syntax error => {}")]
 pub enum Error {
+    #[from]
     #[display(fmt = "{}", _0)]
     CoreError(tablam::errors::Error),
+    #[from]
     #[display(
         fmt = "Unexpected token. It found: {}, it was expected: {}. ({})",
         _0,
@@ -20,10 +22,13 @@ pub enum Error {
         _2
     )]
     Unexpected(Token, Token, TokenData),
+    #[from]
     #[display(fmt = "Unclosed group. It was expected: {}. ({})", _0, _1)]
     UnclosedGroup(Token, TokenData),
     #[display(fmt = "Variable '{}' not found in scope", _0)]
     VariableNotFound(String),
+    #[display(fmt = "Function '{}' not found in scope", _0)]
+    FunctionNotFound(String),
     #[display(fmt = "Unexpected EOF.")]
     Eof,
 }
@@ -111,18 +116,18 @@ impl Environment {
         }
     }
 
-    pub fn find_function(&self, k: &str) -> Option<Function> {
-        match self.functions.get(k) {
+    pub fn find_function(&self, name: &str) -> Result<Function, Error> {
+        match self.functions.get(name) {
             Some(function) => {
                 if let Expression::Function(f) = function {
-                    Some(f.clone())
+                    Ok(f.clone())
                 } else {
-                    None
+                    Err(Error::FunctionNotFound(name.to_string()))
                 }
             }
             None => match &self.parent {
-                Some(env) => env.find_function(k),
-                None => None,
+                Some(env) => env.find_function(name),
+                None => Err(Error::FunctionNotFound(name.to_string())),
             },
         }
     }

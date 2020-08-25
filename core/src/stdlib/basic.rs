@@ -25,7 +25,7 @@ fn basic_fn_variadic(name: &str, kind: DataType, f: RelFun) -> Function {
 
 pub fn basic_functions() -> Vec<Function> {
     vec![
-        basic_fn_variadic("std.print", DataType::ANY, print),
-        basic_fn_variadic("std.println", DataType::ANY, print_ln),
+        basic_fn_variadic("print", DataType::ANY, print),
+        basic_fn_variadic("println", DataType::ANY, print_ln),
     ]
 }

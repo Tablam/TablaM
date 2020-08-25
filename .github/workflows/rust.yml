@@ -1,4 +1,12 @@
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
 
 name: Continuous integration
 
@@ -31,6 +39,7 @@ jobs:
           args: -- -D warnings
 
   build:
+    needs: check
     name: Build
     strategy:
       matrix:

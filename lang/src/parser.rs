@@ -34,21 +34,21 @@ impl<'source> Parser<'source> {
         self.parse_ast(0)
     }
 
-    fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+    fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, ErrorLang> {
         if let Some((found, data)) = self.peek_both() {
             return if discriminant(&found) == discriminant(&expected) {
                 self.accept();
                 Ok(found)
             } else {
-                let feedback = Error::Unexpected(found, expected, data);
+                let feedback = ErrorLang::Unexpected(found, expected, data);
                 Err(feedback)
             };
         }
 
-        Err(Error::Eof)
+        Err(ErrorLang::Eof)
     }
 
-    fn accept_and_check_next(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+    fn accept_and_check_next(&mut self, expected: Token) -> std::result::Result<Token, ErrorLang> {
         let result = self.check_next_token(expected);
         match result {
             Ok(token) => Ok(token),
@@ -59,8 +59,11 @@ impl<'source> Parser<'source> {
         }
     }
 
-    fn match_at_least_one(&mut self, conditions: Vec<Token>) -> std::result::Result<Token, Error> {
-        let mut result = Err(Error::Eof);
+    fn match_at_least_one(
+        &mut self,
+        conditions: Vec<Token>,
+    ) -> std::result::Result<Token, ErrorLang> {
+        let mut result = Err(ErrorLang::Eof);
         for expected in conditions {
             result = self.check_next_token(expected);
             match &result {
@@ -156,7 +159,7 @@ impl<'source> Parser<'source> {
                         if let Some(Token::RightParentheses) = self.peek() {
                             Expression::Block(vec![lhs, rhs])
                         } else {
-                            return Err(Error::UnclosedGroup(Token::LeftParentheses, data));
+                            return Err(ErrorLang::UnclosedGroup(Token::LeftParentheses, data));
                         }
                     }
                     _ => continue,
@@ -210,17 +213,17 @@ impl<'source> Parser<'source> {
         Err(result.err().unwrap())
     }
 
-    fn parse_param_call(&mut self) -> std::result::Result<Option<ParamCall>, Error> {
+    fn parse_param_call(&mut self) -> std::result::Result<Option<ParamCall>, ErrorLang> {
         if let Some((token, _data)) = self.accept() {
             //dbg!(&token);
             if token.is_literal_or_value() {
                 let expr = self.parse_ast(0)?;
                 Ok(Some(ParamCall::new("", expr)))
             } else {
-                Err(Error::Eof)
+                Err(ErrorLang::Eof)
             }
         } else {
-            Err(Error::Eof)
+            Err(ErrorLang::Eof)
         }
     }
 

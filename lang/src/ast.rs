@@ -6,13 +6,14 @@ use tablam::prelude::Scalar;
 use crate::lexer::{Token, TokenData};
 use std::fmt;
 use tablam::function::Function;
+use tablam::query::CmOp;
 use tablam::types::format_list;
 
 pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
 #[display(fmt = "Syntax error => {}")]
-pub enum Error {
+pub enum ErrorLang {
     #[from]
     #[display(fmt = "{}", _0)]
     CoreError(tablam::errors::Error),
@@ -35,8 +36,8 @@ pub enum Error {
     Eof,
 }
 
-pub type Return = std::result::Result<Expression, Error>;
-pub type ReturnT<T> = std::result::Result<T, Error>;
+pub type Return = std::result::Result<Expression, ErrorLang>;
+pub type ReturnT<T> = std::result::Result<T, ErrorLang>;
 
 #[derive(Debug, Clone, Display, From)]
 pub enum Expression {
@@ -74,6 +75,12 @@ pub enum Expression {
         previous.push_str(current.as_str()); previous.push('\n'); previous})"#
     )]
     Block(Vec<Expression>),
+
+    #[display(fmt = "if {} do\n\t{}else\n\t{}\nend", _0, _1, _2)]
+    If(Box<BoolOperation>, Box<Expression>, Box<Expression>),
+
+    #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
+    While(Box<BoolOperation>, Box<Expression>),
 
     #[display(fmt = "{}", _0)]
     Error(String),
@@ -130,6 +137,14 @@ impl fmt::Display for FunctionCall {
     }
 }
 
+#[derive(Debug, Clone, Display)]
+pub enum BoolOperation {
+    Bool(bool),
+    Var(String),
+    #[display(fmt = "{} {} {}", _1, _0, _2)]
+    Cmp(CmOp, Box<Expression>, Box<Expression>),
+}
+
 #[derive(Debug, Clone)]
 pub struct Environment {
     vars: HashMap<Identifier, Expression>,
@@ -154,28 +169,28 @@ impl Environment {
         self.functions.insert(name, def);
     }
 
-    pub fn find_variable(&self, name: &str) -> Result<&Expression, Error> {
+    pub fn find_variable(&self, name: &str) -> Result<&Expression, ErrorLang> {
         match self.vars.get(name) {
             Some(variable) => Ok(variable),
             None => match &self.parent {
                 Some(env) => env.find_variable(name),
-                None => Err(Error::VariableNotFound(name.to_string())),
+                None => Err(ErrorLang::VariableNotFound(name.to_string())),
             },
         }
     }
 
-    pub fn find_function(&self, name: &str) -> Result<Function, Error> {
+    pub fn find_function(&self, name: &str) -> Result<Function, ErrorLang> {
         match self.functions.get(name) {
             Some(function) => {
                 if let Expression::Function(f) = function {
                     Ok(f.clone())
                 } else {
-                    Err(Error::FunctionNotFound(name.to_string()))
+                    Err(ErrorLang::FunctionNotFound(name.to_string()))
                 }
             }
             None => match &self.parent {
                 Some(env) => env.find_function(name),
-                None => Err(Error::FunctionNotFound(name.to_string())),
+                None => Err(ErrorLang::FunctionNotFound(name.to_string())),
             },
         }
     }

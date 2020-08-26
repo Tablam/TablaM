@@ -1,5 +1,6 @@
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
+use tablam_lang::ast::Expression;
 use tablam_lang::eval::Program;
 
 fn print_welcome() {
@@ -31,9 +32,15 @@ fn main() {
                 "help" => println!("Help & more info at http://www.tablam.org"),
                 line => {
                     rl.add_history_entry(line);
-                    println!("Line: {}", line);
+                    dbg!(&line);
                     match program.execute_str(line) {
-                        Ok(expr) => println!("{}", expr),
+                        Ok(expr) => match expr {
+                            Expression::Pass => continue,
+                            Expression::Eof => {
+                                break;
+                            }
+                            expr => println!("{}", expr),
+                        },
                         Err(err) => eprintln!("Error: {}", err),
                     }
                 }

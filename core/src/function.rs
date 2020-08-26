@@ -8,7 +8,7 @@ use crate::prelude::*;
 use crate::types::format_list;
 
 //pub type RelFun = fn(&[Scalar]) -> Result<Scalar>;
-pub type RelFun = for<'a> fn(&'a [&'a Scalar]) -> Result<Scalar>;
+pub type RelFun = for<'a> fn(&'a [Scalar]) -> Result<Scalar>;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "{} :{}", name, kind)]
@@ -35,7 +35,7 @@ impl Param {
 
 #[derive(Clone, From)]
 pub struct Function {
-    name: String,
+    pub name: String,
     params: Vec<Param>,
     result: Vec<Param>,
     f: Box<RelFun>,
@@ -65,7 +65,7 @@ impl Function {
         Self::new(name, &[param], &[ret], f)
     }
 
-    pub fn call(&self, params: &[&Scalar]) -> Result<Scalar> {
+    pub fn call(&self, params: &[Scalar]) -> Result<Scalar> {
         if params.len() != self.params.len() {
             return Err(Error::ParamCount(params.len(), self.params.len()));
         }

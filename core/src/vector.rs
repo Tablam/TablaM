@@ -165,12 +165,12 @@ impl Vector {
 
     pub fn fold_fn<F>(&self, initial: &Scalar, apply: F) -> Result<Self>
     where
-        F: Fn(&[&Scalar]) -> Result<Scalar>,
+        F: Fn(&[Scalar]) -> Result<Scalar>,
     {
         if self.rel_shape() != RelShape::Table {
             let mut data: Vec<Scalar> = Vec::with_capacity(self._rows());
             for x in self.data.iter() {
-                data.push(apply(&[initial, x])?);
+                data.push(apply(&[initial.clone(), x.clone()])?);
             }
 
             Ok(Self::new_vector(data, self.kind()))

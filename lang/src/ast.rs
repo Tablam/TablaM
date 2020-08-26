@@ -4,7 +4,9 @@ use tablam::derive_more::{Display, From};
 use tablam::prelude::Scalar;
 
 use crate::lexer::{Token, TokenData};
+use std::fmt;
 use tablam::function::Function;
+use tablam::types::format_list;
 
 pub type Identifier = String;
 
@@ -36,9 +38,10 @@ pub enum Error {
 pub type Return = std::result::Result<Expression, Error>;
 pub type ReturnT<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, Clone, Display)]
+#[derive(Debug, Clone, Display, From)]
 pub enum Expression {
     //Values
+    #[from]
     #[display(fmt = "{}", _0)]
     Value(Scalar),
     #[display(fmt = "{}", _0)]
@@ -50,11 +53,17 @@ pub enum Expression {
     #[display(fmt = "let {:} := {}", _0, _1)]
     Immutable(Identifier, Box<Expression>),
 
+    #[from]
     #[display(fmt = "{}", _0)]
     Function(Function),
+    #[from]
+    #[display(fmt = "{}", _0)]
+    FunctionCall(FunctionCall),
 
+    #[from]
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
+
     #[display(fmt = "{}", _0)]
     ComparisonOp(BinaryOperation),
 
@@ -80,6 +89,45 @@ pub struct BinaryOperation {
     pub operator: Token,
     pub left: Box<Expression>,
     pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, Display)]
+#[display(fmt = "{} := {}", name, value)]
+pub struct ParamCall {
+    pub name: String,
+    pub value: Expression,
+}
+
+impl ParamCall {
+    pub fn new(name: &str, value: Expression) -> Self {
+        ParamCall {
+            name: name.to_string(),
+            value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, From)]
+pub struct FunctionCall {
+    pub name: String,
+    pub params: Vec<ParamCall>,
+}
+
+impl FunctionCall {
+    pub fn new(name: &str, params: &[ParamCall]) -> Self {
+        FunctionCall {
+            name: name.into(),
+            params: params.to_vec(),
+        }
+    }
+}
+
+impl fmt::Display for FunctionCall {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+        format_list(&self.params, self.params.len(), "(", ")", f)?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]

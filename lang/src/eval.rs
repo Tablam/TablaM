@@ -15,7 +15,7 @@ impl Program {
         let mut env = Environment::new(None);
 
         for f in tablam::stdlib::std_functions() {
-            env.add_function(f.key(), Expression::Function(f));
+            env.add_function(f.name.clone(), Expression::Function(f));
         }
 
         Program {
@@ -64,18 +64,32 @@ impl Program {
             Expression::Variable(name) => self.env().find_variable(name.as_str())?.clone(),
             Expression::BinaryOp(op) => {
                 let name = match op.operator {
-                    Token::Plus => "add_Int_Int",
-                    Token::Minus => "minus_Int_Int",
-                    Token::Multiplication => "mul_Int_Int",
-                    Token::Division => "div_Int_Int",
+                    Token::Plus => "add",
+                    Token::Minus => "minus",
+                    Token::Multiplication => "mul",
+                    Token::Division => "div",
                     _ => unreachable!(),
                 };
-                let f = self.env().find_function(name).expect("Fail std");
+                let f = self.env().find_function(name)?;
 
                 let lhs = self.eval_value(&op.left)?;
                 let rhs = self.eval_value(&op.right)?;
 
-                Expression::Value(f.call(&[&lhs, &rhs])?)
+                Expression::Value(f.call(&[lhs, rhs])?)
+            }
+            Expression::FunctionCall(call) => {
+                let f = self.env().find_function(&call.name)?;
+                let mut params = Vec::with_capacity(call.params.len());
+                //TODO: Check validity of params
+                for p in call.params {
+                    let expr = self.eval_value(&p.value)?;
+                    params.push(expr);
+                }
+                let result = f.call(params.as_slice())?;
+                match result {
+                    Scalar::None => Expression::Pass,
+                    expr => Expression::Value(expr),
+                }
             }
             _x => unimplemented!(),
         };

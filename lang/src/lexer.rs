@@ -200,6 +200,9 @@ pub enum Token {
     #[display(fmt = "]")]
     #[token("]")]
     EndVector,
+    #[display(fmt = ";")]
+    #[token(";")]
+    RowSeparator,
 
     //Definitions
     #[display(fmt = "do")]

@@ -49,6 +49,65 @@ fn test_syntax_v0() {
 }
 
 #[test]
+fn test_syntax_collections() {
+    assert_lex(
+        "let n := [8; 9; 10]",
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("n".to_string()), "n", 4..5),
+            (Token::Assignment, ":=", 6..8),
+            (Token::StartVector, "[", 9..10),
+            (Token::Integer(8i64), "8", 10..11),
+            (Token::RowSeparator, ";", 11..12),
+            (Token::Integer(9i64), "9", 13..14),
+            (Token::RowSeparator, ";", 14..15),
+            (Token::Integer(10i64), "10", 16..18),
+            (Token::EndVector, "]", 18..19),
+        ],
+    );
+
+    assert_lex(
+        "let num := [Int; 5; 6; 7]",
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("num".to_string()), "num", 4..7),
+            (Token::Assignment, ":=", 8..10),
+            (Token::StartVector, "[", 11..12),
+            (Token::Type(String::from("Int")), "Int", 12..15),
+            (Token::RowSeparator, ";", 15..16),
+            (Token::Integer(5i64), "5", 17..18),
+            (Token::RowSeparator, ";", 18..19),
+            (Token::Integer(6i64), "6", 20..21),
+            (Token::RowSeparator, ";", 21..22),
+            (Token::Integer(7i64), "7", 23..24),
+            (Token::EndVector, "]", 24..25),
+        ],
+    );
+
+    assert_lex(
+        "let numbers := [name:Int; 1; 2; 3; 4]",
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("numbers".to_string()), "numbers", 4..11),
+            (Token::Assignment, ":=", 12..14),
+            (Token::StartVector, "[", 15..16),
+            (Token::Variable(String::from("name")), "name", 16..20),
+            (Token::TypeDefiner, ":", 20..21),
+            (Token::Type(String::from("Int")), "Int", 21..24),
+            (Token::RowSeparator, ";", 24..25),
+            (Token::Integer(1i64), "1", 26..27),
+            (Token::RowSeparator, ";", 27..28),
+            (Token::Integer(2i64), "2", 29..30),
+            (Token::RowSeparator, ";", 30..31),
+            (Token::Integer(3i64), "3", 32..33),
+            (Token::RowSeparator, ";", 33..34),
+            (Token::Integer(4i64), "4", 35..36),
+            (Token::EndVector, "]", 36..37),
+        ],
+    );
+}
+
+#[test]
 fn test_strings() {
     assert_lex(r#""a""#, &[(Token::String("a".into()), r#""a""#, 0..3)]);
     assert_lex("'a'", &[(Token::String("a".into()), "'a'", 0..3)]);

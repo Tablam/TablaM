@@ -127,19 +127,44 @@ impl DataType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub enum BinOp {
-    Add,
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+pub enum UnaryOp {
+    #[display(fmt = "not")]
+    Not,
+    #[display(fmt = "-")]
     Minus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+pub enum BinOp {
+    #[display(fmt = "+")]
+    Add,
+    #[display(fmt = "-")]
+    Minus,
+    #[display(fmt = "*")]
     Mul,
+    #[display(fmt = "+")]
     Div,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum LogicOp {
+    #[display(fmt = "and")]
     And,
+    #[display(fmt = "or")]
     Or,
-    Not,
+    #[display(fmt = "=")]
+    Equal,
+    #[display(fmt = "<>")]
+    NotEqual,
+    #[display(fmt = ">")]
+    Greater,
+    #[display(fmt = ">=")]
+    GreaterEqual,
+    #[display(fmt = "<")]
+    Less,
+    #[display(fmt = "<=")]
+    LessEqual,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]

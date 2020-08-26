@@ -193,6 +193,14 @@ pub enum Token {
     #[token("/=")]
     DivisionEqual,
 
+    //Collections
+    #[display(fmt = "[")]
+    #[token("[")]
+    StartVector,
+    #[display(fmt = "]")]
+    #[token("]")]
+    EndVector,
+
     //Definitions
     #[display(fmt = "do")]
     #[token("do")]

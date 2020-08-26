@@ -162,20 +162,20 @@ impl<'source> Parser<'source> {
                 let rhs = self.parse_ast(r_bp)?;
 
                 if token.is_binary_operator() {
-                    lhs = Expression::BinaryOp(BinaryOperation {
-                        operator: token,
-                        left: Box::new(lhs),
-                        right: Box::new(rhs),
-                    });
+                    lhs = Expression::BinaryOp(BinaryOperation::new(
+                        token,
+                        Box::new(lhs),
+                        Box::new(rhs),
+                    ));
                     continue;
                 }
 
                 if token.is_comparison_operator() {
-                    lhs = Expression::ComparisonOp(BinaryOperation {
-                        operator: token,
-                        left: Box::new(lhs),
-                        right: Box::new(rhs),
-                    });
+                    lhs = Expression::ComparisonOp(ComparisonOperator::new(
+                        token,
+                        Box::new(lhs),
+                        Box::new(rhs),
+                    ));
                     continue;
                 }
 

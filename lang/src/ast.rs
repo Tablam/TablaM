@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use tablam::derive_more::{Display, From};
-use tablam::prelude::Scalar;
+use tablam::prelude::{BinOp, LogicOp, Scalar};
 
 use crate::lexer::{Token, TokenData};
 use tablam::function::Function;
@@ -56,7 +56,7 @@ pub enum Expression {
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
     #[display(fmt = "{}", _0)]
-    ComparisonOp(BinaryOperation),
+    ComparisonOp(ComparisonOperator),
 
     #[display(
         fmt = "{}",
@@ -77,9 +77,57 @@ pub enum Expression {
 #[derive(Debug, Clone, Display)]
 #[display(fmt = "{} {} {}", left, operator, right)]
 pub struct BinaryOperation {
-    pub operator: Token,
+    pub operator: BinOp,
     pub left: Box<Expression>,
     pub right: Box<Expression>,
+}
+
+impl BinaryOperation {
+    pub fn new(token: Token, left: Box<Expression>, right: Box<Expression>) -> Self {
+        let operator = match token {
+            Token::Plus => BinOp::Add,
+            Token::Minus => BinOp::Minus,
+            Token::Multiplication => BinOp::Mul,
+            Token::Division => BinOp::Div,
+            _ => unreachable!("Binary operator not implemented."),
+        };
+
+        BinaryOperation {
+            operator,
+            left,
+            right,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Display)]
+#[display(fmt = "{} {} {}", left, operator, right)]
+pub struct ComparisonOperator {
+    pub operator: LogicOp,
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+impl ComparisonOperator {
+    pub fn new(token: Token, left: Box<Expression>, right: Box<Expression>) -> Self {
+        let operator = match token {
+            Token::Equal => LogicOp::Equal,
+            Token::NotEqual => LogicOp::NotEqual,
+            Token::Greater => LogicOp::Greater,
+            Token::GreaterEqual => LogicOp::GreaterEqual,
+            Token::Less => LogicOp::Less,
+            Token::LessEqual => LogicOp::LessEqual,
+            Token::And => LogicOp::And,
+            Token::Or => LogicOp::Or,
+            _ => unreachable!("Binary operator not implemented."),
+        };
+
+        ComparisonOperator {
+            operator,
+            left,
+            right,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

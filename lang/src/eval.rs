@@ -64,11 +64,10 @@ impl Program {
             Expression::Variable(name) => self.env().find_variable(name.as_str())?.clone(),
             Expression::BinaryOp(op) => {
                 let name = match op.operator {
-                    Token::Plus => "add_Int_Int",
-                    Token::Minus => "minus_Int_Int",
-                    Token::Multiplication => "mul_Int_Int",
-                    Token::Division => "div_Int_Int",
-                    _ => unreachable!(),
+                    BinOp::Add => "add_Int_Int",
+                    BinOp::Minus => "minus_Int_Int",
+                    BinOp::Mul => "mul_Int_Int",
+                    BinOp::Div => "div_Int_Int",
                 };
                 let f = self.env().find_function(name).expect("Fail std");
 

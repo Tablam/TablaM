@@ -122,16 +122,25 @@ impl<'source> Parser<'source> {
         let op = self.accept();
         //dbg!(&op);
         let mut lhs = match op {
+            Some((Token::True, _)) => Expression::Value(Scalar::Bool(true)),
+            Some((Token::False, _)) => Expression::Value(Scalar::Bool(false)),
             Some((Token::Integer(number), _)) => Expression::Value(Scalar::I64(number)),
             Some((Token::Float(number), _)) => Expression::Value(Scalar::F64(number)),
             Some((Token::Decimal(decimal), _)) => Expression::Value(Scalar::Decimal(decimal)),
             Some((Token::String(text), _)) => Expression::Value(Scalar::UTF8(Rc::new(text))),
             Some((Token::Var, _)) => self.parse_var()?,
             Some((Token::Let, _)) => self.parse_let()?,
-            Some((Token::Variable(name), _)) => Expression::Variable(name),
+            Some((Token::Variable(name), _)) => {
+                //Check if is a function name...
+                if self.peek() == Some(Token::LeftParentheses) {
+                    self.parse_function_call(&name)?
+                } else {
+                    Expression::Variable(name)
+                }
+            }
             t => panic!("bad token: {:?}", t),
         };
-
+        //dbg!(&lhs);
         while let Some((token, data)) = self.peek_both() {
             //dbg!(&token);
 
@@ -199,6 +208,32 @@ impl<'source> Parser<'source> {
         }
 
         Err(result.err().unwrap())
+    }
+
+    fn parse_param_call(&mut self) -> std::result::Result<Option<ParamCall>, Error> {
+        if let Some((token, _data)) = self.accept() {
+            //dbg!(&token);
+            if token.is_literal_or_value() {
+                let expr = self.parse_ast(0)?;
+                Ok(Some(ParamCall::new("", expr)))
+            } else {
+                Err(Error::Eof)
+            }
+        } else {
+            Err(Error::Eof)
+        }
+    }
+
+    fn parse_function_call(&mut self, name: &str) -> Return {
+        //Eat '('
+        self.accept();
+        let expr = self.parse_ast(0)?;
+        // dbg!(&expr);
+        let mut params = Vec::new();
+
+        params.push(ParamCall::new("", expr));
+
+        Ok(FunctionCall::new(name, &params).into())
     }
 
     fn parse_let(&mut self) -> Return {

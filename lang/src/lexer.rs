@@ -158,14 +158,14 @@ pub enum Token {
 
     //Numbers
     #[display(fmt = "{}", _0)]
-    #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]
-    Integer(i64),
-    #[display(fmt = "{}", _0)]
     #[regex(r"\d+\.*\d*f", |lex| parse_token_data_without_suffix::<R64>(lex, 1))]
     Float(R64),
     #[display(fmt = "{}", _0)]
     #[regex(r"\d+\.*\d*d", |lex| parse_token_data_without_suffix::<Decimal>(lex, 1))]
     Decimal(Decimal),
+    #[display(fmt = "{}", _0)]
+    #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]
+    Integer(i64),
 
     //Arithmetic operators
     #[display(fmt = "+")]
@@ -255,6 +255,31 @@ pub enum Token {
 }
 
 impl Token {
+    pub fn can_reduce_to_value(&self) -> bool {
+        self == &Token::True
+            || self == &Token::False
+            || self == &Token::Minus
+            || self == &Token::MinusEqual
+            || self == &Token::Multiplication
+            || self == &Token::MultiplicationEqual
+            || self == &Token::Division
+            || self == &Token::DivisionEqual
+    }
+
+    pub fn is_literal_or_value(&self) -> bool {
+        match self {
+            Token::String(_)
+            | Token::Constant(_)
+            | Token::Variable(_)
+            | Token::True
+            | Token::False
+            | Token::Float(_)
+            | Token::Decimal(_)
+            | Token::Integer(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_binary_operator(&self) -> bool {
         self == &Token::Plus
             || self == &Token::PlusEqual

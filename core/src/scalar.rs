@@ -39,7 +39,7 @@ pub enum Scalar {
     //Sum types
     Sum(Box<Case>),
     //Collections
-    Vector(Box<Vector>),
+    Vector(Rc<Vector>),
     //Lazy computation
     //Seq(Seq<'static>),
 }
@@ -145,7 +145,7 @@ impl From<Case> for Scalar {
 
 impl From<Vector> for Scalar {
     fn from(x: Vector) -> Self {
-        Scalar::Vector(Box::new(x))
+        Scalar::Vector(Rc::new(x))
     }
 }
 
@@ -188,7 +188,7 @@ impl From<Scalar> for String {
 /// Provide support for broadcast a function over scalars and vectors
 pub fn fold_fn2<F>(x: &Scalar, y: &Scalar, apply: F) -> errors::Result<Scalar>
 where
-    F: Fn(&[&Scalar]) -> errors::Result<Scalar>,
+    F: Fn(&[Scalar]) -> errors::Result<Scalar>,
 {
     let data = match (x, y) {
         (Scalar::Vector(a), Scalar::Vector(b)) => {
@@ -198,14 +198,14 @@ where
             let mut data = Vec::with_capacity(a.data.len());
 
             for (lhs, rhs) in a.data.iter().zip(b.data.iter()) {
-                data.push(apply(&[lhs, rhs])?);
+                data.push(apply(&[lhs.clone(), rhs.clone()])?);
             }
 
             Ok(Vector::new_vector(data, a.kind()))
         }
         (_, Scalar::Vector(data)) => data.fold_fn(x, apply),
         (Scalar::Vector(data), _) => data.fold_fn(y, apply),
-        _ => return Err(errors::Error::RankNotMatch),
+        _ => return Err(errors::Error::TypeMismatchBinOp(x.kind(), y.kind())),
     }?;
     Ok(data.into())
 }

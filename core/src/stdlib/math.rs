@@ -4,14 +4,14 @@ use crate::prelude::*;
 
 macro_rules! math_op {
     ($name:ident, $op:path) => {
-        pub fn $name(params: &[&Scalar]) -> Result<Scalar> {
+        pub fn $name(params: &[Scalar]) -> Result<Scalar> {
             let x = &params[0];
             let y = &params[1];
 
             if x.kind().kind_group() != KindGroup::Numbers
                 || y.kind().kind_group() != KindGroup::Numbers
             {
-                return Err(Error::InvalidTypeMath);
+                return Err(Error::TypeMismatchBinOp(x.kind(), y.kind()));
             }
 
             match (x, y) {

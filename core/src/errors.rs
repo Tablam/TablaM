@@ -1,3 +1,4 @@
+use crate::types::DataType;
 use derive_more::{Display, From};
 
 #[derive(Debug, From, Display)]
@@ -23,7 +24,8 @@ pub enum Error {
     #[display(fmt = "File Error: {}", _0)]
     FileError(std::io::Error, String),
     RankNotMatch,
-    InvalidTypeMath,
+    #[display(fmt = "Type mismatch {} <> {}", _0, _1)]
+    TypeMismatchBinOp(DataType, DataType),
     #[display(fmt = "The function was called with {} params when need {}", _0, _1)]
     ParamCount(usize, usize),
 }

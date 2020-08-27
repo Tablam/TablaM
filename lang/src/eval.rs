@@ -31,6 +31,34 @@ impl Program {
         self.env.borrow_mut()
     }
 
+    fn decode_bool(&self, value: &BoolOperation) -> ReturnT<bool> {
+        match value {
+            BoolOperation::Bool(x) => Ok(*x),
+            BoolOperation::Var(name) => {
+                let x = self.eval_value(&Expression::Variable(name.into()))?;
+                if let Scalar::Bool(x) = x {
+                    Ok(x)
+                } else {
+                    Err(ErrorLang::Eof)
+                }
+            }
+            BoolOperation::Cmp(cmp) => {
+                let a = self.eval_value(&cmp.left)?;
+                let b = self.eval_value(&cmp.right)?;
+                Ok(match cmp.operator {
+                    LogicOp::Equal => a == b,
+                    LogicOp::NotEqual => a != b,
+                    LogicOp::Less => a < b,
+                    LogicOp::LessEqual => a <= b,
+                    LogicOp::Greater => a > b,
+                    LogicOp::GreaterEqual => a >= b,
+                    LogicOp::And => unreachable!(),
+                    LogicOp::Or => unreachable!(),
+                })
+            }
+        }
+    }
+
     pub fn execute_str(&self, source: &str) -> Return {
         let mut parser = Parser::new(source);
         self.eval_expr(parser.parse()?)
@@ -53,6 +81,14 @@ impl Program {
             Expression::Pass => expr,
             Expression::Value(_) => expr,
             Expression::Eof => return Ok(expr),
+            Expression::Block(lines) => {
+                let mut last = None;
+                for line in lines.0 {
+                    last = Some(self.eval_expr(line)?);
+                }
+
+                last.unwrap_or(Expression::Pass)
+            }
             Expression::Mutable(name, value) => {
                 self.env_mut().add_variable(name, *value);
                 Expression::Pass
@@ -90,7 +126,15 @@ impl Program {
                     expr => Expression::Value(expr),
                 }
             }
-            _x => unimplemented!(),
+            Expression::If(check, if_true, if_false) => {
+                if self.decode_bool(&check)? {
+                    *if_true
+                } else {
+                    *if_false
+                }
+            }
+            Expression::While(_check, _body) => unimplemented!(),
+            x => unimplemented!("{}", x),
         };
         Ok(expr)
     }

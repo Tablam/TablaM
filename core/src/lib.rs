@@ -39,7 +39,7 @@ pub mod prelude {
     pub use crate::dsl::*;
     pub use crate::errors::{Error, Result};
     pub use crate::function::*;
-    pub use crate::query::{Comparable, JoinOp, QueryOp};
+    pub use crate::query::{CmOp, Comparable, JoinOp, QueryOp};
     pub use crate::row::RowPk;
     pub use crate::scalar::{fold_fn2, Scalar};
     pub use crate::schema::*;

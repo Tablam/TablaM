@@ -31,24 +31,40 @@ impl<'source> Parser<'source> {
     }
 
     pub fn parse(&mut self) -> Return {
-        self.parse_ast(0)
+        let mut lines = Vec::new();
+        let line = self.parse_ast(0)?;
+        //dbg!(&line);
+        let mut is_eof = line.is_eof();
+        lines.push(line);
+
+        while !is_eof {
+            let line = self.parse_ast(0)?;
+            //dbg!(&line);
+
+            is_eof = line.is_eof();
+            if !is_eof {
+                lines.push(line);
+            }
+        }
+
+        Ok(Expression::Block(lines.into()))
     }
 
-    fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+    fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, ErrorLang> {
         if let Some((found, data)) = self.peek_both() {
             return if discriminant(&found) == discriminant(&expected) {
                 self.accept();
                 Ok(found)
             } else {
-                let feedback = Error::Unexpected(found, expected, data);
+                let feedback = ErrorLang::Unexpected(found, expected, data);
                 Err(feedback)
             };
         }
 
-        Err(Error::Eof)
+        Err(ErrorLang::Eof)
     }
 
-    fn check_and_accept_next(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+    fn check_and_accept_next(&mut self, expected: Token) -> std::result::Result<Token, ErrorLang> {
         let result = self.check_next_token(expected);
         match result {
             Ok(token) => Ok(token),
@@ -59,8 +75,11 @@ impl<'source> Parser<'source> {
         }
     }
 
-    fn match_at_least_one(&mut self, conditions: Vec<Token>) -> std::result::Result<Token, Error> {
-        let mut result = Err(Error::Eof);
+    fn match_at_least_one(
+        &mut self,
+        conditions: Vec<Token>,
+    ) -> std::result::Result<Token, ErrorLang> {
+        let mut result = Err(ErrorLang::Eof);
         for expected in conditions {
             result = self.check_next_token(expected);
             match &result {
@@ -118,29 +137,40 @@ impl<'source> Parser<'source> {
         Some(res)
     }
 
-    fn parse_ast(&mut self, min_bindpower: u8) -> Return {
-        let op = self.accept();
-        //dbg!(&op);
-        let mut lhs = match op {
-            Some((Token::True, _)) => Expression::Value(Scalar::Bool(true)),
-            Some((Token::False, _)) => Expression::Value(Scalar::Bool(false)),
-            Some((Token::Integer(number), _)) => Expression::Value(Scalar::I64(number)),
-            Some((Token::Float(number), _)) => Expression::Value(Scalar::F64(number)),
-            Some((Token::Decimal(decimal), _)) => Expression::Value(Scalar::Decimal(decimal)),
-            Some((Token::String(text), _)) => Expression::Value(Scalar::UTF8(Rc::new(text))),
-            Some((Token::Var, _)) => self.parse_var()?,
-            Some((Token::Let, _)) => self.parse_let()?,
-            Some((Token::Variable(name), _)) => {
+    fn parse_lhs(&mut self, op: &Token) -> Return {
+        let expr = match op {
+            Token::True => Expression::Value(Scalar::Bool(true)),
+            Token::False => Expression::Value(Scalar::Bool(false)),
+            Token::Integer(number) => Expression::Value(Scalar::I64(*number)),
+            Token::Float(number) => Expression::Value(Scalar::F64(*number)),
+            Token::Decimal(decimal) => Expression::Value(Scalar::Decimal(*decimal)),
+            Token::String(text) => Expression::Value(Scalar::UTF8(Rc::new(text.into()))),
+            Token::Var => self.parse_var()?,
+            Token::Let => self.parse_let()?,
+            Token::Variable(name) => {
                 match self.peek() {
                     //Check if is a function name...
                     Some(Token::LeftParentheses) => self.parse_function_call(&name)?,
                     Some(Token::TypeDefiner) => self.parse_parameter_definition(&name)?,
-                    _ => Expression::Variable(name),
+                    _ => Expression::Variable(name.into()),
                 }
             }
-            Some((Token::StartVector, _)) => self.parse_vector()?,
+            Token::StartVector => self.parse_vector()?,
+            Token::If => self.parse_if()?,
             t => panic!("bad token: {:?}", t),
         };
+        Ok(expr)
+    }
+
+    fn parse_ast(&mut self, min_bindpower: u8) -> Return {
+        let op = self.accept();
+        //dbg!(&op);
+        let mut lhs = if let Some((op, _)) = op {
+            self.parse_lhs(&op)?
+        } else {
+            return Ok(Expression::Eof);
+        };
+
         //dbg!(&lhs);
         while let Some((token, data)) = self.peek_both() {
             //dbg!(&token);
@@ -155,9 +185,9 @@ impl<'source> Parser<'source> {
                     Some((Token::LeftParentheses, _)) => {
                         let rhs = self.parse_ast(0)?;
                         if let Some(Token::RightParentheses) = self.peek() {
-                            Expression::Block(vec![lhs, rhs])
+                            Expression::Block(vec![lhs, rhs].into())
                         } else {
-                            return Err(Error::UnclosedGroup(Token::LeftParentheses, data));
+                            return Err(ErrorLang::UnclosedGroup(Token::LeftParentheses, data));
                         }
                     }
                     _ => continue,
@@ -189,7 +219,7 @@ impl<'source> Parser<'source> {
                     continue;
                 }
 
-                lhs = Expression::Block(vec![lhs, rhs]);
+                lhs = Expression::Block(vec![lhs, rhs].into());
                 continue;
             }
 
@@ -236,17 +266,17 @@ impl<'source> Parser<'source> {
         Err(result.err().unwrap())
     }
 
-    fn parse_param_call(&mut self) -> std::result::Result<Option<ParamCall>, Error> {
+    fn parse_param_call(&mut self) -> std::result::Result<Option<ParamCall>, ErrorLang> {
         if let Some((token, _data)) = self.accept() {
             //dbg!(&token);
             if token.is_literal_or_value() {
                 let expr = self.parse_ast(0)?;
                 Ok(Some(ParamCall::new("", expr)))
             } else {
-                Err(Error::Eof)
+                Err(ErrorLang::Eof)
             }
         } else {
-            Err(Error::Eof)
+            Err(ErrorLang::Eof)
         }
     }
 
@@ -280,7 +310,7 @@ impl<'source> Parser<'source> {
             match cell.clone() {
                 Expression::ParameterDefinition(field) => fields.push(field.into()),
                 Expression::Value(scalar) => data.push(scalar),
-                _ => return Err(Error::UnexpectedItem(cell)),
+                _ => return Err(ErrorLang::UnexpectedItem(cell)),
             }
             //dbg!(cell);
             if Token::EndVector
@@ -311,5 +341,58 @@ impl<'source> Parser<'source> {
         Ok(Expression::Value(Scalar::Vector(Rc::new(
             Vector::new_vector(data, kind),
         ))))
+    }
+
+    fn parse_bool_op(&mut self) -> ReturnT<BoolOperation> {
+        if let Some(expr) = self.peek() {
+            //dbg!(&expr);
+            let op = match expr {
+                Token::True => BoolOperation::Bool(true),
+                Token::False => BoolOperation::Bool(false),
+                Token::Variable(name) => BoolOperation::Var(name),
+                _ => return Err(ErrorLang::ExpectedBoolOp(expr)),
+            };
+            self.accept();
+            Ok(op)
+        } else {
+            Err(ErrorLang::ExpectedBoolOp(Token::Error))
+        }
+    }
+
+    fn parse_if(&mut self) -> Return {
+        let op = self.parse_bool_op()?;
+
+        self.check_and_accept_next(Token::Start)?;
+
+        let mut if_true = Vec::new();
+        let mut if_else = Vec::new();
+        let mut is_else = false;
+        while let Some(t) = self.peek() {
+            if t == Token::Else {
+                is_else = true;
+                self.accept();
+                continue;
+            }
+            if t == Token::End {
+                break;
+            }
+            if is_else {
+                if_else.push(self.parse_ast(0)?);
+            } else {
+                if_true.push(self.parse_ast(0)?);
+            }
+        }
+
+        if self.peek() == Some(Token::End) {
+            self.accept();
+        } else {
+            return Err(ErrorLang::Eof);
+        }
+
+        Ok(Expression::If(
+            Box::new(op),
+            Box::new(Expression::Block(if_true.into())),
+            Box::new(Expression::Block(if_else.into())),
+        ))
     }
 }

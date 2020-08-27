@@ -13,7 +13,7 @@ pub type Identifier = String;
 
 #[derive(Debug, Display, From)]
 #[display(fmt = "Syntax error => {}")]
-pub enum Error {
+pub enum ErrorLang {
     #[from]
     #[display(fmt = "{}", _0)]
     CoreError(tablam::errors::Error),
@@ -35,12 +35,27 @@ pub enum Error {
     VariableNotFound(String),
     #[display(fmt = "Function '{}' not found in scope", _0)]
     FunctionNotFound(String),
+    #[display(
+        fmt = "It was expected a boolean expression that return true OR false, but got: {}",
+        _0
+    )]
+    ExpectedBoolOp(Token),
     #[display(fmt = "Unexpected EOF.")]
     Eof,
 }
 
-pub type Return = std::result::Result<Expression, Error>;
-pub type ReturnT<T> = std::result::Result<T, Error>;
+pub type Return = std::result::Result<Expression, ErrorLang>;
+pub type ReturnT<T> = std::result::Result<T, ErrorLang>;
+
+#[derive(Debug, Clone, From)]
+pub struct Block(pub(crate) Vec<Expression>);
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        format_list(&self.0, self.0.len(), "", "", f)?;
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, Display, From)]
 pub enum Expression {
@@ -72,17 +87,17 @@ pub enum Expression {
     #[display(fmt = "{}", _0)]
     ComparisonOp(ComparisonOperator),
 
+    #[display(fmt = "{}", _0)]
+    Block(Block),
+
+    #[display(fmt = "if {} do\n\t{}\nelse\n\t{}\nend", _0, _1, _2)]
+    If(Box<BoolOperation>, Box<Expression>, Box<Expression>),
+
+    #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
+    While(Box<BoolOperation>, Box<Expression>),
     #[from]
     #[display(fmt = "{}", _0)]
     ParameterDefinition(Param),
-
-    #[display(
-        fmt = "{}",
-        r#"_0.iter().map(|expr| expr.to_string())
-        .fold(String::new(), |mut previous, current| { 
-        previous.push_str(current.as_str()); previous.push('\n'); previous})"#
-    )]
-    Block(Vec<Expression>),
 
     #[display(fmt = "{}", _0)]
     Error(String),
@@ -95,6 +110,13 @@ pub enum Expression {
 impl Expression {
     pub fn is(variant: &Self, expected: &Self) -> bool {
         discriminant(variant) == discriminant(expected)
+    }
+
+    pub fn is_eof(&self) -> bool {
+        match self {
+            Expression::Eof => true,
+            _ => false,
+        }
     }
 }
 
@@ -130,6 +152,13 @@ pub struct ComparisonOperator {
     pub operator: LogicOp,
     pub left: Box<Expression>,
     pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, Display)]
+pub enum BoolOperation {
+    Bool(bool),
+    Var(String),
+    Cmp(ComparisonOperator),
 }
 
 #[derive(Debug, Clone, Display)]
@@ -217,28 +246,28 @@ impl Environment {
         self.functions.insert(name, def);
     }
 
-    pub fn find_variable(&self, name: &str) -> Result<&Expression, Error> {
+    pub fn find_variable(&self, name: &str) -> Result<&Expression, ErrorLang> {
         match self.vars.get(name) {
             Some(variable) => Ok(variable),
             None => match &self.parent {
                 Some(env) => env.find_variable(name),
-                None => Err(Error::VariableNotFound(name.to_string())),
+                None => Err(ErrorLang::VariableNotFound(name.to_string())),
             },
         }
     }
 
-    pub fn find_function(&self, name: &str) -> Result<Function, Error> {
+    pub fn find_function(&self, name: &str) -> Result<Function, ErrorLang> {
         match self.functions.get(name) {
             Some(function) => {
                 if let Expression::Function(f) = function {
                     Ok(f.clone())
                 } else {
-                    Err(Error::FunctionNotFound(name.to_string()))
+                    Err(ErrorLang::FunctionNotFound(name.to_string()))
                 }
             }
             None => match &self.parent {
                 Some(env) => env.find_function(name),
-                None => Err(Error::FunctionNotFound(name.to_string())),
+                None => Err(ErrorLang::FunctionNotFound(name.to_string())),
             },
         }
     }

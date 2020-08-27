@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+use std::mem::discriminant;
 
 use tablam::derive_more::{Display, From};
 use tablam::prelude::{BinOp, LogicOp, Scalar};
 
 use crate::lexer::{Token, TokenData};
 use std::fmt;
-use tablam::function::Function;
+use tablam::function::{Function, Param};
 use tablam::types::format_list;
 
 pub type Identifier = String;
@@ -24,6 +25,9 @@ pub enum ErrorLang {
         _2
     )]
     Unexpected(Token, Token, TokenData),
+
+    #[display(fmt = "{}", _0)]
+    UnexpectedItem(Expression),
     #[from]
     #[display(fmt = "Unclosed group. It was expected: {}. ({})", _0, _1)]
     UnclosedGroup(Token, TokenData),
@@ -79,6 +83,7 @@ pub enum Expression {
     #[display(fmt = "{}", _0)]
     BinaryOp(BinaryOperation),
 
+    #[from]
     #[display(fmt = "{}", _0)]
     ComparisonOp(ComparisonOperator),
 
@@ -90,6 +95,9 @@ pub enum Expression {
 
     #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
     While(Box<BoolOperation>, Box<Expression>),
+    #[from]
+    #[display(fmt = "{}", _0)]
+    ParameterDefinition(Param),
 
     #[display(fmt = "{}", _0)]
     Error(String),
@@ -100,6 +108,10 @@ pub enum Expression {
 }
 
 impl Expression {
+    pub fn is(variant: &Self, expected: &Self) -> bool {
+        discriminant(variant) == discriminant(expected)
+    }
+
     pub fn is_eof(&self) -> bool {
         match self {
             Expression::Eof => true,

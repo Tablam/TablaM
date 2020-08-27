@@ -297,12 +297,9 @@ impl<'source> Parser<'source> {
         let mut data = Vec::<Scalar>::new();
         loop {
             //if empty vector or ends in ; or ,
-            match self.peek() {
-                Some(Token::EndVector) => {
-                    self.accept();
-                    break;
-                }
-                _ => (),
+            if let Some(Token::EndVector) = self.peek() {
+                self.accept();
+                break;
             }
 
             //dbg!("other");

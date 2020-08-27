@@ -81,6 +81,14 @@ impl Program {
             Expression::Pass => expr,
             Expression::Value(_) => expr,
             Expression::Eof => return Ok(expr),
+            Expression::Block(lines) => {
+                let mut last = None;
+                for line in lines.0 {
+                    last = Some(self.eval_expr(line)?);
+                }
+
+                last.unwrap_or(Expression::Pass)
+            }
             Expression::Mutable(name, value) => {
                 self.env_mut().add_variable(name, *value);
                 Expression::Pass
@@ -126,7 +134,7 @@ impl Program {
                 }
             }
             Expression::While(_check, _body) => unimplemented!(),
-            _x => unimplemented!(),
+            x => unimplemented!("{}", x),
         };
         Ok(expr)
     }

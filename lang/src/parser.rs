@@ -31,7 +31,23 @@ impl<'source> Parser<'source> {
     }
 
     pub fn parse(&mut self) -> Return {
-        self.parse_ast(0)
+        let mut lines = Vec::new();
+        let line = self.parse_ast(0)?;
+        //dbg!(&line);
+        let mut is_eof = line.is_eof();
+        lines.push(line);
+
+        while !is_eof {
+            let line = self.parse_ast(0)?;
+            //dbg!(&line);
+
+            is_eof = line.is_eof();
+            if !is_eof {
+                lines.push(line);
+            }
+        }
+
+        Ok(Expression::Block(lines.into()))
     }
 
     fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, ErrorLang> {
@@ -173,49 +189,57 @@ impl<'source> Parser<'source> {
         Err(result.err().unwrap())
     }
 
-    fn parse_if(&mut self) -> Return {
+    fn parse_bool_op(&mut self) -> ReturnT<BoolOperation> {
         if let Some(expr) = self.peek() {
+            //dbg!(&expr);
             let op = match expr {
                 Token::True => BoolOperation::Bool(true),
                 Token::False => BoolOperation::Bool(false),
-                _ => return Err(ErrorLang::Eof),
+                Token::Variable(name) => BoolOperation::Var(name),
+                _ => return Err(ErrorLang::ExpectedBoolOp(expr)),
             };
             self.accept();
-            self.accept_and_check_next(Token::Start)?;
-
-            let mut if_true = Vec::new();
-            let mut if_else = Vec::new();
-            let mut is_else = false;
-            while let Some(t) = self.peek() {
-                if t == Token::Else {
-                    is_else = true;
-                    self.accept();
-                    continue;
-                }
-                if t == Token::End {
-                    break;
-                }
-                if is_else {
-                    if_else.push(self.parse_ast(0)?);
-                } else {
-                    if_true.push(self.parse_ast(0)?);
-                }
-            }
-
-            if self.peek() == Some(Token::End) {
-                self.accept();
-            } else {
-                return Err(ErrorLang::Eof);
-            }
-
-            Ok(Expression::If(
-                Box::new(op),
-                Box::new(Expression::Block(if_true)),
-                Box::new(Expression::Block(if_else)),
-            ))
+            Ok(op)
         } else {
-            Ok(Expression::Eof)
+            Err(ErrorLang::ExpectedBoolOp(Token::Error))
         }
+    }
+
+    fn parse_if(&mut self) -> Return {
+        let op = self.parse_bool_op()?;
+
+        self.accept_and_check_next(Token::Start)?;
+
+        let mut if_true = Vec::new();
+        let mut if_else = Vec::new();
+        let mut is_else = false;
+        while let Some(t) = self.peek() {
+            if t == Token::Else {
+                is_else = true;
+                self.accept();
+                continue;
+            }
+            if t == Token::End {
+                break;
+            }
+            if is_else {
+                if_else.push(self.parse_ast(0)?);
+            } else {
+                if_true.push(self.parse_ast(0)?);
+            }
+        }
+
+        if self.peek() == Some(Token::End) {
+            self.accept();
+        } else {
+            return Err(ErrorLang::Eof);
+        }
+
+        Ok(Expression::If(
+            Box::new(op),
+            Box::new(Expression::Block(if_true.into())),
+            Box::new(Expression::Block(if_else.into())),
+        ))
     }
 
     fn parse_lhs(&mut self, op: &Token) -> Return {
@@ -265,7 +289,7 @@ impl<'source> Parser<'source> {
                     Some((Token::LeftParentheses, _)) => {
                         let rhs = self.parse_ast(0)?;
                         if let Some(Token::RightParentheses) = self.peek() {
-                            Expression::Block(vec![lhs, rhs])
+                            Expression::Block(vec![lhs, rhs].into())
                         } else {
                             return Err(ErrorLang::UnclosedGroup(Token::LeftParentheses, data));
                         }
@@ -299,7 +323,7 @@ impl<'source> Parser<'source> {
                     continue;
                 }
 
-                lhs = Expression::Block(vec![lhs, rhs]);
+                lhs = Expression::Block(vec![lhs, rhs].into());
                 continue;
             }
 

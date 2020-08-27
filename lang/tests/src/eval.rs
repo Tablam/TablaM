@@ -31,4 +31,6 @@ fn test_call_funs() {
 fn test_ifs() {
     run_ok("if true do 1 else 2 end", "1");
     run_ok("if false do 1 else 2 end", "2");
+    run_ok("let a:=true\nif a do 1 else 2 end", "1");
+    //run_ok("let a:=true\n let b:= if a do 1 else 2 end\nb", "1");
 }

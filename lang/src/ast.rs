@@ -31,12 +31,27 @@ pub enum ErrorLang {
     VariableNotFound(String),
     #[display(fmt = "Function '{}' not found in scope", _0)]
     FunctionNotFound(String),
+    #[display(
+        fmt = "It was expected a boolean expression that return true OR false, but got: {}",
+        _0
+    )]
+    ExpectedBoolOp(Token),
     #[display(fmt = "Unexpected EOF.")]
     Eof,
 }
 
 pub type Return = std::result::Result<Expression, ErrorLang>;
 pub type ReturnT<T> = std::result::Result<T, ErrorLang>;
+
+#[derive(Debug, Clone, From)]
+pub struct Block(pub(crate) Vec<Expression>);
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        format_list(&self.0, self.0.len(), "", "", f)?;
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, Display, From)]
 pub enum Expression {
@@ -67,15 +82,10 @@ pub enum Expression {
     #[display(fmt = "{}", _0)]
     ComparisonOp(ComparisonOperator),
 
-    #[display(
-        fmt = "{}",
-        r#"_0.iter().map(|expr| expr.to_string())
-        .fold(String::new(), |mut previous, current| { 
-        previous.push_str(current.as_str()); previous.push('\n'); previous})"#
-    )]
-    Block(Vec<Expression>),
+    #[display(fmt = "{}", _0)]
+    Block(Block),
 
-    #[display(fmt = "if {} do\n\t{}else\n\t{}\nend", _0, _1, _2)]
+    #[display(fmt = "if {} do\n\t{}\nelse\n\t{}\nend", _0, _1, _2)]
     If(Box<BoolOperation>, Box<Expression>, Box<Expression>),
 
     #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
@@ -87,6 +97,15 @@ pub enum Expression {
     Pass,
     #[display(fmt = "eof")]
     Eof,
+}
+
+impl Expression {
+    pub fn is_eof(&self) -> bool {
+        match self {
+            Expression::Eof => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Display)]

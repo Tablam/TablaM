@@ -42,20 +42,23 @@ impl Program {
                     Err(ErrorLang::Eof)
                 }
             }
-            BoolOperation::Cmp(cmp, lhs, rhs) => {
-                let a = self.eval_value(&lhs)?;
-                let b = self.eval_value(&rhs)?;
-                Ok(match cmp {
-                    CmOp::Eq => a == b,
-                    CmOp::NotEq => a != b,
-                    CmOp::Less => a < b,
-                    CmOp::LessEq => a <= b,
-                    CmOp::Greater => a > b,
-                    CmOp::GreaterEq => a >= b,
+            BoolOperation::Cmp(cmp) => {
+                let a = self.eval_value(&cmp.left)?;
+                let b = self.eval_value(&cmp.right)?;
+                Ok(match cmp.operator {
+                    LogicOp::Equal => a == b,
+                    LogicOp::NotEqual => a != b,
+                    LogicOp::Less => a < b,
+                    LogicOp::LessEqual => a <= b,
+                    LogicOp::Greater => a > b,
+                    LogicOp::GreaterEqual => a >= b,
+                    LogicOp::And => unreachable!(),
+                    LogicOp::Or => unreachable!(),
                 })
             }
         }
     }
+
     pub fn execute_str(&self, source: &str) -> Return {
         let mut parser = Parser::new(source);
         self.eval_expr(parser.parse()?)
@@ -89,11 +92,10 @@ impl Program {
             Expression::Variable(name) => self.env().find_variable(name.as_str())?.clone(),
             Expression::BinaryOp(op) => {
                 let name = match op.operator {
-                    Token::Plus => "add",
-                    Token::Minus => "minus",
-                    Token::Multiplication => "mul",
-                    Token::Division => "div",
-                    _ => unreachable!(),
+                    BinOp::Add => "add",
+                    BinOp::Minus => "minus",
+                    BinOp::Mul => "mul",
+                    BinOp::Div => "div",
                 };
                 let f = self.env().find_function(name)?;
 

@@ -47,7 +47,7 @@ pub mod prelude {
     pub use crate::sum_type::Case;
     pub use crate::tree::Tree;
     pub use crate::types::{
-        Column, ColumnAlias, DataType, KindGroup, NativeKind, Rel, RelShape, Tuple,
+        BinOp, Column, ColumnAlias, DataType, KindGroup, LogicOp, NativeKind, Rel, RelShape, Tuple,
     };
     pub use crate::vector::Vector;
 }

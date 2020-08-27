@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use crate::ast::*;
 use crate::lexer::*;
-use tablam::prelude::Scalar;
+use tablam::prelude::{DataType, Field, Param, Scalar, Schema, Vector};
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,
@@ -48,7 +48,7 @@ impl<'source> Parser<'source> {
         Err(Error::Eof)
     }
 
-    fn accept_and_check_next(&mut self, expected: Token) -> std::result::Result<Token, Error> {
+    fn check_and_accept_next(&mut self, expected: Token) -> std::result::Result<Token, Error> {
         let result = self.check_next_token(expected);
         match result {
             Ok(token) => Ok(token),
@@ -131,13 +131,14 @@ impl<'source> Parser<'source> {
             Some((Token::Var, _)) => self.parse_var()?,
             Some((Token::Let, _)) => self.parse_let()?,
             Some((Token::Variable(name), _)) => {
-                //Check if is a function name...
-                if self.peek() == Some(Token::LeftParentheses) {
-                    self.parse_function_call(&name)?
-                } else {
-                    Expression::Variable(name)
+                match self.peek() {
+                    //Check if is a function name...
+                    Some(Token::LeftParentheses) => self.parse_function_call(&name)?,
+                    Some(Token::TypeDefiner) => self.parse_parameter_definition(&name)?,
+                    _ => Expression::Variable(name),
                 }
             }
+            Some((Token::StartVector, _)) => self.parse_vector()?,
             t => panic!("bad token: {:?}", t),
         };
         //dbg!(&lhs);
@@ -199,12 +200,37 @@ impl<'source> Parser<'source> {
     }
 
     fn parse_var(&mut self) -> Return {
-        let mut result = self.check_next_token(Token::Variable("".to_string()));
+        let result = self.check_next_token(Token::Variable("".to_string()));
         if let Ok(Token::Variable(name)) = result {
-            result = self.check_next_token(Token::Assignment);
-            if result.is_ok() {
-                return Ok(Expression::Mutable(name, Box::new(self.parse_ast(0)?)));
-            }
+            self.check_next_token(Token::Assignment)?;
+
+            return Ok(Expression::Mutable(name, Box::new(self.parse_ast(0)?)));
+        }
+
+        Err(result.err().unwrap())
+    }
+
+    fn parse_let(&mut self) -> Return {
+        let dummy = String::from("");
+        let result =
+            self.match_at_least_one(vec![Token::Variable(dummy.clone()), Token::Constant(dummy)]);
+        if let Ok(Token::Variable(name)) | Ok(Token::Constant(name)) = result {
+            self.check_next_token(Token::Assignment)?;
+
+            return Ok(Expression::Immutable(name, Box::new(self.parse_ast(0)?)));
+        }
+
+        Err(result.err().unwrap())
+    }
+
+    fn parse_parameter_definition(&mut self, name: &str) -> Return {
+        self.accept();
+        let result = self.check_and_accept_next(Token::Type(String::from("")));
+        if let Ok(Token::Type(type_param)) = result {
+            return Ok(Expression::ParameterDefinition(Param::from_str(
+                name,
+                type_param.as_str(),
+            )));
         }
 
         Err(result.err().unwrap())
@@ -236,17 +262,54 @@ impl<'source> Parser<'source> {
         Ok(FunctionCall::new(name, &params).into())
     }
 
-    fn parse_let(&mut self) -> Return {
-        let dummy = String::from("");
-        let mut result =
-            self.match_at_least_one(vec![Token::Variable(dummy.clone()), Token::Constant(dummy)]);
-        if let Ok(Token::Variable(name)) | Ok(Token::Constant(name)) = result {
-            result = self.check_next_token(Token::Assignment);
-            if result.is_ok() {
-                return Ok(Expression::Immutable(name, Box::new(self.parse_ast(0)?)));
+    fn parse_vector(&mut self) -> Return {
+        let mut fields = Vec::<Field>::new();
+        let mut data = Vec::<Scalar>::new();
+        loop {
+            //if empty vector or ends in ; or ,
+            match self.peek() {
+                Some(Token::EndVector) => {
+                    self.accept();
+                    break;
+                }
+                _ => (),
             }
+
+            //dbg!("other");
+            let cell = self.parse_ast(0)?;
+            match cell.clone() {
+                Expression::ParameterDefinition(field) => fields.push(field.into()),
+                Expression::Value(scalar) => data.push(scalar),
+                _ => return Err(Error::UnexpectedItem(cell)),
+            }
+            //dbg!(cell);
+            if Token::EndVector
+                == self.match_at_least_one(vec![
+                    Token::Separator,
+                    Token::RowSeparator,
+                    Token::EndVector,
+                ])?
+            {
+                break;
+            };
         }
 
-        Err(result.err().unwrap())
+        if data.is_empty() {
+            return Ok(Expression::Value(Scalar::Vector(Rc::new(
+                Vector::new_empty(DataType::ANY),
+            ))));
+        }
+
+        if fields.len() > 1 {
+            let schema = Schema::new(fields, None);
+            return Ok(Expression::Value(Scalar::Vector(Rc::new(
+                Vector::new_table(data, schema),
+            ))));
+        }
+
+        let kind = data.first().expect("empty vector").kind();
+        Ok(Expression::Value(Scalar::Vector(Rc::new(
+            Vector::new_vector(data, kind),
+        ))))
     }
 }

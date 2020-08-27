@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::str::FromStr;
 
 use derive_more::Display;
 
@@ -123,6 +124,20 @@ impl DataType {
             DataType::Char => KindGroup::Strings,
             DataType::UTF8 => KindGroup::Strings,
             _ => KindGroup::Other,
+        }
+    }
+}
+
+impl FromStr for DataType {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<DataType, Self::Err> {
+        match input {
+            "Decimal" => Ok(DataType::Decimal),
+            "Int" => Ok(DataType::I64),
+            "Float" => Ok(DataType::F64),
+            "DateTime" => Ok(DataType::DateTime),
+            _ => Err(()),
         }
     }
 }

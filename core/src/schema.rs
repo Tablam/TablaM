@@ -3,6 +3,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
 
+use crate::function::Param;
 use crate::types::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -29,6 +30,14 @@ impl Field {
 
     pub fn kind(&self) -> &DataType {
         &self.kind
+    }
+}
+
+impl ::core::convert::From<Param> for Field {
+    #[allow(unused_variables)]
+    #[inline]
+    fn from(original: Param) -> Field {
+        Field::new(&original.name, original.kind)
     }
 }
 

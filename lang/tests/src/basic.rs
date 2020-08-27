@@ -105,6 +105,11 @@ fn test_syntax_collections() {
             (Token::EndVector, "]", 36..37),
         ],
     );
+
+    let result: Vec<_> = Token::lexer("let numbers := [name:Int; 1; 2; 3; 4]")
+        .spanned()
+        .collect();
+    dbg!(result);
 }
 
 #[test]
@@ -259,4 +264,39 @@ fn test_parser() {
         result.expect("not getting expression").to_string(),
         String::from("let t := a and b or 1 <> 2")
     );
+
+    let input = "let empty := []";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let empty := Vec[it:Any;]")
+    );
+
+    let input = "let n := [9; 8; 10]";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let n := Vec[it:Int; 9; 8; 10]")
+    );
+
+    let input = "let complex := [real:Decimal, img:Int; 1d,3; 3d,4; 4d,5;]";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let complex := Vec[real:Dec, img:Int; 1, 3; 3, 4; 4, 5]")
+    );
+
+    /*let input = "let n := [9; 8; 10]";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    println!("{}", input);
+    dbg!(result);
+    dbg!(result.expect("not getting expression").to_string());
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let complex := Vec[real:Dec, img:Int; 1, 3; 3, 4; 4, 5]")
+    );*/
 }

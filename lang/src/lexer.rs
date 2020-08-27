@@ -245,12 +245,10 @@ pub enum Token {
     #[display(fmt = ",")]
     #[token(",")]
     Separator,
-    #[display(fmt = "=>")]
-    #[token("=>")]
-    ReturnDefiner,
     #[display(fmt = "return")]
     #[token("return")]
     Return,
+
     #[token("\n", increase_current_line)]
     #[regex(r"[ \t\f]+", logos::skip)]
     #[error]

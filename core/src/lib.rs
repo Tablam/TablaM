@@ -49,5 +49,5 @@ pub mod prelude {
     pub use crate::types::{
         BinOp, Column, ColumnAlias, DataType, KindGroup, LogicOp, NativeKind, Rel, RelShape, Tuple,
     };
-    pub use crate::vector::Vector;
+    pub use crate::vector::{Shape, Vector};
 }

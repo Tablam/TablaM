@@ -1,6 +1,7 @@
 use core::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::str::FromStr;
 
 use derive_more::{Display, From};
 
@@ -11,10 +12,10 @@ use crate::types::format_list;
 pub type RelFun = for<'a> fn(&'a [Scalar]) -> Result<Scalar>;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{} :{}", name, kind)]
+#[display(fmt = "{}:{}", name, kind)]
 pub struct Param {
-    name: String,
-    kind: DataType,
+    pub name: String,
+    pub kind: DataType,
 }
 
 impl Param {
@@ -22,6 +23,13 @@ impl Param {
         Param {
             name: name.to_string(),
             kind,
+        }
+    }
+
+    pub fn from_str(name: &str, kind: &str) -> Self {
+        Param {
+            name: name.to_string(),
+            kind: DataType::from_str(kind).expect("DataType not implemented"),
         }
     }
 

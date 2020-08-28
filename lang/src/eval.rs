@@ -142,6 +142,16 @@ impl Program {
                 }
                 Expression::Pass
             }
+            Expression::ForIn(range, body) => {
+                let RangeOperation::StartEnd(name, start, end) = *range;
+
+                for i in start..end {
+                    self.env_mut()
+                        .add_variable(name.clone(), Expression::Value(Scalar::I64(i)));
+                    self.eval_expr(*body.clone())?;
+                }
+                Expression::Pass
+            }
             x => unimplemented!("{}", x),
         };
         Ok(expr)

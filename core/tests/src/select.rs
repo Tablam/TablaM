@@ -61,5 +61,6 @@ fn test_file() {
     let q = q.execute(rel.rows_iter());
 
     let v = Vector::from_iter(q.schema, q.iter);
+    dbg!(&v);
     assert_eq!(&format!("{}", v), "Vec[id:Str; '1']");
 }

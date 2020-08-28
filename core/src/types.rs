@@ -233,7 +233,7 @@ impl fmt::Display for ProjectDef {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
-#[display(fmt = "{} as {}", from, to)]
+#[display(fmt = "{} as #{}", from, to)]
 pub struct ColumnAlias {
     pub from: Column,
     pub to: String,
@@ -388,6 +388,20 @@ impl Ord for dyn Rel {
 impl ToHash for dyn Rel {
     fn to_hash(&self, h: &mut dyn Hasher) {
         self.rel_hash(h)
+    }
+}
+
+impl fmt::Display for dyn Rel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.type_name())?;
+        write!(f, "{}", self.schema())?;
+        Ok(())
+    }
+}
+
+impl Hash for dyn Rel {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.rel_hash(state);
     }
 }
 

@@ -40,7 +40,7 @@ impl Default for io::Console {
 }
 
 #[derive(Debug, Display, Derivative, From)]
-#[display(fmt = "{:?}", path)]
+#[display(fmt = "File([{}], {:?})", schema, path)]
 #[derivative(Hash, PartialEq, PartialOrd, Ord, Eq)]
 pub struct File {
     #[derivative(
@@ -50,6 +50,7 @@ pub struct File {
         Ord = "ignore"
     )]
     f: fs::File,
+    schema: Schema,
     path: PathBuf,
     read: bool,
     write: bool,
@@ -69,14 +70,30 @@ impl File {
             .open(&path);
 
         let f = Self::map_err(f, &path)?;
-
-        Ok(File {
+        let schema = if let Some(header) = BufReader::new(&f).lines().next() {
+            match header {
+                Ok(header) => {
+                    let mut fields = Vec::new();
+                    for f in header.split(',') {
+                        fields.push(Field::new(f, DataType::UTF8));
+                    }
+                    Schema::new(fields, None)
+                }
+                Err(e) => return Err(Error::file_err(e, path)),
+            }
+        } else {
+            Schema::new_single("line", DataType::UTF8)
+        };
+        let mut f = File {
             f,
+            schema,
             path,
             read,
             write,
             create,
-        })
+        };
+        f.seek_start(0)?;
+        Ok(f)
     }
 
     pub fn read_to_string(&mut self) -> Result<String> {
@@ -100,8 +117,9 @@ impl File {
 
         buffer
             .lines()
+            .skip(1)
             .scan((), |_, x| x.ok())
-            .map(|x| vec![x.into()])
+            .map(|x| x.split(',').map(Scalar::from).collect())
     }
 }
 
@@ -111,11 +129,11 @@ impl Rel for File {
     }
 
     fn kind(&self) -> DataType {
-        DataType::Vec(vec![DataType::UTF8].into())
+        DataType::Vec(self.schema.kind().into())
     }
 
     fn schema(&self) -> Schema {
-        schema_it(DataType::UTF8)
+        self.schema.clone()
     }
 
     fn len(&self) -> usize {
@@ -127,7 +145,7 @@ impl Rel for File {
     }
 
     fn cols(&self) -> usize {
-        1
+        self.schema.len()
     }
 
     fn rows(&self) -> Option<usize> {
@@ -153,4 +171,43 @@ impl Rel for File {
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
         cmp(self, other)
     }
+}
+
+impl Clone for File {
+    fn clone(&self) -> Self {
+        //TODO: Fix this ugly hack
+        Self::new(self.path.clone(), self.read, self.write, self.create).unwrap()
+    }
+}
+
+fn open(of: &[Scalar]) -> Result<Scalar> {
+    if let Scalar::UTF8(name) = &of[0] {
+        let f = File::new(name.as_str().into(), true, false, false)?;
+        Ok(Scalar::File(f))
+    } else {
+        Err(Error::ParamTypeMismatch("open".into()))
+    }
+}
+
+fn read_to_string(of: &[Scalar]) -> Result<Scalar> {
+    if let Scalar::File(mut f) = of[0].clone() {
+        let s = f.read_to_string()?;
+        return Ok(s.into());
+    };
+    Err(Error::ParamTypeMismatch("read_to_string".into()))
+}
+
+fn fn_open(name: &str, params: &[Param], f: RelFun) -> Function {
+    Function::new(name, params, &[Param::kind(DataType::None)], Box::new(f))
+}
+
+pub fn functions() -> Vec<Function> {
+    vec![
+        fn_open("open", &[Param::kind(DataType::UTF8)], open),
+        fn_open(
+            "read_to_string",
+            &[Param::kind(DataType::UTF8)],
+            read_to_string,
+        ),
+    ]
 }

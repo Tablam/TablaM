@@ -17,8 +17,9 @@ where
 pub fn std_functions() -> Vec<Function> {
     let mut funs = Vec::new();
 
-    funs.extend_from_slice(&basic::basic_functions());
-    funs.extend_from_slice(&math::math_functions());
+    funs.extend_from_slice(&basic::functions());
+    funs.extend_from_slice(&math::functions());
+    funs.extend_from_slice(&io::functions());
 
     funs
 }

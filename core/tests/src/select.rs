@@ -61,8 +61,5 @@ fn test_file() {
     let q = q.execute(rel.rows_iter());
 
     let v = Vector::from_iter(q.schema, q.iter);
-    assert_eq!(
-        &format!("{}", v),
-        "Vec[it:Str; 'id,ref,name,category,price,qty,tax,date']"
-    );
+    assert_eq!(&format!("{}", v), "Vec[id:Str; '1']");
 }

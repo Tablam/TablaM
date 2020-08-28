@@ -1,6 +1,6 @@
 use std::mem::swap;
 use tablam::prelude::*;
-use tablam::stdlib::math::math_functions;
+use tablam::stdlib::math::functions;
 
 #[test]
 fn test_scalar() {
@@ -58,7 +58,7 @@ fn test_functions() {
     let a = 1.into();
     let b = 2.into();
 
-    let f = math_functions();
+    let f = functions();
     let plus = &f[0];
 
     dbg!(plus.key());

@@ -26,6 +26,8 @@ pub enum Error {
     RankNotMatch,
     #[display(fmt = "Type mismatch {} <> {}", _0, _1)]
     TypeMismatchBinOp(DataType, DataType),
+    #[display(fmt = "Type mismatch in the function {} params", _0)]
+    ParamTypeMismatch(String),
     #[display(fmt = "The function was called with {} params when need {}", _0, _1)]
     ParamCount(usize, usize),
 }

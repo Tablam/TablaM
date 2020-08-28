@@ -37,7 +37,7 @@ fn math_fn(name: &str, kind: DataType, f: RelFun) -> Function {
     Function::new_bin_op(name, "left", "right", kind, Box::new(f))
 }
 
-pub fn math_functions() -> Vec<Function> {
+pub fn functions() -> Vec<Function> {
     let mut fun = Vec::with_capacity(4 * 3);
 
     for kind in &[DataType::I64, DataType::F64, DataType::Decimal] {

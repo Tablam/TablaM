@@ -6,6 +6,7 @@ use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
 use crate::errors;
+use crate::stdlib::io::File;
 use crate::sum_type::Case;
 use crate::types::{DataType, NativeKind, Rel, Tuple};
 use crate::vector::Vector;
@@ -42,6 +43,7 @@ pub enum Scalar {
     Vector(Rc<Vector>),
     //Lazy computation
     //Seq(Seq<'static>),
+    File(File),
 }
 
 impl Scalar {
@@ -60,6 +62,7 @@ impl Scalar {
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
             Scalar::Vector(x) => x.kind(),
+            Scalar::File(x) => x.kind(),
         }
     }
 

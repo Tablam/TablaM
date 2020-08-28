@@ -77,6 +77,7 @@ impl Program {
     }
 
     pub fn eval_expr(&self, expr: Expression) -> Return {
+        //dbg!(&expr);
         let expr = match expr {
             Expression::Pass => expr,
             Expression::Value(_) => expr,
@@ -90,11 +91,13 @@ impl Program {
                 last.unwrap_or(Expression::Pass)
             }
             Expression::Mutable(name, value) => {
-                self.env_mut().add_variable(name, *value);
+                let value = self.eval_expr(*value)?;
+                self.env_mut().add_variable(name, value);
                 Expression::Pass
             }
             Expression::Immutable(name, value) => {
-                self.env_mut().add_variable(name, *value);
+                let value = self.eval_expr(*value)?;
+                self.env_mut().add_variable(name, value);
                 Expression::Pass
             }
             Expression::Variable(name) => self.env().find_variable(name.as_str())?.clone(),
@@ -128,9 +131,9 @@ impl Program {
             }
             Expression::If(check, if_true, if_false) => {
                 if self.decode_bool(&check)? {
-                    *if_true
+                    self.eval_expr(*if_true)?
                 } else {
-                    *if_false
+                    self.eval_expr(*if_false)?
                 }
             }
             Expression::While(_check, _body) => unimplemented!(),

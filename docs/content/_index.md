@@ -9,6 +9,10 @@ title = "Documentation"
 
 [https://github.com/Tablam/TablaM/](https://github.com/Tablam/TablaM/)
 
+### Run in browser:
+
+You can test the latest release in the browser at https://repl.it/@mamcx/RelpIt.
+
 ### Long term goals ###
 
 * Build a practical general language but *tailored* for data-manipulation and database coding (in the broad sense of the word).

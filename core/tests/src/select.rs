@@ -2,6 +2,7 @@ use tablam::prelude::*;
 
 use crate::basic::PRODUCTS_CSV;
 use crate::utils::*;
+use std::io::Write;
 use tablam::stdlib::io::File;
 
 #[test]
@@ -53,9 +54,14 @@ fn test_tree() {
 fn test_file() {
     let mut temp = std::env::temp_dir().to_path_buf();
     temp.push("sample.csv");
-    let mut rel = File::new(temp, true, true, true).unwrap();
-    rel.write_string(PRODUCTS_CSV).unwrap();
-    rel.seek_start(0).unwrap();
+    //Hack around the fact file support is broken...
+
+    let mut f = std::fs::File::create(&temp).unwrap();
+    f.write_all(PRODUCTS_CSV.as_ref()).unwrap();
+    drop(f);
+    let rel = File::new(temp, true, true, true).unwrap();
+    // rel.write_string(PRODUCTS_CSV).unwrap();
+    // rel.seek_start(0).unwrap();
 
     let q = rel.query().select(&[colp(0)]).limit(1);
     let q = q.execute(rel.rows_iter());

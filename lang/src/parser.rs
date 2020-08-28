@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::ast::*;
 use crate::lexer::*;
 use tablam::prelude::{DataType, Field, Param, Scalar, Schema, Vector};
+use tablam::types::Rel;
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,

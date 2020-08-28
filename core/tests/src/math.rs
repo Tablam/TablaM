@@ -65,3 +65,14 @@ fn test_functions() {
     let result = plus.call(&[a, b]).unwrap();
     assert_eq!(int(3), result);
 }
+
+#[test]
+fn test_folds() {
+    let a = 1.into();
+    assert_eq!(int(1), math::sum(&[a]).unwrap());
+    let a = array(&[1, 2, 3]).into();
+    assert_eq!(int(6), math::sum(&[a]).unwrap());
+
+    let a = array(&[1, 2, 3]).into();
+    assert_eq!(int(2), math::avg(&[a]).unwrap());
+}

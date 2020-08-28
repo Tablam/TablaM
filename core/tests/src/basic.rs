@@ -24,3 +24,10 @@ fn types() {
     assert_eq!(one.kind(), DataType::I64);
     assert_eq!(s.kind(), DataType::Sum(Box::new(DataType::I64)));
 }
+
+#[test]
+fn cmp() {
+    let a: Scalar = array(&[1, 2, 3]).into();
+    assert_eq!(int(3), basic::max(&[a.clone()]).unwrap());
+    assert_eq!(int(1), basic::min(&[a]).unwrap());
+}

@@ -281,7 +281,7 @@ fn test_parser() {
         String::from("let n := Vec[it:Int; 9; 8; 10]")
     );
 
-    let input = "let complex := [real:Decimal, img:Int; 1d,3; 3d,4; 4d,5;]";
+    let input = "let complex := [real:Dec, img:Int; 1d,3; 3d,4; 4d,5;]";
     let mut parser = Parser::new(input);
     let result = parser.parse();
     assert_eq!(

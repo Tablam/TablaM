@@ -5,10 +5,13 @@ use decorum::R64;
 use derive_more::{Display, From};
 use rust_decimal::Decimal;
 
+use crate::dsl::schema_it;
 use crate::errors;
+use crate::for_impl::*;
+use crate::schema::Schema;
 use crate::stdlib::io::File;
 use crate::sum_type::Case;
-use crate::types::{DataType, NativeKind, Rel, Tuple};
+use crate::types::{DataType, NativeKind, Rel, RelShape, Tuple};
 use crate::vector::Vector;
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -44,10 +47,57 @@ pub enum Scalar {
     //Lazy computation
     //Seq(Seq<'static>),
     File(File),
+    Top,
 }
 
 impl Scalar {
-    pub fn kind(&self) -> DataType {
+    pub fn repeat(&self, times: usize) -> Tuple {
+        (0..times).map(|_| self.clone()).collect()
+    }
+
+    pub fn rows_iter(&self) -> Box<dyn Iterator<Item = Tuple> + '_> {
+        match self {
+            Scalar::Vector(x) => Box::new(x.rows_iter()),
+            Scalar::File(x) => Box::new(x.rows_iter()),
+            x => Box::new(std::iter::once(x.clone()).map(|x| vec![x])),
+        }
+    }
+
+    pub fn to_scalar(&self) -> Option<Scalar> {
+        if !self.is_scalar() {
+            return None;
+        }
+
+        match self {
+            Scalar::Vector(x) => Some(x.data[0].clone()),
+            Scalar::File(_) => None,
+            x => Some(x.clone()),
+        }
+    }
+}
+
+impl Rel for Scalar {
+    fn type_name(&self) -> &str {
+        match self {
+            Scalar::None => "None",
+            Scalar::Bit(_) => "Bit",
+            Scalar::Bool(_) => "Bool",
+            Scalar::Char(_) => "Char",
+            Scalar::Date(_) => "Date",
+            Scalar::DateTime(_) => "DateTime",
+            Scalar::Decimal(_) => "Decimal",
+            Scalar::F64(_) => "F64",
+            Scalar::I64(_) => "I64",
+            Scalar::Time(_) => "Time",
+            Scalar::UTF8(_) => "UTF8",
+            Scalar::Sum(_) => "Sum",
+            Scalar::Vector(x) => x.type_name(),
+            Scalar::File(x) => x.type_name(),
+            Scalar::Top => "Top",
+        }
+    }
+
+    fn kind(&self) -> DataType {
         match self {
             Scalar::None => DataType::None,
             Scalar::Bit(_) => DataType::Bit,
@@ -63,11 +113,68 @@ impl Scalar {
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
             Scalar::Vector(x) => x.kind(),
             Scalar::File(x) => x.kind(),
+            Scalar::Top => DataType::Top,
         }
     }
 
-    pub fn repeat(&self, times: usize) -> Tuple {
-        (0..times).map(|_| self.clone()).collect()
+    fn schema(&self) -> Schema {
+        match self {
+            Scalar::Vector(x) => x.schema(),
+            Scalar::File(x) => x.schema(),
+            x => schema_it(x.kind()),
+        }
+    }
+
+    fn len(&self) -> usize {
+        match self {
+            Scalar::Vector(x) => x.len(),
+            Scalar::File(x) => x.len(),
+            _ => 1,
+        }
+    }
+
+    fn cols(&self) -> usize {
+        match self {
+            Scalar::Vector(x) => x.cols(),
+            Scalar::File(x) => x.cols(),
+            _ => 1,
+        }
+    }
+
+    fn rows(&self) -> Option<usize> {
+        match self {
+            Scalar::Vector(x) => x.rows(),
+            Scalar::File(x) => x.rows(),
+            _ => Some(1),
+        }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn rel_shape(&self) -> RelShape {
+        match self {
+            Scalar::Vector(x) => x.rel_shape(),
+            Scalar::File(x) => x.rel_shape(),
+            _ => RelShape::Scalar,
+        }
+    }
+
+    fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
+        match self {
+            Scalar::Vector(x) => x.rel_hash(&mut hasher),
+            Scalar::File(x) => x.rel_hash(&mut hasher),
+            x => x.hash(&mut hasher),
+        }
+    }
+
+    fn rel_eq(&self, other: &dyn Rel) -> bool {
+        cmp_eq(self, other)
+    }
+
+    fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
+        cmp(self, other)
     }
 }
 

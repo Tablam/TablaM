@@ -27,6 +27,13 @@ impl Default for ExtrasLexer {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Display)]
+#[display(fmt = "#{} as {}", from, to)]
+pub struct Alias {
+    pub from: String,
+    pub to: String,
+}
+
 fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
     lexer.extras.current_line += 1;
     lexer.extras.current_initial_column = lexer.span().end;
@@ -39,7 +46,18 @@ where
     <T as std::str::FromStr>::Err: std::fmt::Debug,
 {
     let value = lexer.slice();
-    let parsed_value: T = value[..value.len() - suffix_len].parse().unwrap();
+    let parsed_value: T = value[..value.len() - suffix_len].parse::<T>().unwrap();
+
+    Some(parsed_value)
+}
+
+fn parse_token_data_without_prefix<T>(lexer: &mut Lexer<Token>, prefix_len: usize) -> Option<T>
+where
+    T: std::fmt::Debug + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    let value = lexer.slice();
+    let parsed_value: T = value[prefix_len..value.len()].parse::<T>().unwrap();
 
     Some(parsed_value)
 }
@@ -58,6 +76,18 @@ fn parse_token_quotes(lexer: &mut Lexer<Token>) -> Option<String> {
     let parsed_value: String = lexer.slice().parse().unwrap();
 
     Some(parsed_value[1..parsed_value.len() - 1].to_string())
+}
+
+fn parse_aliased_column(lexer: &mut Lexer<Token>) -> Option<Alias> {
+    let target: String = lexer.slice().parse().unwrap();
+    let delimiter = " as ";
+    let init = target.find(delimiter).expect("As not found");
+    let column = target[1..init].to_string();
+    let alias = target[init + delimiter.len()..].to_string();
+    Some(Alias {
+        from: column,
+        to: alias,
+    })
 }
 
 pub(crate) fn extract_token_data(lexer: &mut Lexer<Token>) -> TokenData {
@@ -88,7 +118,10 @@ pub enum Token {
 
     //Strings, capture with both single and double quote
     #[display(fmt = "{}", _0)]
-    #[regex(r#""([^"\\]|\\t|\\u|\\n|\\")*"|'([^'\\]|\\t|\\u|\\n|\\')*'"#, |lex| parse_token_quotes(lex))]
+    #[regex(
+        r#""([^"\\]|\\t|\\u|\\n|\\")*"|'([^'\\]|\\t|\\u|\\n|\\')*'"#,
+        parse_token_quotes
+    )]
     String(String),
     /*
        #[regex(r#""""[\w\d\s[^\s"{}]]+""""#)]
@@ -203,6 +236,38 @@ pub enum Token {
     #[display(fmt = ";")]
     #[token(";")]
     RowSeparator,
+    #[display(fmt = "#{}", _0)]
+    #[regex("#[[:lower:]][_[[:lower:]][[:digit:]]]*", |lex| parse_token_data_without_prefix::<String>(lex, 1))]
+    Column(String),
+    #[display(fmt = "#{}", _0)]
+    #[regex("#[[:digit:]]+", |lex| parse_token_data_without_prefix::<usize>(lex, 1))]
+    IndexedColumn(usize),
+    #[display(fmt = "#{}", _0)]
+    #[regex(
+        "#[[:lower:]][_[[:lower:]][[:digit:]]]* as [[:lower:]][_[[:lower:]][[:digit:]]]*",
+        parse_aliased_column
+    )]
+    AliasedColumn(Alias),
+
+    //Relational operators
+    #[display(fmt = "?select")]
+    #[token("?select")]
+    Select,
+    #[display(fmt = "?select")]
+    #[token("?deselect")]
+    Deselect,
+    #[display(fmt = "?where")]
+    #[token("?where")]
+    Where,
+    #[display(fmt = "?limit")]
+    #[token("?limit")]
+    Limit,
+    #[display(fmt = "?skip")]
+    #[token("?skip")]
+    Skip,
+    #[display(fmt = "?distinct")]
+    #[token("?distinct")]
+    Distinct,
 
     //Definitions
     #[display(fmt = "do")]

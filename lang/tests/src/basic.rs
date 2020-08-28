@@ -4,7 +4,7 @@ use std::fmt;
 use std::ops::Range;
 
 use tablam::rust_decimal::prelude::*;
-use tablam_lang::lexer::{Scanner, Token, TokenData};
+use tablam_lang::lexer::{Alias, Scanner, Token, TokenData};
 use tablam_lang::parser::Parser;
 
 pub fn assert_lex<'a, Token>(
@@ -50,6 +50,17 @@ fn test_syntax_v0() {
 
 #[test]
 fn test_syntax_collections() {
+    assert_lex(
+        "let empty := []",
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("empty".to_string()), "empty", 4..9),
+            (Token::Assignment, ":=", 10..12),
+            (Token::StartVector, "[", 13..14),
+            (Token::EndVector, "]", 14..15),
+        ],
+    );
+
     assert_lex(
         "let n := [8; 9; 10]",
         &[
@@ -106,10 +117,90 @@ fn test_syntax_collections() {
         ],
     );
 
-    let result: Vec<_> = Token::lexer("let numbers := [name:Int; 1; 2; 3; 4]")
+    assert_lex(
+        "let complex := [real:Int, img:Decimal; 1,1d; 2,2d; 3,3d]",
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("complex".to_string()), "complex", 4..11),
+            (Token::Assignment, ":=", 12..14),
+            (Token::StartVector, "[", 15..16),
+            (Token::Variable(String::from("real")), "real", 16..20),
+            (Token::TypeDefiner, ":", 20..21),
+            (Token::Type(String::from("Int")), "Int", 21..24),
+            (Token::Separator, ",", 24..25),
+            (Token::Variable(String::from("img")), "img", 26..29),
+            (Token::TypeDefiner, ":", 29..30),
+            (Token::Type(String::from("Decimal")), "Decimal", 30..37),
+            (Token::RowSeparator, ";", 37..38),
+            (Token::Integer(1i64), "1", 39..40),
+            (Token::Separator, ",", 40..41),
+            (Token::Decimal(Decimal::from(1)), "1d", 41..43),
+            (Token::RowSeparator, ";", 43..44),
+            (Token::Integer(2i64), "2", 45..46),
+            (Token::Separator, ",", 46..47),
+            (Token::Decimal(Decimal::from(2)), "2d", 47..49),
+            (Token::RowSeparator, ";", 49..50),
+            (Token::Integer(3i64), "3", 51..52),
+            (Token::Separator, ",", 52..53),
+            (Token::Decimal(Decimal::from(3)), "3d", 53..55),
+            (Token::EndVector, "]", 55..56),
+        ],
+    );
+}
+
+#[test]
+fn test_syntax_query() {
+    assert_lex(
+        "complex ?select #0, #1",
+        &[
+            (Token::Variable("complex".to_string()), "complex", 0..7),
+            (Token::Select, "?select", 8..15),
+            (Token::IndexedColumn(0), "#0", 16..18),
+            (Token::Separator, ",", 18..19),
+            (Token::IndexedColumn(1), "#1", 20..22),
+        ],
+    );
+
+    assert_lex(
+        "complex ?select #real, #img as i ?where #i > 1",
+        &[
+            (Token::Variable("complex".to_string()), "complex", 0..7),
+            (Token::Select, "?select", 8..15),
+            (Token::Column(String::from("real")), "#real", 16..21),
+            (Token::Separator, ",", 21..22),
+            (
+                Token::AliasedColumn(Alias {
+                    from: String::from("img"),
+                    to: String::from("i"),
+                }),
+                "#img as i",
+                23..32,
+            ),
+            (Token::Where, "?where", 33..39),
+            (Token::Column(String::from("i")), "#i", 40..42),
+            (Token::Greater, ">", 43..44),
+            (Token::Integer(1i64), "1", 45..46),
+        ],
+    );
+
+    assert_lex(
+        "complex ?deselect #img ?skip 3 ?limit 6 ?distinct",
+        &[
+            (Token::Variable("complex".to_string()), "complex", 0..7),
+            (Token::Deselect, "?deselect", 8..17),
+            (Token::Column(String::from("img")), "#img", 18..22),
+            (Token::Skip, "?skip", 23..28),
+            (Token::Integer(3i64), "3", 29..30),
+            (Token::Limit, "?limit", 31..37),
+            (Token::Integer(6i64), "6", 38..39),
+            (Token::Distinct, "?distinct", 40..49),
+        ],
+    );
+
+    /*let result: Vec<_> = Token::lexer("let numbers := [name:Int; 1; 2; 3; 4]")
         .spanned()
         .collect();
-    dbg!(result);
+    dbg!(result);*/
 }
 
 #[test]

@@ -136,7 +136,12 @@ impl Program {
                     self.eval_expr(*if_false)?
                 }
             }
-            Expression::While(_check, _body) => unimplemented!(),
+            Expression::While(check, body) => {
+                while self.decode_bool(&check)? {
+                    self.eval_expr(*body.clone())?;
+                }
+                Expression::Pass
+            }
             x => unimplemented!("{}", x),
         };
         Ok(expr)

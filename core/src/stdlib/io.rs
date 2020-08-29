@@ -123,6 +123,12 @@ impl File {
     }
 }
 
+pub fn read_file_to_string(f: &mut fs::File) -> Result<String> {
+    let mut x = String::new();
+    f.read_to_string(&mut x)?;
+    Ok(x)
+}
+
 impl Rel for File {
     fn type_name(&self) -> &str {
         "File"

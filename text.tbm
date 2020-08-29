@@ -1,0 +1,8 @@
+let sales:= [
+  name:Str, price:Dec, qty:Int;
+  "Hamburger", 10.2d, 2;
+  "Soda", 3.0d, 4;
+  "French fries", 7.0d, 2;
+]
+
+println(sales)

@@ -1,6 +1,6 @@
 [package]
 name = "tablam-lang"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Mario Montoya <mamcx@elmalabarista.com>"]
 repository = "https://bitbucket.org/tablam/tablam/"
 homepage = "https://bitbucket.org/tablam/tablam/"
@@ -13,6 +13,7 @@ edition = "2018"
 tablam = { path = "../core" }
 logos = "0.11.4"
 rustyline = "6.2.0"
+seahorse = "1.0.0"
 
 [[bin]]
 name = "tablam"

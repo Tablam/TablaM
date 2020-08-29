@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::ast::*;
 use crate::lexer::*;
 use tablam::prelude::{
-    Column, ColumnAlias, Comparable, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
+    Column, ColumnAlias, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
 };
 use tablam::types::Rel;
 
@@ -223,7 +223,10 @@ impl<'source> Parser<'source> {
                     continue;
                 }
 
-                if lhs.is_indexed_column() || rhs.is_indexed_column() {}
+                if lhs.is_indexed_column() || rhs.is_indexed_column() {
+                    lhs = Expression::as_bool_condition_qry(token, lhs, rhs);
+                    continue;
+                }
 
                 if token.is_comparison_operator() {
                     lhs = Expression::ComparisonOp(ComparisonOperation::new(
@@ -367,11 +370,29 @@ impl<'source> Parser<'source> {
                     self.accept();
                     self.parse_select_qry(operations)?
                 }
+                Some(Token::Where) => {
+                    self.accept();
+                    self.parse_where_qry(operations)?
+                }
                 _ => break,
             }
         }
 
         Ok(Expression::QueryOperation(operations))
+    }
+
+    fn parse_where_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
+        let expression = self.parse_ast(0)?;
+        let (operator, left, right) = match expression {
+            Expression::BoolConditionQry(operator, lhs, rhs) => (operator, lhs, rhs),
+            _ => {
+                return Err(ErrorLang::Query(String::from(
+                    "You must indicate at least one condition.",
+                )))
+            }
+        };
+
+        Ok(operations.filter(&operator, left, right))
     }
 
     fn parse_select_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {

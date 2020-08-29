@@ -331,9 +331,8 @@ pub type Combinator<'a> = Box<dyn Fn(Iter, Iter) -> Iter<'a> + 'a>;
 
 impl fmt::Display for QueryOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for q in &self.query {
-            write!(f, "{}", q)?;
-        }
+        let joined = self.query.iter().map(|q| q.to_string()).join(" ");
+        write!(f, "{}", joined)?;
         Ok(())
     }
 }

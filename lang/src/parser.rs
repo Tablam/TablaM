@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::ast::*;
 use crate::lexer::*;
 use tablam::prelude::{
-    Column, ColumnAlias, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
+    Column, ColumnAlias, Comparable, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
 };
 use tablam::types::Rel;
 
@@ -223,8 +223,10 @@ impl<'source> Parser<'source> {
                     continue;
                 }
 
+                if lhs.is_indexed_column() || rhs.is_indexed_column() {}
+
                 if token.is_comparison_operator() {
-                    lhs = Expression::ComparisonOp(ComparisonOperator::new(
+                    lhs = Expression::ComparisonOp(ComparisonOperation::new(
                         token,
                         Box::new(lhs),
                         Box::new(rhs),

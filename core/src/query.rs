@@ -1,4 +1,4 @@
-use derive_more::Display;
+use derive_more::{Display, From};
 use itertools::Itertools;
 
 use crate::for_impl::*;
@@ -24,7 +24,7 @@ pub enum CmOp {
     GreaterEq,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display, From)]
 pub enum Comparable {
     #[display(fmt = "#{}", _0)]
     Column(usize),

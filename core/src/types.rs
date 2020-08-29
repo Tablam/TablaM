@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 use std::str::FromStr;
 
 use derive_more::{Display, From};
@@ -110,6 +111,7 @@ pub enum DataType {
     #[display(fmt = "Seq({})", _0)]
     Seq(KindRel),
     // Planed: Blob
+    Top,
 }
 
 impl DataType {
@@ -126,18 +128,47 @@ impl DataType {
             _ => KindGroup::Other,
         }
     }
+
+    pub fn default_value(&self) -> Scalar {
+        match self {
+            DataType::None => Scalar::None,
+            DataType::Bit => Scalar::Bit(0),
+            DataType::Bool => Scalar::Bool(false),
+            DataType::I64 => Scalar::I64(0),
+            DataType::F64 => Scalar::F64(0.0.into()),
+            DataType::Decimal => Scalar::Decimal(0.into()),
+            DataType::Time => unimplemented!(),
+            DataType::Date => unimplemented!(),
+            DataType::DateTime => unimplemented!(),
+            DataType::Char => Scalar::Char(char::default()),
+            DataType::UTF8 => Scalar::UTF8(Rc::new("".into())),
+            DataType::ANY => Scalar::None,
+            DataType::Variadic(_) => unimplemented!(),
+            DataType::Sum(_) => unimplemented!(),
+            DataType::Vec(_) => unimplemented!(),
+            DataType::Tree(_) => unimplemented!(),
+            DataType::Map(_) => unimplemented!(),
+            DataType::Seq(_) => unimplemented!(),
+            DataType::Top => Scalar::Top,
+        }
+    }
 }
 
 impl FromStr for DataType {
-    type Err = ();
+    type Err = String;
 
     fn from_str(input: &str) -> Result<DataType, Self::Err> {
         match input {
-            "Decimal" => Ok(DataType::Decimal),
+            "Bool" => Ok(DataType::Bool),
+            "Dec" => Ok(DataType::Decimal),
             "Int" => Ok(DataType::I64),
             "Float" => Ok(DataType::F64),
+            "Date" => Ok(DataType::Date),
+            "Time" => Ok(DataType::Time),
             "DateTime" => Ok(DataType::DateTime),
-            _ => Err(()),
+            "Str" => Ok(DataType::UTF8),
+            "Char" => Ok(DataType::Char),
+            x => Err(x.to_string()),
         }
     }
 }
@@ -351,6 +382,10 @@ pub trait Rel: fmt::Debug {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+    fn is_scalar(&self) -> bool {
+        self.cols() == 1 && self.rows() == Some(1)
+    }
+
     fn cols(&self) -> usize;
     fn rows(&self) -> Option<usize>;
 

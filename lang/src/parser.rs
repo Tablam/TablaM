@@ -8,6 +8,7 @@ use crate::lexer::*;
 use tablam::prelude::{
     Column, ColumnAlias, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
 };
+use tablam::types::Rel;
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,

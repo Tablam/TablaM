@@ -46,15 +46,25 @@
         </nav>    
   </header>
   <aside class="w-full sm:w-1/5 p-6 bg-gray-800 text-gray-100 shadow">
-    {% set section = get_section(path="_index.md", metadata_only=true) %}
-    <h2 class="text-xl font-bold">Index:</h2>
-    <nav class="list-posts">
-        {% for page in section.pages %}
-            <article class="font-thin">
-                <h3 class="post__title"><a href="{{ page.permalink }}">{{ page.title }}</a></h3>
-            </article>
+    {% if page.toc %}
+    <h2 class="text-2xl font-bold pb-4">Index</h2>
+    <nav class="font-semibold text-xl underline">
+        {% for h1 in page.toc %}
+        <li class="pb-2 mb-2">
+            <a href="{{h1.permalink | safe}}">{{ h1.title }}</a>
+            {% if h1.children %}
+                <ul class="pt-2">
+                    {% for h2 in h1.children %}
+                    <li class="font-medium">
+                        <a href="{{h2.permalink | safe}}">{{ h2.title }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </li>
         {% endfor %}
     </nav>
+    {% endif %}
   </aside>
   <content class="w-full sm:w-4/5 p-6">
   {% block content %}

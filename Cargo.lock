@@ -455,6 +455,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
+name = "seahorse"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48badc1e4709936b554463f45691c5c5d667c2203a6872aa4283bc14bed3e9c7"
+
+[[package]]
 name = "serde"
 version = "1.0.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -495,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "tablam"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bit-vec",
  "chrono",
@@ -510,10 +516,11 @@ dependencies = [
 
 [[package]]
 name = "tablam-lang"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "logos",
  "rustyline",
+ "seahorse",
  "tablam",
 ]
 

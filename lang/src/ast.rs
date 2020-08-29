@@ -97,6 +97,9 @@ pub enum Expression {
     #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
     While(Box<BoolOperation>, Box<Expression>),
 
+    #[display(fmt = "for {} do\n\t{}\nend", _0, _1)]
+    ForIn(Box<RangeOperation>, Box<Expression>),
+
     #[from]
     #[display(fmt = "{}", _0)]
     ParameterDefinition(Param),
@@ -189,6 +192,12 @@ pub enum BoolOperation {
     Bool(bool),
     Var(String),
     Cmp(ComparisonOperator),
+}
+
+#[derive(Debug, Clone, Display)]
+pub enum RangeOperation {
+    #[display(fmt = "{} in {}..{}", _0, _1, _2)]
+    StartEnd(String, i64, i64),
 }
 
 #[derive(Debug, Clone, Display)]

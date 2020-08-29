@@ -123,6 +123,12 @@ impl File {
     }
 }
 
+pub fn read_file_to_string(f: &mut fs::File) -> Result<String> {
+    let mut x = String::new();
+    f.read_to_string(&mut x)?;
+    Ok(x)
+}
+
 impl Rel for File {
     fn type_name(&self) -> &str {
         "File"
@@ -197,6 +203,20 @@ fn read_to_string(of: &[Scalar]) -> Result<Scalar> {
     Err(Error::ParamTypeMismatch("read_to_string".into()))
 }
 
+fn save_file(of: &[Scalar]) -> Result<Scalar> {
+    if of.len() != 2 {
+        return Err(Error::ParamCount(of.len(), 2));
+    }
+
+    if let Scalar::File(mut f) = of[0].clone() {
+        let s = format!("{}", &of[1]);
+        f.write_string(&s)?;
+
+        return Ok(Scalar::None);
+    };
+    Err(Error::ParamTypeMismatch("save_file".into()))
+}
+
 fn fn_open(name: &str, params: &[Param], f: RelFun) -> Function {
     Function::new(name, params, &[Param::kind(DataType::None)], Box::new(f))
 }
@@ -208,6 +228,11 @@ pub fn functions() -> Vec<Function> {
             "read_to_string",
             &[Param::kind(DataType::UTF8)],
             read_to_string,
+        ),
+        fn_open(
+            "save_file",
+            &[Param::kind(DataType::ANY), Param::kind(DataType::UTF8)],
+            save_file,
         ),
     ]
 }

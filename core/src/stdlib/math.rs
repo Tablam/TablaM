@@ -1,6 +1,7 @@
 use std::ops::*;
 
 use crate::prelude::*;
+use crate::stdlib::basic::fold;
 
 macro_rules! math_op {
     ($name:ident, $op:path) => {
@@ -37,6 +38,23 @@ fn math_fn(name: &str, kind: DataType, f: RelFun) -> Function {
     Function::new_bin_op(name, "left", "right", kind, Box::new(f))
 }
 
+pub fn sum(params: &[Scalar]) -> Result<Scalar> {
+    let init = params[0].kind().default_value();
+    fold(init, params, math_add)
+}
+
+pub fn avg(params: &[Scalar]) -> Result<Scalar> {
+    let init = params[0].kind().default_value();
+    let total = params[0].rows().unwrap_or(0);
+    let total = if total == 0 { 1 } else { total };
+
+    math_div(&[fold(init, params, math_add)?, Scalar::I64(total as i64)])
+}
+
+fn math_fold(name: &str, param: DataType, ret: DataType, f: RelFun) -> Function {
+    Function::new_single(name, Param::kind(param), ret, Box::new(f))
+}
+
 pub fn functions() -> Vec<Function> {
     let mut fun = Vec::with_capacity(4 * 3);
 
@@ -45,6 +63,8 @@ pub fn functions() -> Vec<Function> {
         fun.push(math_fn("minus", kind.clone(), math_minus));
         fun.push(math_fn("mul", kind.clone(), math_mul));
         fun.push(math_fn("div", kind.clone(), math_div));
+        fun.push(math_fold("sum", kind.clone(), kind.clone(), sum));
+        fun.push(math_fold("avg", kind.clone(), kind.clone(), avg));
     }
     fun
 }

@@ -230,7 +230,7 @@ pub fn functions() -> Vec<Function> {
             read_to_string,
         ),
         fn_open(
-            "save_file",
+            "save",
             &[Param::kind(DataType::ANY), Param::kind(DataType::UTF8)],
             save_file,
         ),

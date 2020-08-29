@@ -195,6 +195,7 @@ pub enum Token {
     Float(R64),
     #[display(fmt = "{}", _0)]
     #[regex(r"\d+\.*\d*d", |lex| parse_token_data_without_suffix::<Decimal>(lex, 1))]
+    #[regex(r"\d+\.\d+", |lex| parse_token_data::<Decimal>(lex))]
     Decimal(Decimal),
     #[display(fmt = "{}", _0)]
     #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]

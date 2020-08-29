@@ -2,11 +2,10 @@ use std::collections::HashMap;
 use std::mem::discriminant;
 
 use tablam::derive_more::{Display, From};
-use tablam::prelude::{BinOp, LogicOp, Scalar};
+use tablam::prelude::{BinOp, Column, Function, LogicOp, Param, QueryOp, Scalar};
 
 use crate::lexer::{Token, TokenData};
 use std::fmt;
-use tablam::function::{Function, Param};
 use tablam::types::format_list;
 
 pub type Identifier = String;
@@ -25,9 +24,11 @@ pub enum ErrorLang {
         _2
     )]
     Unexpected(Token, Token, TokenData),
-
-    #[display(fmt = "{}", _0)]
+    #[display(fmt = "Unexpected item: {}", _0)]
     UnexpectedItem(Expression),
+    #[display(fmt = "Syntax query error: {}", _0)]
+    Query(String),
+
     #[from]
     #[display(fmt = "Unclosed group. It was expected: {}. ({})", _0, _1)]
     UnclosedGroup(Token, TokenData),
@@ -95,9 +96,17 @@ pub enum Expression {
 
     #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
     While(Box<BoolOperation>, Box<Expression>),
+
     #[from]
     #[display(fmt = "{}", _0)]
     ParameterDefinition(Param),
+
+    #[from]
+    #[display(fmt = "{}", _0)]
+    Column(Column),
+
+    #[display(fmt = "{}", _0)]
+    QueryOperation(QueryOperation),
 
     #[display(fmt = "{}", _0)]
     Error(String),
@@ -117,6 +126,27 @@ impl Expression {
             Expression::Eof => true,
             _ => false,
         }
+    }
+}
+
+#[derive(Debug, Clone, Display)]
+#[display(fmt = "{} {}", collection, query)]
+pub struct QueryOperation {
+    collection: Box<Expression>,
+    query: QueryOp,
+}
+
+impl QueryOperation {
+    pub fn new(collection: Expression, query: QueryOp) -> Self {
+        QueryOperation {
+            collection: Box::new(collection),
+            query,
+        }
+    }
+
+    pub fn select(mut self, columns: Vec<Column>) -> Self {
+        self.query = self.query.select(&columns);
+        self
     }
 }
 

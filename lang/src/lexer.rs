@@ -80,7 +80,7 @@ fn parse_token_quotes(lexer: &mut Lexer<Token>) -> Option<String> {
 
 fn parse_aliased_column(lexer: &mut Lexer<Token>) -> Option<Alias> {
     let target: String = lexer.slice().parse().unwrap();
-    let delimiter = " as ";
+    let delimiter = " as #";
     let init = target.find(delimiter).expect("As not found");
     let column = target[1..init].to_string();
     let alias = target[init + delimiter.len()..].to_string();
@@ -244,7 +244,7 @@ pub enum Token {
     IndexedColumn(usize),
     #[display(fmt = "#{}", _0)]
     #[regex(
-        "#[[:lower:]][_[[:lower:]][[:digit:]]]* as [[:lower:]][_[[:lower:]][[:digit:]]]*",
+        "#[[:lower:]][_[[:lower:]][[:digit:]]]* as #[[:lower:]][_[[:lower:]][[:digit:]]]*",
         parse_aliased_column
     )]
     AliasedColumn(Alias),
@@ -366,6 +366,14 @@ impl Token {
             || self == &Token::LessEqual
             || self == &Token::And
             || self == &Token::Or
+    }
+
+    pub fn is_query_operator(&self) -> bool {
+        self == &Token::Select
+            || self == &Token::Where
+            || self == &Token::Limit
+            || self == &Token::Skip
+            || self == &Token::Distinct
     }
 }
 

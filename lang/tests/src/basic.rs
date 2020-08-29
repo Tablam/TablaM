@@ -162,7 +162,7 @@ fn test_syntax_query() {
     );
 
     assert_lex(
-        "complex ?select #real, #img as i ?where #i > 1",
+        "complex ?select #real, #img as #i ?where #i > 1",
         &[
             (Token::Variable("complex".to_string()), "complex", 0..7),
             (Token::Select, "?select", 8..15),
@@ -173,13 +173,13 @@ fn test_syntax_query() {
                     from: String::from("img"),
                     to: String::from("i"),
                 }),
-                "#img as i",
-                23..32,
+                "#img as #i",
+                23..33,
             ),
-            (Token::Where, "?where", 33..39),
-            (Token::Column(String::from("i")), "#i", 40..42),
-            (Token::Greater, ">", 43..44),
-            (Token::Integer(1i64), "1", 45..46),
+            (Token::Where, "?where", 34..40),
+            (Token::Column(String::from("i")), "#i", 41..43),
+            (Token::Greater, ">", 44..45),
+            (Token::Integer(1i64), "1", 46..47),
         ],
     );
 
@@ -280,104 +280,120 @@ fn test_scanner() {
 
 #[test]
 fn test_parser() {
-    let input = "1";
+    /*let input = "1";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("1")
+        );
+
+        let input = "1+2";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("1 + 2")
+        );
+
+        let input = "1+2-1";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("1 + 2 - 1")
+        );
+
+        let input = "let t := 1";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let t := 1")
+        );
+
+        let input = "var y = 1d";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result
+                .expect_err("erroneous assignment operator.")
+                .to_string(),
+            String::from(
+                "Syntax error => Unexpected token. It found: =, it was expected: :=. (Line 1 |6..7|)"
+            )
+        );
+
+        let input = "let t := b";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let t := b")
+        );
+
+        let input = "let t := b + 1";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let t := b + 1")
+        );
+
+        let input = "let t := a and b";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let t := a and b")
+        );
+
+        let input = "let t := a and b or 1 <> 2";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let t := a and b or 1 <> 2")
+        );
+
+        let input = "let empty := []";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let empty := Vec[it:Any;]")
+        );
+
+        let input = "let n := [9; 8; 10]";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let n := Vec[it:Int; 9; 8; 10]")
+        );
+
+        let input = "let complex := [real:Decimal, img:Int; 1d,3; 3d,4; 4d,5;]";
+        let mut parser = Parser::new(input);
+        let result = parser.parse();
+        assert_eq!(
+            result.expect("not getting expression").to_string(),
+            String::from("let complex := Vec[real:Dec, img:Int; 1, 3; 3, 4; 4, 5]")
+        );
+    */
+    let input = "complex ?select #name";
     let mut parser = Parser::new(input);
     let result = parser.parse();
     assert_eq!(
         result.expect("not getting expression").to_string(),
-        String::from("1")
+        String::from("complex ?select #name")
     );
 
-    let input = "1+2";
+    let input = "complex ?select #name, #ln as #last_name";
     let mut parser = Parser::new(input);
     let result = parser.parse();
     assert_eq!(
         result.expect("not getting expression").to_string(),
-        String::from("1 + 2")
-    );
-
-    let input = "1+2-1";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("1 + 2 - 1")
-    );
-
-    let input = "let t := 1";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let t := 1")
-    );
-
-    let input = "var y = 1d";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result
-            .expect_err("erroneous assignment operator.")
-            .to_string(),
-        String::from(
-            "Syntax error => Unexpected token. It found: =, it was expected: :=. (Line 1 |6..7|)"
-        )
-    );
-
-    let input = "let t := b";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let t := b")
-    );
-
-    let input = "let t := b + 1";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let t := b + 1")
-    );
-
-    let input = "let t := a and b";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let t := a and b")
-    );
-
-    let input = "let t := a and b or 1 <> 2";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let t := a and b or 1 <> 2")
-    );
-
-    let input = "let empty := []";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let empty := Vec[it:Any;]")
-    );
-
-    let input = "let n := [9; 8; 10]";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let n := Vec[it:Int; 9; 8; 10]")
-    );
-
-    let input = "let complex := [real:Decimal, img:Int; 1d,3; 3d,4; 4d,5;]";
-    let mut parser = Parser::new(input);
-    let result = parser.parse();
-    assert_eq!(
-        result.expect("not getting expression").to_string(),
-        String::from("let complex := Vec[real:Dec, img:Int; 1, 3; 3, 4; 4, 5]")
+        String::from("complex ?select #name, #ln as #last_name")
     );
 
     /*let input = "let n := [9; 8; 10]";

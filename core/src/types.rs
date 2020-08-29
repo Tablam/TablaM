@@ -4,7 +4,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
-use derive_more::Display;
+use derive_more::{Display, From};
 
 use crate::query::QueryOp;
 use crate::scalar::Scalar;
@@ -256,13 +256,13 @@ impl ColumnAlias {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display, From)]
 pub enum Column {
     #[display(fmt = "#{}", _0)]
     Pos(usize),
     #[display(fmt = "#{}", _0)]
     Name(String),
-    #[display(fmt = "#{}", _0)]
+    #[display(fmt = "{}", _0)]
     Alias(Box<ColumnAlias>),
 }
 

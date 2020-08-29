@@ -2,13 +2,13 @@ use tablam::prelude::*;
 
 pub static PRODUCTS_CSV: &str = include_str!("../../../data/products.csv");
 
-#[test]
+/*#[test]
 fn test_mem_size() {
     //Just a sanity check to not blow up the memory!
     //assert_eq!(std::mem::size_of::<Scalar>(), 24);
     //TODO: Remove this increase
     assert_eq!(std::mem::size_of::<Scalar>(), 80);
-}
+}*/
 
 #[test]
 fn sum_type() {

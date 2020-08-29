@@ -1,4 +1,4 @@
-use derive_more::Display;
+use derive_more::{Display, From};
 use itertools::Itertools;
 
 use crate::for_impl::*;
@@ -24,7 +24,7 @@ pub enum CmOp {
     GreaterEq,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display, From)]
 pub enum Comparable {
     #[display(fmt = "#{}", _0)]
     Column(usize),
@@ -331,9 +331,8 @@ pub type Combinator<'a> = Box<dyn Fn(Iter, Iter) -> Iter<'a> + 'a>;
 
 impl fmt::Display for QueryOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for q in &self.query {
-            write!(f, "{}", q)?;
-        }
+        let joined = self.query.iter().map(|q| q.to_string()).join(" ");
+        write!(f, "{}", joined)?;
         Ok(())
     }
 }

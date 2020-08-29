@@ -396,6 +396,15 @@ fn test_parser() {
         String::from("complex ?select #name, #ln as #last_name")
     );
 
+    let input = "complex ?select #img, #real as #r ?where #1 > 20";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    println!("{}", input);
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("complex ?select #img, #real as #r ?where #1 > 20")
+    );
+
     /*let input = "let n := [9; 8; 10]";
     let mut parser = Parser::new(input);
     let result = parser.parse();

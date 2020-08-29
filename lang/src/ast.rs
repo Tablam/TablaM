@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::mem::discriminant;
 
 use tablam::derive_more::{Display, From};
-use tablam::prelude::{BinOp, Column, Function, LogicOp, Param, QueryOp, Scalar};
+use tablam::prelude::{BinOp, Column, Comparable, Function, LogicOp, Param, QueryOp, Scalar};
 
 use crate::lexer::{Token, TokenData};
 use std::fmt;
@@ -86,7 +86,7 @@ pub enum Expression {
 
     #[from]
     #[display(fmt = "{}", _0)]
-    ComparisonOp(ComparisonOperator),
+    ComparisonOp(ComparisonOperation),
 
     #[display(fmt = "{}", _0)]
     Block(Block),
@@ -112,6 +112,9 @@ pub enum Expression {
     QueryOperation(QueryOperation),
 
     #[display(fmt = "{}", _0)]
+    BoolConditionQry(Token, Comparable, Comparable),
+
+    #[display(fmt = "{}", _0)]
     Error(String),
     #[display(fmt = "pass")]
     Pass,
@@ -129,6 +132,38 @@ impl Expression {
             Expression::Eof => true,
             _ => false,
         }
+    }
+
+    pub fn is_indexed_column(&self) -> bool {
+        match self {
+            Expression::Column(col) => match col {
+                Column::Pos(_) => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
+    pub fn as_bool_condition_qry(operator: Token, left: Self, right: Self) -> Self {
+        let lhs: Comparable = match left {
+            Expression::Column(col) => match col {
+                Column::Pos(position) => position.into(),
+                _ => unreachable!("Not condition query implemented by name."),
+            },
+            Expression::Value(scalar) => scalar.into(),
+            _ => unreachable!("Invalidate expression in condition."),
+        };
+
+        let rhs: Comparable = match right {
+            Expression::Column(col) => match col {
+                Column::Pos(position) => position.into(),
+                _ => unreachable!("Not condition query implemented by name."),
+            },
+            Expression::Value(scalar) => scalar.into(),
+            _ => unreachable!("Invalidate expression in condition."),
+        };
+
+        Expression::BoolConditionQry(operator, lhs, rhs)
     }
 }
 
@@ -149,6 +184,20 @@ impl QueryOperation {
 
     pub fn select(mut self, columns: Vec<Column>) -> Self {
         self.query = self.query.select(&columns);
+        self
+    }
+
+    pub fn filter(mut self, operator: &Token, left: Comparable, right: Comparable) -> Self {
+        self.query = match operator {
+            Token::Equal => self.query.eq(left, right),
+            Token::NotEqual => self.query.not_eq(left, right),
+            Token::Greater => self.query.greater(left, right),
+            Token::GreaterEqual => self.query.greater_eq(left, right),
+            Token::Less => self.query.less(left, right),
+            Token::LessEqual => self.query.less_eq(left, right),
+            _ => unreachable!("Ilegal operator in filter condition."),
+        };
+
         self
     }
 }
@@ -181,7 +230,7 @@ impl BinaryOperation {
 
 #[derive(Debug, Clone, Display)]
 #[display(fmt = "{} {} {}", left, operator, right)]
-pub struct ComparisonOperator {
+pub struct ComparisonOperation {
     pub operator: LogicOp,
     pub left: Box<Expression>,
     pub right: Box<Expression>,
@@ -191,7 +240,7 @@ pub struct ComparisonOperator {
 pub enum BoolOperation {
     Bool(bool),
     Var(String),
-    Cmp(ComparisonOperator),
+    Cmp(ComparisonOperation),
 }
 
 #[derive(Debug, Clone, Display)]
@@ -239,7 +288,7 @@ impl fmt::Display for FunctionCall {
     }
 }
 
-impl ComparisonOperator {
+impl ComparisonOperation {
     pub fn new(token: Token, left: Box<Expression>, right: Box<Expression>) -> Self {
         let operator = match token {
             Token::Equal => LogicOp::Equal,
@@ -253,7 +302,7 @@ impl ComparisonOperator {
             _ => unreachable!("Binary operator not implemented."),
         };
 
-        ComparisonOperator {
+        ComparisonOperation {
             operator,
             left,
             right,

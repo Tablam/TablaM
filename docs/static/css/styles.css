@@ -2,4 +2,8 @@
 
 @tailwind components;
 
+.footnote-definition p {
+	@apply inline font-light text-gray-700 text-sm;
+}
+
 @tailwind utilities;

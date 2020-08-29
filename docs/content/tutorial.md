@@ -3,21 +3,21 @@ title = "Tutorial"
 
 +++
 
-**!warning**: This tutorial is in progress, and the code is not yet functional
+**!warning**: This tutorial is in progress, and the code is not yet fully functional
 
 ## Prerequisites
 
 First, install or run the language in the browser, [as explained here](/install).
 
-When you run the executable called "tablam" it enter in the "[repl](https://en.wikipedia.org/wiki/Read–eval–print_loop)" mode, in the terminal. You write the code and press "Enter" to execute.
+When you run the executable called "`tablam`" it enter in the "[repl](https://en.wikipedia.org/wiki/Read–eval–print_loop)" mode, in the terminal. You write the code and press "*Enter*" to execute.
 
-You can also write the code in a text file with the extension ".tbm", and use a programming text editor like [Sublime](http://www.sublimetext.com) or [Visual Studio Code](https://code.visualstudio.com), then call `tablam name_file.tbm` to execute it.
+You can also write the code in a text file with the extension ".tbm", and use a programming text editor like [Sublime](http://www.sublimetext.com) or [Visual Studio Code](https://code.visualstudio.com), then call `tablam -f name_file.tbm` to execute it.
 
 ## Introduction
 
 Normally the tutorial of a programming language starts with the famous `"hello world"`[^1].
 
-Then it shows some small taste of syntax and later maybe it pretends you read the rest of the (potentially large) documentation and somehow, you "get it".
+Then it shows some small [taste of syntax](/syntax) and later maybe it pretends you read the rest of the (potentially large) [documentation](/functions) and somehow, you will "get it".
 
 We, instead, will do something *different*. We build a *simple* yet functional program (a mini shopping cart) that shows what is the point of the language.
 
@@ -33,11 +33,11 @@ But first is necessary to talk about what *kind* of programming language **Tabla
 
 You probably have guessed a lot of things just looking at this table. It looks like it talks about sales for a fast food store. You get an idea of what kind of products are available, at what prices and what quantities were given.
 
-This is what makes the relational model its power. Is fairly "visual" and considers the data as "[first-class citizen](https://en.wikipedia.org/wiki/First-class_citizen)". But also, exist many other things that the relation tell us about:
+This is what makes the relational model its power. Is fairly "visual" and considers the data (relations) as "[first-class citizen](https://en.wikipedia.org/wiki/First-class_citizen)". But also, exist many other things that the relation tell us about:
 
-- It has a header that labels the columns (name, price, qty)
+- It has a header that labels the columns (*name*, *price*, *qty*)
 - It has columns, and their values are *homogeneous*
-- It has rows, and their value (the row), represents a single entity of the relation
+- It has rows, and their value (the whole row), represents a single entity of the relation
 
 ## Write the first program
 
@@ -73,23 +73,23 @@ Let's explain what all that text means:
 
   We can use "*queries*" to manipulate the data stored in relations. This "*queries*" are called [***relational operators***](/operators) because they express different operations on relations. 
 
-The character `?` is called "*query*".
+The character `?` is called "*the query operator*" and mark when will a relational operator will be used.
 
-We will only worry about this 2:
+We will only worry about this 2 operations for now:
 
 ### ?select
 
-The `?select` operator (aka: projection or `SELECT * FROM` in sql), allow filtering *the columns* in a relation. Using the character `#` to indicate that is a name (like `#price`) or a number (like `#0`) of a column:
+The `?select` operator (aka: projection or `SELECT * FROM` in SQL), allow filtering *the columns* in a relation. Using the character `#` to indicate that is a name (like `#price`) or a number (like `#0`) of a column:
 
 ```rust
 let products := sales ?select #name
 print(products)
-> 
+> Vec[name:Str; 'Hamburger'; 'Soda'; 'French fries']
 ```
 
 ### ?where
 
-The `?where` operator (aka: selection or `where...` in sql), allow filtering *the rows* in a relation. It needs a "*boolean expression*", ie: expression that compares values, columns or returns true/false.
+The `?where` operator (aka: selection or `where...` in SQL), allow filtering *the rows* in a relation. It needs a "*boolean expression*", ie: expression that compares values, columns or returns true/false.
 
 ```rust
 let soda := sales ?where #name == "Soda"
@@ -120,7 +120,7 @@ print(most)
 
 Note how each operation work in relations and return relations.
 
-Single values like `1` or `"Soda"` are also relations. Know too as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". TablaM considers it relations of 1 column, 1 row, and 1 cell.
+Single values like `1` or `"Soda"` are also relations. Know too as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". **TablaM** considers it relations of 1 column, 1 row, and 1 cell.
 
 This mean that this is possible:
 
@@ -128,12 +128,50 @@ This mean that this is possible:
 let price := 1.0 ?select #0
 ```
 
-Now, we can continue with the program and make it more useful:
+Now, we can continue with the program and make it more useful. Before was said the values are "*immutable*" by default. This mean that if we want change things we need to create *new* values from the *olds*. Let's add another sale:
 
 ```rust
-	
+let new_sale := ["Hot dog", 4.0, 1]
+let sales := add(sales, new_sale)
+print(sales)
 ```
 
+Something *weird* happened here. **TablaM** use types to not mix wrong things, yet where it say that `new_sale` is `[name:Str, price:Dec, qty:Int;]`?.
 
+Well, is because **TablaM** use a neat trick: Their values are not only typed, but also [compared structurally](https://en.wikipedia.org/wiki/Structural_type_system). In other languages, two things are different just to be [*named differently*](https://en.wikipedia.org/wiki/Nominal_type_system):
+
+```rust
+// In rust, a nominal typed language
+struct SalesA {name:Str, price:Dec, qty:Int}
+struct SalesB {name:Str, price:Dec, qty:Int}
+let a = SalesA::new("Hot dog", 4.0, 1)
+let b = SalesB::new("Hot dog", 4.0, 1)
+a == b //false
+```
+
+Instead, in TablaM, two things are equal if their *schema/header* match:
+
+```rust
+-- In TablaM, a structural typed language
+let a := ["Hot dog", 4.0, 1]
+-- is automatically infered the header [name:Str, price:Dec, qty:Int;]
+
+let b := [name:Str, price:Dec, qty:Int; "Hot dog", 4.0, 1]
+a = b //true!
+```
+
+**Comming soon in "TablaM, the awesome programming language":**
+
+Sorry for the cliffhanger, but **TablaM** is still in development. Hopefully we can answer:
+
+- How this tutorial end?
+- Can TablaM become the most awesome language in earth?
+- Seriously, why is not this language ready yet?
+
+If wanna help in support this vision, please consider fund the project clicking in:
+
+<a href="https://www.buymeacoffee.com/mamcx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-white.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;"  class="mx-auto"></a>
+
+or helping in the developing at [https://github.com/Tablam/TablaM]( https://github.com/Tablam/TablaM).
 
 [^1]: And is `print("hello world")`, by the way.

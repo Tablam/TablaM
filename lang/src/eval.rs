@@ -72,7 +72,7 @@ impl Program {
                 let expr = &self.eval_expr(expr)?;
                 self.eval_value(expr)
             }
-            err => unreachable!("{}", err),
+            expr => self.eval_value(&self.eval_expr(expr.clone())?),
         }
     }
 
@@ -151,6 +151,14 @@ impl Program {
                     self.eval_expr(*body.clone())?;
                 }
                 Expression::Pass
+            }
+            Expression::QueryOperation(query) => {
+                let rel = self.eval_value(&query.collection)?;
+                let mut q = query.query;
+                q.schema = rel.schema();
+                let q = q.execute(rel.rows_iter());
+                let rel = Vector::from_iter(q.schema, q.iter);
+                Expression::Value(rel.into())
             }
             x => unimplemented!("{}", x),
         };

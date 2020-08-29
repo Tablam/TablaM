@@ -53,7 +53,7 @@ fn file_command() -> Command {
 }
 
 fn run_repl(c: &Context) {
-    if c.args.len() > 0 {
+    if !c.args.is_empty() {
         c.help();
         return;
     }
@@ -68,12 +68,13 @@ fn run_repl(c: &Context) {
     loop {
         let readline = rl.readline("\x1b[1;32m>\x1b[0m ");
         match readline {
-            Ok(line) => match line.as_str() {
+            Ok(line) => match line.as_str().trim() {
+                "" => continue,
                 "exit" => break,
                 "help" => println!("Help & more info at http://www.tablam.org"),
                 line => {
                     rl.add_history_entry(line);
-                    dbg!(&line);
+                    //dbg!(&line);
                     match program.execute_str(line) {
                         Ok(expr) => match expr {
                             Expression::Pass => continue,

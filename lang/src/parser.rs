@@ -164,7 +164,7 @@ impl<'source> Parser<'source> {
                 }
             }
             Token::StartVector => self.parse_vector()?,
-            Token::Column(name) => Expression::Column(Column::Name(name.into()).into()),
+            Token::Column(name) => Expression::Column(Column::Name(name.into())),
             Token::IndexedColumn(position) => Column::Pos(*position).into(),
             Token::AliasedColumn(alias) => {
                 Column::Alias(Box::new(ColumnAlias::rename_name(&alias.from, &alias.to))).into()
@@ -405,7 +405,7 @@ impl<'source> Parser<'source> {
                 _ => return Err(ErrorLang::UnexpectedItem(column)),
             };
 
-            if let Ok(_) = self.check_next_token(Token::Separator) {
+            if self.check_next_token(Token::Separator).is_ok() {
                 continue;
             }
             break;

@@ -53,7 +53,7 @@ fn file_command() -> Command {
 }
 
 fn run_repl(c: &Context) {
-    if c.args.len() > 0 {
+    if !c.args.is_empty() {
         c.help();
         return;
     }

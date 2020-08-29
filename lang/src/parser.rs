@@ -5,7 +5,9 @@ use std::rc::Rc;
 
 use crate::ast::*;
 use crate::lexer::*;
-use tablam::prelude::{DataType, Field, Param, Scalar, Schema, Vector};
+use tablam::prelude::{
+    Column, ColumnAlias, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
+};
 use tablam::types::Rel;
 
 pub struct Parser<'source> {
@@ -153,10 +155,20 @@ impl<'source> Parser<'source> {
                     //Check if is a function name...
                     Some(Token::LeftParentheses) => self.parse_function_call(&name)?,
                     Some(Token::TypeDefiner) => self.parse_parameter_definition(&name)?,
+                    Some(Token::Select)
+                    | Some(Token::Where)
+                    | Some(Token::Limit)
+                    | Some(Token::Skip)
+                    | Some(Token::Distinct) => self.parse_query(name.into())?,
                     _ => Expression::Variable(name.into()),
                 }
             }
             Token::StartVector => self.parse_vector()?,
+            Token::Column(name) => Expression::Column(Column::Name(name.into()).into()),
+            Token::IndexedColumn(position) => Column::Pos(*position).into(),
+            Token::AliasedColumn(alias) => {
+                Column::Alias(Box::new(ColumnAlias::rename_name(&alias.from, &alias.to))).into()
+            }
             Token::If => self.parse_if()?,
             t => panic!("bad token: {:?}", t),
         };
@@ -339,6 +351,50 @@ impl<'source> Parser<'source> {
         Ok(Expression::Value(Scalar::Vector(Rc::new(
             Vector::new_vector(data, kind),
         ))))
+    }
+
+    fn parse_query(&mut self, identifier: Identifier) -> Return {
+        let collection = Expression::Variable(identifier);
+        let mut operations = QueryOperation::new(
+            collection,
+            QueryOp::new(Schema::new_single("", DataType::ANY)),
+        );
+        loop {
+            operations = match self.peek() {
+                Some(Token::Select) => {
+                    self.accept();
+                    self.parse_select_qry(operations)?
+                }
+                _ => break,
+            }
+        }
+
+        Ok(Expression::QueryOperation(operations))
+    }
+
+    fn parse_select_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
+        let mut columns = Vec::<Column>::new();
+        loop {
+            let column = self.parse_ast(0)?;
+
+            match column {
+                Expression::Column(column) => columns.push(column),
+                _ => return Err(ErrorLang::UnexpectedItem(column)),
+            };
+
+            if let Ok(_) = self.check_next_token(Token::Separator) {
+                continue;
+            }
+            break;
+        }
+
+        if columns.is_empty() {
+            return Err(ErrorLang::Query(String::from(
+                "You must indicate at least one column.",
+            )));
+        }
+
+        Ok(operations.select(columns))
     }
 
     fn parse_bool_op(&mut self) -> ReturnT<BoolOperation> {

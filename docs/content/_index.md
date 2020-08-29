@@ -1,33 +1,47 @@
 +++
-title = "Documentation"
+title = "Home"
 +++
 # TablaM: A relational language #
 
 **IN EXPERIMENTAL STAGE. NOT USE FOR REAL WORK**
 
-### Code ###
+**TablaM** is an *in-progress* programming language to provide a more ergonomic experience for building **data-oriented** applications.
+
+This means that were most languages are focused on low-level details or engineering at large, **TablaM** is tailored with some small & big design decisions to make it enjoyable to write applications for e-commerce, finance, ERPs, and similars.
+
+A small taste of the language:
+
+```rust
+-- A column, aka: Vectors...
+let qty := [10.5, 4.0, 3.0] 
+-- Like APL/kdb+ operations apply to more than scalars
+prices * 16.0 
+
+-- The ? (query) operator allow to do SQL-like queries to anything
+let doubled := qty ?select #0 * 2.0 
+
+let products := open("products.csv")
+-- like files!
+for p in products ?where #price > 0.0 do
+    print(p)
+end
+--so, we can do joins between anything:
+for p in cross products, qty ?limit 10 do
+	print(p.products.price * p.qty)
+end
+
+```
+
+So, what *kind* of language is **TablaM**?:
+
+- Multi-paradigm, but strongly based on the relational model. Also provide functional, imperative capabilities.
+
+- Immutable values are the *default*, but allow mutable ones.
+
+- Provide SQL/LINQ-like experience across any relation. Like other langs say "*anything is an object*", in **TablaM**, "*anything is a relation*". 
+
+  
+
+### Code
 
 [https://github.com/Tablam/TablaM/](https://github.com/Tablam/TablaM/)
-
-### Run in browser:
-
-You can test the latest release in the browser at https://repl.it/@mamcx/RelpIt.
-
-### Long term goals ###
-
-* Build a practical general language but *tailored* for data-manipulation and database coding (in the broad sense of the word).
-* Become a spiritual attempt at the dbase/foxpro family of database-oriented languages, in the sense manipulate data(bases) is natural and integrated.
-* Have an in-memory relational/vector-oriented structure as the main object, and facilities to provide a relational interface for custom objects/data 
-  (like for example, RDBMS, the file system, csv, json, etc).
-* Could be kind of similar to kdb+ but far less cryptic.
-* Be good not only for developers, but also for database end-users to explore and interface with data.
-* Work on OSX, Linux, Windows, iOS, Android
-* Easy to embed in other languages?
-
-### Contribution guidelines ###
-
-* If have experience in language design or in-memory database coding, please help!
-
-### Who do I talk to? ###
-
-[https://www.elmalabarista.com](https://www.elmalabarista.com)

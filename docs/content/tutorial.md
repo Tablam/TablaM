@@ -3,7 +3,7 @@ title = "Tutorial"
 
 +++
 
-**!warning**: This tutorial is in progress, and the code is not yet functional
+**!warning**: This tutorial is in progress, and the code is not yet fully functional
 
 ## Prerequisites
 

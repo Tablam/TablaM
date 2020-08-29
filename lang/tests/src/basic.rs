@@ -197,10 +197,12 @@ fn test_syntax_query() {
         ],
     );
 
-    /*let result: Vec<_> = Token::lexer("let numbers := [name:Int; 1; 2; 3; 4]")
+    /*
+    let result: Vec<_> = Token::lexer("complex ?deselect #img ?skip 3 ?limit 6 ?distinct")
         .spanned()
         .collect();
-    dbg!(result);*/
+    dbg!(result);
+     */
 }
 
 #[test]
@@ -399,10 +401,17 @@ fn test_parser() {
     let input = "complex ?select #img, #real as #r ?where #1 > 20";
     let mut parser = Parser::new(input);
     let result = parser.parse();
-    println!("{}", input);
     assert_eq!(
         result.expect("not getting expression").to_string(),
         String::from("complex ?select #img, #real as #r ?where #1 > 20")
+    );
+
+    let input = "complex ?deselect #img ?skip 3 ?limit 6 ?distinct";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("complex ?deselect #img ?skip 3 ?limit 6 ?distinct")
     );
 
     /*let input = "let n := [9; 8; 10]";

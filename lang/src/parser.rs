@@ -159,7 +159,8 @@ impl<'source> Parser<'source> {
                     | Some(Token::Where)
                     | Some(Token::Limit)
                     | Some(Token::Skip)
-                    | Some(Token::Distinct) => self.parse_query(name.into())?,
+                    | Some(Token::Distinct)
+                    | Some(Token::Deselect) => self.parse_query(name.into())?,
                     _ => Expression::Variable(name.into()),
                 }
             }
@@ -224,7 +225,7 @@ impl<'source> Parser<'source> {
                 }
 
                 if lhs.is_indexed_column() || rhs.is_indexed_column() {
-                    lhs = Expression::as_bool_condition_qry(token, lhs, rhs);
+                    lhs = Expression::create_bool_condition_qry(token, lhs, rhs);
                     continue;
                 }
 
@@ -370,15 +371,47 @@ impl<'source> Parser<'source> {
                     self.accept();
                     self.parse_select_qry(operations)?
                 }
+                Some(Token::Deselect) => {
+                    self.accept();
+                    self.parse_deselect_qry(operations)?
+                }
                 Some(Token::Where) => {
                     self.accept();
                     self.parse_where_qry(operations)?
+                }
+                Some(Token::Limit) => {
+                    self.accept();
+                    self.parse_limit_qry(operations)?
+                }
+                Some(Token::Skip) => {
+                    self.accept();
+                    self.parse_skip_qry(operations)?
+                }
+                Some(Token::Distinct) => {
+                    self.accept();
+                    self.parse_distinct_qry(operations)?
                 }
                 _ => break,
             }
         }
 
         Ok(Expression::QueryOperation(operations))
+    }
+
+    fn parse_distinct_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
+        Ok(operations.distinct())
+    }
+
+    fn parse_skip_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
+        let offset = self.check_next_token(Token::Integer(164))?;
+
+        Ok(operations.skip(&offset))
+    }
+
+    fn parse_limit_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
+        let offset = self.check_next_token(Token::Integer(164))?;
+
+        Ok(operations.limit(&offset))
     }
 
     fn parse_where_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
@@ -393,6 +426,31 @@ impl<'source> Parser<'source> {
         };
 
         Ok(operations.filter(&operator, left, right))
+    }
+
+    fn parse_deselect_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
+        let mut columns = Vec::<Column>::new();
+        loop {
+            let column = self.parse_ast(0)?;
+
+            match column {
+                Expression::Column(column) => columns.push(column),
+                _ => return Err(ErrorLang::UnexpectedItem(column)),
+            };
+
+            if self.check_next_token(Token::Separator).is_ok() {
+                continue;
+            }
+            break;
+        }
+
+        if columns.is_empty() {
+            return Err(ErrorLang::Query(String::from(
+                "You must indicate at least one column.",
+            )));
+        }
+
+        Ok(operations.deselect(columns))
     }
 
     fn parse_select_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {

@@ -144,7 +144,7 @@ impl Expression {
         }
     }
 
-    pub fn as_bool_condition_qry(operator: Token, left: Self, right: Self) -> Self {
+    pub fn create_bool_condition_qry(operator: Token, left: Self, right: Self) -> Self {
         let lhs: Comparable = match left {
             Expression::Column(col) => match col {
                 Column::Pos(position) => position.into(),
@@ -187,6 +187,11 @@ impl QueryOperation {
         self
     }
 
+    pub fn deselect(mut self, columns: Vec<Column>) -> Self {
+        self.query = self.query.deselect(&columns);
+        self
+    }
+
     pub fn filter(mut self, operator: &Token, left: Comparable, right: Comparable) -> Self {
         self.query = match operator {
             Token::Equal => self.query.eq(left, right),
@@ -195,9 +200,30 @@ impl QueryOperation {
             Token::GreaterEqual => self.query.greater_eq(left, right),
             Token::Less => self.query.less(left, right),
             Token::LessEqual => self.query.less_eq(left, right),
-            _ => unreachable!("Ilegal operator in filter condition."),
+            _ => unreachable!("Illegal operator in filter condition."),
         };
 
+        self
+    }
+
+    pub fn skip(mut self, token: &Token) -> Self {
+        self.query = match token {
+            Token::Integer(offset) => self.query.skip(*offset as usize),
+            _ => unreachable!("Illegal operator in filter condition."),
+        };
+        self
+    }
+
+    pub fn limit(mut self, token: &Token) -> Self {
+        self.query = match token {
+            Token::Integer(offset) => self.query.limit(*offset as usize),
+            _ => unreachable!("Illegal operator in filter condition."),
+        };
+        self
+    }
+
+    pub fn distinct(mut self) -> Self {
+        self.query = self.query.distinct();
         self
     }
 }

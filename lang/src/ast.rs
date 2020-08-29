@@ -135,8 +135,8 @@ impl Expression {
 #[derive(Debug, Clone, Display)]
 #[display(fmt = "{} {}", collection, query)]
 pub struct QueryOperation {
-    collection: Box<Expression>,
-    query: QueryOp,
+    pub collection: Box<Expression>,
+    pub query: QueryOp,
 }
 
 impl QueryOperation {

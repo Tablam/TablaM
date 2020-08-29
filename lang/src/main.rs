@@ -73,7 +73,7 @@ fn run_repl(c: &Context) {
                 "help" => println!("Help & more info at http://www.tablam.org"),
                 line => {
                     rl.add_history_entry(line);
-                    dbg!(&line);
+                    //dbg!(&line);
                     match program.execute_str(line) {
                         Ok(expr) => match expr {
                             Expression::Pass => continue,

@@ -3,7 +3,7 @@ title = "Installation"
 
 +++
 
-To install/test the lasted version of **TablaM**, you can opt for:
+To install/test the last version of **TablaM**, you can opt for:
 
 ### 1. Run in the browser
 
@@ -11,7 +11,7 @@ Visit [https://repl.it/@mamcx/RelpIt]( https://repl.it/@mamcx/RelpIt) and rememb
 
 ### 2. Install binaries
 
-Download the [lasted binaries](https://github.com/Tablam/TablaM/releases), select according to your operative system (available only for 64 bit): 
+Download the [last binaries](https://github.com/Tablam/TablaM/releases), select according to your operative system (available only for 64 bit): 
 
 #### Linux
 

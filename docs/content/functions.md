@@ -39,7 +39,7 @@ avg([1; 2; 3]) -- = 2
 
 ### min & max
 
-The `min`& `max` functions accept a relation and return the min or max value, accordingly, of it.
+The `min`& `max` functions accept a relation and return the min or max value, accordingly.
 
 Note that these are *logical function*s, not math. So it operates on *ANY* value following the total order of types.
 
@@ -108,7 +108,7 @@ let txt := read_to_string(products)
 
 ### save
 
-The `save` function turn the relation in a `String`, then save the results to the disk. Note that this functionally not yet correct results.
+The `save` function turn the relation in a `String`, then save the results to the disk. Note that this functionally not yet work correctly.
 
 ```rust
 fun save(rel:Rel, path: Path)

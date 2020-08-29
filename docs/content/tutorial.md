@@ -9,7 +9,7 @@ title = "Tutorial"
 
 First, install or run the language in the browser, [as explained here](/install).
 
-When you run the executable called "`tablam`" it enter in the "[repl](https://en.wikipedia.org/wiki/Read–eval–print_loop)" mode, in the terminal. You write the code and press "*Enter*" to execute.
+When you run the executable called "`tablam`" it enter in the "[repl](https://en.wikipedia.org/wiki/Read–eval–print_loop)" mode, in the terminal. You write the code and press "*Enter*" key to execute.
 
 You can also write the code in a text file with the extension ".tbm", and use a programming text editor like [Sublime](http://www.sublimetext.com) or [Visual Studio Code](https://code.visualstudio.com), then call `tablam -f name_file.tbm` to execute it.
 
@@ -17,9 +17,9 @@ You can also write the code in a text file with the extension ".tbm", and use a 
 
 Normally the tutorial of a programming language starts with the famous `"hello world"`[^1].
 
-Then it shows some small [taste of syntax](/syntax) and later maybe it pretends you read the rest of the (potentially large) [documentation](/functions) and somehow, you will "get it".
+Then it shows some small [taste of syntax](/syntax) and later pretends that you read the rest of the (potentially large) [documentation](/functions) and somehow, you will "get it".
 
-We, instead, will do something *different*. We build a *simple* yet functional program (a mini shopping cart) that shows what is the point of the language.
+We, instead, will do something *different*. We build a *simple* program (a mini shopping cart) that shows what is the point of the language.
 
 But first is necessary to talk about what *kind* of programming language **TablaM** is. Is based on a paradigm called "[Relational Model](https://en.wikipedia.org/wiki/Relational_model)". What is that? You will learn almost everything just staring, *intensely*, at this table:
 
@@ -73,7 +73,7 @@ Let's explain what all that text means:
 
   We can use "*queries*" to manipulate the data stored in relations. This "*queries*" are called [***relational operators***](/operators) because they express different operations on relations. 
 
-The character `?` is called "*the query operator*" and mark when will a relational operator will be used.
+The character `?` is called "*the query operator*" and mark when a relational operator will be used.
 
 We will only worry about this 2 operations for now:
 
@@ -110,7 +110,7 @@ let profit_total := sum(profit_items)
 print(profit_total)
 ```
 
-And which product give use the biggest profit:
+And which product give the biggest profit:
 
 ```rust
 let most := sales?select #price * #qty
@@ -120,7 +120,7 @@ print(most)
 
 Note how each operation work in relations and return relations.
 
-Single values like `1` or `"Soda"` are also relations. Know too as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". **TablaM** considers it relations of 1 column, 1 row, and 1 cell.
+Single values like `1` or `"Soda"` are also relations. Also know as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". **TablaM** considers it relations of 1 column, 1 row, and 1 cell.
 
 This mean that this is possible:
 
@@ -128,7 +128,7 @@ This mean that this is possible:
 let price := 1.0 ?select #0
 ```
 
-Now, we can continue with the program and make it more useful. Before was said the values are "*immutable*" by default. This mean that if we want change things we need to create *new* values from the *olds*. Let's add another sale:
+Now, we can continue with the program and make it more useful. We said before that the values are "*immutable*" by default. This mean that if we want to change them we need to create *new* values from the *olds*. Let's add another sale:
 
 ```rust
 let new_sale := ["Hot dog", 4.0, 1]
@@ -168,7 +168,7 @@ Sorry for the cliffhanger, but **TablaM** is still in development. Hopefully we 
 - Can TablaM become the most awesome language in earth?
 - Seriously, why is not this language ready yet?
 
-If wanna help in support this vision, please consider fund the project clicking in:
+If wanna to support this vision, please consider fund the project clicking in:
 
 <a href="https://www.buymeacoffee.com/mamcx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-white.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;"  class="mx-auto"></a>
 

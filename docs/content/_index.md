@@ -50,7 +50,7 @@ So, what *kind* of language is **TablaM**?
 
 - Null safe.
 
-- Provide decimal math as the default, instead of binary floating point, making it better for business applications.
+- Provide decimal math as the default, instead of binary floating-point, making it better for business applications.
 
 - Provide Algebraic Data Types  **(tbd)**.
 

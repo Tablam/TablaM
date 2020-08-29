@@ -91,14 +91,14 @@ true and false -- = true
 not true -- = false
 ```
 
-**TablaM** have the concept of a "*total order*". It means all values can be compared in relation to the others. This is required to things like sorting to work. The total order is defined as:
+**TablaM** has the concept of a "*total order*". It means all values can be compared in relation to the others. This is required for things like sorting to work. The total order is defined as:
 
 ```rust
 Bit < Bool < Int < Float < Dec < Time < Date < DateTime <
 Char < Str < Vec < Tree < Map < Any
 ```
 
-You don't need to memorize this. Only know that this feature exist.
+You don't need to memorize this. Only to know that this feature exist.
 
 ### Strings
 
@@ -129,7 +129,7 @@ t"08:00:00" -- Just time
 
 ## Types
 
-**TablaM** use a *static type system*, meaning all values are assigned a *type* and is not possible to use values where it not work (**TBD**, *for now the types are checked at runtime*).
+**TablaM** use a *static type system*, meaning all values are assigned a *type* and is not possible to use values where it doesn’t work (**TBD**, *for now the types are checked at runtime*).
 
 Types are described in *TitleCase* like this:
 
@@ -153,7 +153,7 @@ Str = [it:Str]
 Map[name:Str, age:Int] = [name:Str, age:Int]
 ```
 
-This schema allow the *relational operators* to work and treat the values as if where tables in *SQL*.
+This schema allows the *relational operators* to work and treat the values as they were tables in *SQL*.
 
 ## Relations
 
@@ -227,7 +227,7 @@ Note the use of `[||]` to enclose the data, that it must be preceded by the type
 
 ## Relational operators
 
-The *relational operators* are the second most distinctive feature of the language. Them are *intrinsically* part of the relational model. Where exist a relation, you can be certain you can apply *ALL* the relational operators. Them are [described in their own page](/operators).
+The *relational operators* are the second most distinctive feature of the language. Them are *intrinsically* part of the relational model. Where exist a relation, you can be sure you can apply *ALL* the relational operators. Them are [described in their own page](/operators).
 
 All relational operators must start with the operator *query* `?`.
 
@@ -247,7 +247,7 @@ end
 
 ## Functions
 
-The majority of the functionality is provided with functions. A function is a piece of code that perform varied task to fulfils a need. 
+Most of the functionality of the language is provided with functions. A function is a piece of code that perform varied task to fulfils a need. 
 
 To use a function:
 
@@ -278,7 +278,7 @@ end
 
 Note how you can return the last value in each if branch.
 
-However, this is not possible for looping constructs, them return the "pass"  value. Is similar to the void in other languages.
+However, this is not possible for looping constructs, these return the "pass"  value. Is similar to the void in other languages.
 
 ### while
 

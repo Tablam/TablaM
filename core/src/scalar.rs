@@ -113,7 +113,7 @@ impl Rel for Scalar {
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
             Scalar::Vector(x) => x.kind(),
             Scalar::File(x) => x.kind(),
-            Scalar::Top => DataType::Top,
+            Scalar::Top => DataType::ANY,
         }
     }
 

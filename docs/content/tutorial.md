@@ -9,15 +9,15 @@ title = "Tutorial"
 
 First, install or run the language in the browser, [as explained here](/install).
 
-When you run the executable called "tablam" it enter in the "[repl](https://en.wikipedia.org/wiki/Read–eval–print_loop)" mode, in the terminal. You write the code and press "Enter" to execute.
+When you run the executable called "`tablam`" it enter in the "[repl](https://en.wikipedia.org/wiki/Read–eval–print_loop)" mode, in the terminal. You write the code and press "*Enter*" to execute.
 
-You can also write the code in a text file with the extension ".tbm", and use a programming text editor like [Sublime](http://www.sublimetext.com) or [Visual Studio Code](https://code.visualstudio.com), then call `tablam name_file.tbm` to execute it.
+You can also write the code in a text file with the extension ".tbm", and use a programming text editor like [Sublime](http://www.sublimetext.com) or [Visual Studio Code](https://code.visualstudio.com), then call `tablam -f name_file.tbm` to execute it.
 
 ## Introduction
 
 Normally the tutorial of a programming language starts with the famous `"hello world"`[^1].
 
-Then it shows some small taste of syntax and later maybe it pretends you read the rest of the (potentially large) documentation and somehow, you "get it".
+Then it shows some small [taste of syntax](/syntax) and later maybe it pretends you read the rest of the (potentially large) [documentation](/functions) and somehow, you will "get it".
 
 We, instead, will do something *different*. We build a *simple* yet functional program (a mini shopping cart) that shows what is the point of the language.
 
@@ -120,7 +120,7 @@ print(most)
 
 Note how each operation work in relations and return relations.
 
-Single values like `1` or `"Soda"` are also relations. Know too as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". TablaM considers it relations of 1 column, 1 row, and 1 cell.
+Single values like `1` or `"Soda"` are also relations. Know too as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". **TablaM** considers it relations of 1 column, 1 row, and 1 cell.
 
 This mean that this is possible:
 

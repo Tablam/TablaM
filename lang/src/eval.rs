@@ -72,7 +72,7 @@ impl Program {
                 let expr = &self.eval_expr(expr)?;
                 self.eval_value(expr)
             }
-            err => unreachable!("{}", err),
+            expr => self.eval_value(&self.eval_expr(expr.clone())?),
         }
     }
 

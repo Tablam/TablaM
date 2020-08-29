@@ -94,9 +94,6 @@ pub enum DataType {
     Char,
     #[display(fmt = "Str")]
     UTF8,
-    // For list, dynamic
-    #[display(fmt = "Any")]
-    ANY,
     // Complex
     #[display(fmt = "{}...", _0)]
     Variadic(Box<DataType>),
@@ -111,7 +108,9 @@ pub enum DataType {
     #[display(fmt = "Seq({})", _0)]
     Seq(KindRel),
     // Planed: Blob
-    Top,
+    // For list, dynamic
+    #[display(fmt = "Any")]
+    ANY,
 }
 
 impl DataType {
@@ -149,7 +148,6 @@ impl DataType {
             DataType::Tree(_) => unimplemented!(),
             DataType::Map(_) => unimplemented!(),
             DataType::Seq(_) => unimplemented!(),
-            DataType::Top => Scalar::Top,
         }
     }
 }

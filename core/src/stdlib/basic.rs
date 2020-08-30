@@ -1,11 +1,11 @@
 use crate::prelude::*;
 
-fn print(of: &[Scalar]) -> Result<Scalar> {
-    for x in of {
-        print!("{}", x);
-    }
-    Ok(Scalar::None)
-}
+// fn print(of: &[Scalar]) -> Result<Scalar> {
+//     for x in of {
+//         print!("{}", x);
+//     }
+//     Ok(Scalar::None)
+// }
 
 fn print_ln(of: &[Scalar]) -> Result<Scalar> {
     for x in of {

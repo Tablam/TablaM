@@ -276,10 +276,10 @@ impl<'source> Parser<'source> {
 
     fn parse_var_assignment(&mut self, name: &str) -> Return {
         self.accept();
-        return Ok(Expression::Mutable(
+        Ok(Expression::Mutable(
             name.to_string(),
             Box::new(self.parse_ast(0)?),
-        ));
+        ))
     }
 
     fn parse_parameter_definition(&mut self, name: &str) -> Return {

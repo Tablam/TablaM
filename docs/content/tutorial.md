@@ -89,13 +89,13 @@ print(products)
 
 ### ?where
 
-The `?where` operator (aka: selection or `where...` in SQL), allow filtering *the rows* in a relation. It needs a "*boolean expression*", ie: expression that compares values, columns or returns true/false.
+The `?where` operator (aka: selection or `where...` in SQL), allow filtering *the rows* in a relation. It needs a "*boolean expression*", ie: expression that compares values, columns or returns true/false. The `=` is the equal operator, more [logical operators](/syntax/#compare-values-tbd).
 
 ```rust
-let soda := sales ?where #name == "Soda"
-let soda := sales ?where #0 == "Soda"
+-- let soda := sales ?where #name = "Soda" (TBD)
+let soda := sales ?where #0 = "Soda" -- #0 is #name column
 
-let cheaper := sales ?where #price < 5.0
+let cheaper := sales ?where #1 < 5.0 -- #1 is #price column
 
 ```
 

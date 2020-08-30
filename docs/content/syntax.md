@@ -13,6 +13,9 @@ The syntax is made to be learned quickly, and be as consistent as possible.
 
 ```sql
 -- Comments start with 2 'minus' symbol
+--- Multiline 
+commentaries
+---
 ```
 
 ## Declarations
@@ -63,7 +66,7 @@ Similar to array languages/libraries like APL/kdb+/NumPy, the operators know how
 1 + 1 -- Scalar + Scalar
 1 + [1; 2; 3] -- Scalar + Vector
 [1; 2] + [3; 4] -- Vector + Vector, same rank
-[1] + [3; 4] -- ERROR
+[1] + [3; 4] -- ERROR, different rank 1 <> 2
 ```
 
 ### Booleans
@@ -78,8 +81,8 @@ With boolean values we can do *boolean expressions*, so we can
 ### Compare values (**TBD**):
 
 ```python
-1 == 1 -- = true
-1 != 1 -- = false
+1 = 1 -- = true
+1 <> 1 -- = false
 
 1 > 2 -- = false
 1 >= 2 -- = false

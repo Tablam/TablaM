@@ -1,6 +1,6 @@
 [package]
 name = "tablam-lang"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Mario Montoya <mamcx@elmalabarista.com>"]
 repository = "https://bitbucket.org/tablam/tablam/"
 homepage = "https://bitbucket.org/tablam/tablam/"

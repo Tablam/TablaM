@@ -9,7 +9,7 @@ title = "Home"
 
 This means that were most languages are focused on low-level details or engineering at large, **TablaM** is tailored with some small & big design decisions to make it enjoyable to write applications for e-commerce, finance, ERPs, and similars.
 
-**The most distinctive feature of the language** is the use of the *relational model* as base for its operation. This allow to provide a set of *universal and consistent* [operations](/operators) that make easier to manipulate data. 
+**The most distinctive feature of the language** is the use of the *relational model* as the base for its operation. This allows us to provide a set of *universal and consistent* [operations](/operators) that make it easier to manipulate data. 
 
 For example, where most languages have different methods to "*query*" items (sometimes called `find`, other times `get` or `search` or `filter` or ...), meaning you need to learn all different ways that change according to the context or kind of value you are using, in **TablaM** is just `?where`, and *ALL* values, even files, databases, sockets, values, numbers, text, etc... can be queried with the *same set of operators*. And you don't need to code them, because are universally available.
 
@@ -56,7 +56,7 @@ So, what *kind* of language is **TablaM**?
 
 - Provide SQL/LINQ-like experience across any relation. Like other languages say "*anything is an object*", in **TablaM**, "*anything is a relation*". 
 
-- Built-in support for a variety of protocols, formats and data transformation  **(tbd)**.
+- Built-in support for a variety of protocols, formats, and data transformation  **(tbd)**.
 
 - No needs for ORMs. Talk directly to major RDBMS/SQL databases (PostgreSQL, MySql, SQL Server, SQLite) **(tbd)**.
 

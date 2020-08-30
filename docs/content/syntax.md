@@ -17,7 +17,7 @@ The syntax is made to be learned quickly, and be as consistent as possible.
 
 ## Declarations
 
-By *default*, the values are immutable except if explicitly marked as mutable. To declare a value you write:
+By *default*, the values are immutable except if explicitly marked as mutable **(TBD)**. To declare a value you write:
 
 ```swift
 let x := 1 -- inmmutable

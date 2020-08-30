@@ -315,6 +315,16 @@ pub enum Token {
     #[token("return")]
     Return,
 
+    #[regex(r"---(?s)[.[^-]]*---\n*", |lex| {
+    increase_current_line(lex);
+    logos::Skip
+    })]
+    #[regex(r"--.*\n", |lex| {
+    increase_current_line(lex);
+    logos::Skip
+    })]
+    Commentary,
+
     #[token("\n", increase_current_line)]
     #[regex(r"[ \t\f]+", logos::skip)]
     #[error]

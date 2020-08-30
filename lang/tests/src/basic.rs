@@ -46,6 +46,41 @@ fn test_syntax_v0() {
             (Token::Integer(1i64), "1", 11..12),
         ],
     );
+
+    assert_lex(
+        "let sum := 1 + 1  -- sum = 2
+    -- test one line
+    var c := 1 + 2
+    --- header ---
+    collection ?where #name > 1
+    --- multiline
+    commentaries
+    example
+    ---",
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable(String::from("sum")), "sum", 4..7),
+            (Token::Assignment, ":=", 8..10),
+            (Token::Integer(1i64), "1", 11..12),
+            (Token::Plus, "+", 13..14),
+            (Token::Integer(1i64), "1", 15..16),
+            (Token::Var, "var", 54..57),
+            (Token::Variable(String::from("c")), "c", 58..59),
+            (Token::Assignment, ":=", 60..62),
+            (Token::Integer(1i64), "1", 63..64),
+            (Token::Plus, "+", 65..66),
+            (Token::Integer(2i64), "2", 67..68),
+            (
+                Token::Variable(String::from("collection")),
+                "collection",
+                92..102,
+            ),
+            (Token::Where, "?where", 103..109),
+            (Token::Column(String::from("name")), "#name", 110..115),
+            (Token::Greater, ">", 116..117),
+            (Token::Integer(1i64), "1", 118..119),
+        ],
+    );
 }
 
 #[test]

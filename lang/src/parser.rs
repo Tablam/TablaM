@@ -55,6 +55,7 @@ impl<'source> Parser<'source> {
 
     fn check_next_token(&mut self, expected: Token) -> std::result::Result<Token, ErrorLang> {
         if let Some((found, data)) = self.peek_both() {
+            //dbg!(&found);
             return if discriminant(&found) == discriminant(&expected) {
                 self.accept();
                 Ok(found)
@@ -117,7 +118,7 @@ impl<'source> Parser<'source> {
 
     fn postfix_binding_power(token: &Token) -> Option<(u8, ())> {
         let res = match token {
-            Token::RightParentheses => (13, ()),
+            Token::LeftParentheses => (13, ()),
             _ => return None,
         };
         Some(res)
@@ -302,11 +303,24 @@ impl<'source> Parser<'source> {
     fn parse_function_call(&mut self, name: &str) -> Return {
         //Eat '('
         self.accept();
-        let expr = self.parse_ast(0)?;
-        // dbg!(&expr);
         let mut params = Vec::new();
+        loop {
+            if let Some(Token::RightParentheses) = self.peek() {
+                self.accept();
+                break;
+            }
 
-        params.push(ParamCall::new("", expr));
+            let expr = self.parse_ast(0)?;
+            //dbg!(&expr);
+
+            params.push(ParamCall::new("", expr));
+
+            if Token::RightParentheses
+                == self.match_at_least_one(vec![Token::Separator, Token::RightParentheses])?
+            {
+                break;
+            };
+        }
 
         Ok(FunctionCall::new(name, &params).into())
     }

@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "tablam"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bit-vec",
  "chrono",
@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "tablam-lang"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "logos",
  "rustyline",

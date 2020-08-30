@@ -35,9 +35,9 @@ You probably have guessed a lot of things just looking at this table. It looks l
 
 This is what makes the relational model its power. Is fairly "visual" and considers the data (relations) as "[first-class citizen](https://en.wikipedia.org/wiki/First-class_citizen)". But also, exist many other things that the relation tell us about:
 
-- It has a header that labels the columns (*name*, *price*, *qty*)
-- It has columns, and their values are *homogeneous*
-- It has rows, and their value (the whole row), represents a single entity of the relation
+- It has a header that **labels** the columns (*name*, *price*, *qty*)
+- It has columns, and their values are ***homogeneous***
+- It has rows, and their value (the whole row), represents a **single entity** of the relation
 
 ## Write the first program
 
@@ -55,9 +55,9 @@ let sales:= [
 Let's explain what all that text means:
 
 - `let sales` create an immutable (read-only) binding named "sales"
-- `:=` is the assignment operator. It put in the *left* what is on the *right* of it.
+- `:=` is the **assignment operator**. It put in the *left* what is on the *right* of it.
 - Enclosed in `[]` is the relation, stored as a *vector*. Vectors are one of the ways to store data in computer memory. If you come from another language it could look strange to see that the vector allows rows and columns, instead of *only* flat values like `[1;2;3]`. But remember that this is a relational language!
-- The first line declares the header or schema of the relation, with pairs of *names* & *types*. Types are, among other things, ways to define what kind of value the data/column *is*.
+- The first line declares the **header or schema** of the relation, with pairs of *names* & *types*. Types are, among other things, ways to define what kind of value the data/column *is*.
 
 | name  | type                                                         | type usage                                                   |
 | ----- | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -65,7 +65,7 @@ Let's explain what all that text means:
 | price | [Dec](https://en.wikipedia.org/wiki/Decimal_data_type)       | For numbers, as 64 bit decimals, like money                  |
 | qty   | [Int](https://en.wikipedia.org/wiki/Integer_%28computer_science%29) | For numbers, as 64 bit integers, like quantities, positions, counts, etc |
 
-- The next lines are the "rows". It must match the type of their column.
+- The next lines are the *"**rows**"*. It must match the type of their column.
 
  Now with this data, we can do a lot of stuff, thanks to:
 
@@ -89,22 +89,22 @@ print(products)
 
 ### ?where
 
-The `?where` operator (aka: selection or `where...` in SQL), allow filtering *the rows* in a relation. It needs a "*boolean expression*", ie: expression that compares values, columns or returns true/false.
+The `?where` operator (aka: selection or `where...` in SQL), allow filtering *the rows* in a relation. It needs a "Boolean expression*", i.e.: expression that compares values, columns or returns true/false. The `=` is the equal operator, more [logical operators](/syntax/#compare-values-tbd).
 
 ```rust
-let soda := sales ?where #name == "Soda"
-let soda := sales ?where #0 == "Soda"
+-- let soda := sales ?where #name = "Soda" (TBD)
+let soda := sales ?where #0 = "Soda" -- #0 is #name column
 
-let cheaper := sales ?where #price < 5.0
+let cheaper := sales ?where #1 < 5.0 -- #1 is #price column
 
 ```
 
 ## Some math
 
-Now we can start to do more stuff. We can know how many money we get for this sale:
+Now we can start to do more stuff. We can know how many money we get for this sale: 
 
 ```rust
-let profit_items := sales?select #price * #qty
+let profit_items := sales?select #price * #qty -- arithmetic operations in relational operators (TBD)
 print(profit_items)
 let profit_total := sum(profit_items)
 print(profit_total)
@@ -120,7 +120,7 @@ print(most)
 
 Note how each operation work in relations and return relations.
 
-Single values like `1` or `"Soda"` are also relations. Also know as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". **TablaM** considers it relations of 1 column, 1 row, and 1 cell.
+Single values like `1` or `"Soda"` are also relations. Also know as "[scalars](https://en.wikipedia.org/wiki/Variable_(computer_science))". **TablaM** considers it relations of 1 whole column, 1 whole row  and 1 cell.
 
 This mean that this is possible:
 
@@ -128,7 +128,7 @@ This mean that this is possible:
 let price := 1.0 ?select #0
 ```
 
-Now, we can continue with the program and make it more useful. We said before that the values are "*immutable*" by default. This mean that if we want to change them we need to create *new* values from the *olds*. Let's add another sale:
+Now, we can continue with the program and make it more useful. We said before that the values are "***immutable***" by default. This mean that if we want to change them we need to create *new* values from the *olds*. Let's add another sale:
 
 ```rust
 let new_sale := ["Hot dog", 4.0, 1]
@@ -144,12 +144,12 @@ Well, is because **TablaM** use a neat trick: Their values are not only typed, b
 // In rust, a nominal typed language
 struct SalesA {name:Str, price:Dec, qty:Int}
 struct SalesB {name:Str, price:Dec, qty:Int}
-let a = SalesA::new("Hot dog", 4.0, 1)
-let b = SalesB::new("Hot dog", 4.0, 1)
-a == b //false
+let a := SalesA::new("Hot dog", 4.0, 1)
+let b := SalesB::new("Hot dog", 4.0, 1)
+a = b //false
 ```
 
-Instead, in TablaM, two things are equal if their *schema/header* match:
+Instead, in **TablaM**, two things are equal if their *schema/header* match:
 
 ```rust
 -- In TablaM, a structural typed language
@@ -157,7 +157,7 @@ let a := ["Hot dog", 4.0, 1]
 -- is automatically infered the header [name:Str, price:Dec, qty:Int;]
 
 let b := [name:Str, price:Dec, qty:Int; "Hot dog", 4.0, 1]
-a = b //true!
+a = b -- true!
 ```
 
 **Comming soon in "TablaM, the awesome programming language":**

@@ -162,6 +162,7 @@ impl<'source> Parser<'source> {
                     | Some(Token::Skip)
                     | Some(Token::Distinct)
                     | Some(Token::Deselect) => self.parse_query(name.into())?,
+                    Some(Token::Assignment) => self.parse_var_assignment(name)?,
                     _ => Expression::Variable(name.into()),
                 }
             }
@@ -271,6 +272,14 @@ impl<'source> Parser<'source> {
         }
 
         Err(result.err().unwrap())
+    }
+
+    fn parse_var_assignment(&mut self, name: &str) -> Return {
+        self.accept();
+        return Ok(Expression::Mutable(
+            name.to_string(),
+            Box::new(self.parse_ast(0)?),
+        ));
     }
 
     fn parse_parameter_definition(&mut self, name: &str) -> Return {

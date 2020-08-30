@@ -65,11 +65,12 @@ jobs:
         with:
           command: build
           args: --release --all --locked
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+      - run: mv target/release/${{ matrix.artifact_name  }} target/release/${{ matrix.asset_name }}
+      - uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ matrix.artifact_name }}
-          asset_name: ${{ matrix.asset_name }}
-          tag: "latest"
-          overwrite: true
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "TablaM Binaries"
+          files: |
+            target/release/${{ matrix.asset_name }}

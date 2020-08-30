@@ -58,7 +58,7 @@ So, what *kind* of language is **TablaM**?
 
 - Built-in support for a variety of protocols, formats and data transformation  **(tbd)**.
 
-- No needs ORMs. Talk directly to major RDBMS/SQL databases (PostgreSQL, MySql, SQL Server, SQLite) **(tbd)**.
+- No needs for ORMs. Talk directly to major RDBMS/SQL databases (PostgreSQL, MySql, SQL Server, SQLite) **(tbd)**.
 
   
 

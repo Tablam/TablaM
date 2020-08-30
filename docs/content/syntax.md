@@ -23,11 +23,11 @@ commentaries
 By *default*, the values are immutable except if explicitly marked as mutable. To declare a value you write:
 
 ```swift
-let x := 1 -- inmmutable
+let x := 1 -- immutable aka: final (java), const (js), it cannot be updated
 var x := 1 -- mutable
 ```
 
-Note how to *assign a value* is used the operator `:=`. This is different to  `=` that is used to *compare for equality*.
+Note how to ***assign a value*** is used the operator `:=`. This is different to  `=` that is used to ***compare for equality***.
 
 ## Literals
 
@@ -42,11 +42,11 @@ Literals are values that are typed directly in the source code, and are the most
 1.0f --64 bit floats (base 2, requiered explicit suffix)
 ```
 
-Note how the `Decimal` is the default floating point number, instead of the `float`, that is more common. 
+Note how the `Decimal` is the **default floating point number**, instead of the `float`, that is more common. 
 
 This mean **TablaM** is tailored to do [more exact arithmetic](https://stackoverflow.com/questions/618535/difference-between-decimal-float-and-double-in-net) for business/financial purposes, instead of default for engineering like most languages.
 
-With numbers it is possible to do some
+With numbers it is possible to do some arithmetic and assignment operators 
 
 ### Math
 
@@ -56,6 +56,8 @@ With numbers it is possible to do some
 2.0f * 10.0f -- = 20.0f
 10 / 2 -- = 5.0
 1 + 2.0 -- Error: Type mismatch Int <> Dec
+let num := 1
+num += 1 -- arithmetic and assignment operators (TBD)
 ```
 
 **TablaM** doesn't do invisible conversions of values. Is necessary to explicitly cast values to mix them. (**TBD**).
@@ -76,7 +78,7 @@ true
 false
 ```
 
-With boolean values we can do *boolean expressions*, so we can
+With Boolean values we can do *Boolean expressions*, so we can
 
 ### Compare values (**TBD**):
 
@@ -132,7 +134,7 @@ t"08:00:00" -- Just time
 
 ## Types
 
-**TablaM** use a *static type system*, meaning all values are assigned a *type* and is not possible to use values where it doesn’t work (**TBD**, *for now the types are checked at runtime*).
+**TablaM** use a *static type system*, meaning all values are assigned a *type* and is not possible to use values where it doesn’t work (**TBD**, *for **now** the types are checked at runtime*).
 
 Types are described in *TitleCase* like this:
 
@@ -230,7 +232,7 @@ Note the use of `[||]` to enclose the data, that it must be preceded by the type
 
 ## Relational operators
 
-The *relational operators* are the second most distinctive feature of the language. Them are *intrinsically* part of the relational model. Where exist a relation, you can be sure you can apply *ALL* the relational operators. Them are [described in their own page](/operators).
+The *relational operators* are the second most distinctive feature of the language. Them are *intrinsically* part of the relational model. Where exist a relation, you can be sure you can apply *ALL* the relational operators. Them are **[described in their own page](/operators)**.
 
 All relational operators must start with the operator *query* `?`.
 
@@ -262,7 +264,7 @@ print(1)
 sum([1;2;3])
 ```
 
-The available functions are [described in their own page](/functions).
+The available functions are **[described in their own page](/functions).**
 
 ## Control flow
 
@@ -283,7 +285,7 @@ Note how you can return the last value in each if branch.
 
 However, this is not possible for looping constructs, these return the "pass"  value. Is similar to the void in other languages.
 
-### while
+### while (TBD)
 
 ```rust
 while true do
@@ -292,7 +294,7 @@ end
 -- return pass
 ```
 
-### for
+### for  (TBD)
 
 ```rust
 for i in 1..10 do --this count from 1 to 9

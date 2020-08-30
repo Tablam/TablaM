@@ -127,11 +127,21 @@ pub enum Token {
        #[regex(r#""""[\w\d\s[^\s"{}]]+""""#)]
        Multiline,
     */
+    //Dates
+    #[display(fmt = "DateTime")]
+    #[regex(r#"dt"\d\d\d\d-(0[1-9]|1[012])-([12][0-9]|3[01]|0[1-9])T([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]""#)]
+    DateTime,
+    #[display(fmt = "Date")]
+    #[regex(r#"d"\d\d\d\d-(0[1-9]|1[012])-([12][0-9]|3[01]|0[1-9])""#)]
+    Date,
+    #[display(fmt = "Time")]
+    #[regex(r#"t"[0-1][0-9]|2[0-3]:[0-5][0-9]:[0-5][0-9]""#)]
+    Time,
+
     //Identifiers
     #[display(fmt = "{}", _0)]
     #[regex(r"[[:upper:]]+[_[[:upper:]][[:digit:]]]*", |lex| parse_token_data::<String>(lex))]
     Constant(String),
-    #[display(fmt = "{}", _0)]
     #[regex(r"[[:upper:]](?:[[[:lower:]][[:digit:]]]+[[:upper:]]*)+", |lex| parse_token_data::<String>(lex))]
     Type(String),
     #[display(fmt = "{}", _0)]

@@ -172,7 +172,7 @@ impl<'source> Parser<'source> {
                 Column::Alias(Box::new(ColumnAlias::rename_name(&alias.from, &alias.to))).into()
             }
             Token::If => self.parse_if()?,
-            t => panic!("bad token: {:?}", t),
+            token => return Err(ErrorLang::Unimplemented(token.clone())),
         };
         Ok(expr)
     }

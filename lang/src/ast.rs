@@ -41,6 +41,8 @@ pub enum ErrorLang {
         _0
     )]
     ExpectedBoolOp(Token),
+    #[display(fmt = "Unimplemented syntax. {:?}", _0)]
+    Unimplemented(Token),
     #[display(fmt = "Unexpected EOF.")]
     Eof,
 }

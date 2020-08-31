@@ -29,6 +29,4 @@ To help make this project a reality consider donate or sponsor with a subscripti
 
 [https://www.elmalabarista.com](https://www.elmalabarista.com)
 
-
-
-![powered-by-vercel](/Users/mamcx/Proyectos/TablaM/docs/static/img/powered-by-vercel.svg)
+<a href="http://google.com.au/">![powered-by-vercel](/docs/static/img/powered-by-vercel.svg)</a>

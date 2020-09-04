@@ -56,3 +56,11 @@ The `?skip N` operator skip N rows from the query and return the rest. If the va
 let products := sales ?skip 1
 ```
 
+### ?distinct:
+
+The `?distinct` operator avoid duplicated values.
+
+```rust
+let products := sales ?distinct
+```
+

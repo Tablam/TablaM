@@ -15,7 +15,7 @@
 * Could be kind of similar to kdb+ but far less cryptic.
 * Be good not only for developers, but also for database end-users to explore and interface with data.
 * Work on OSX, Linux, Windows, iOS, Android
-* Easy to embed in other languages?
+* Easy to embed in other languages
 
 ### Contribution guidelines ###
 

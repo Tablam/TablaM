@@ -21,6 +21,12 @@
 
 * If have experience in language design or in-memory database coding, please help!
 
+### Sponsor the project
+
+To help make this project a reality consider donate or sponsor with a subscription in [https://www.buymeacoffee.com/mamcx](https://www.buymeacoffee.com/mamcx).
+
 ### Who do I talk to? ###
 
 [https://www.elmalabarista.com](https://www.elmalabarista.com)
+
+<a href="https://vercel.com/?utm_source=tablam&utm_campaign=oss">![powered-by-vercel](/docs/static/img/powered-by-vercel.svg)</a>

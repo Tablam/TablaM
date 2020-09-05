@@ -11,7 +11,7 @@ use crate::for_impl::*;
 use crate::schema::Schema;
 use crate::stdlib::io::File;
 use crate::sum_type::Case;
-use crate::types::{DataType, NativeKind, Rel, RelShape, Tuple};
+use crate::types::{DataType, NativeKind, Rel, RelShape, Relation, Tuple};
 use crate::vector::Vector;
 
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -46,7 +46,9 @@ pub enum Scalar {
     Vector(Rc<Vector>),
     //Lazy computation
     //Seq(Seq<'static>),
-    File(File),
+    //Objects
+    File(Box<File>),
+    Rel(Relation),
     Top,
 }
 
@@ -93,6 +95,7 @@ impl Rel for Scalar {
             Scalar::Sum(_) => "Sum",
             Scalar::Vector(x) => x.type_name(),
             Scalar::File(x) => x.type_name(),
+            Scalar::Rel(_) => "Rel",
             Scalar::Top => "Top",
         }
     }
@@ -112,6 +115,7 @@ impl Rel for Scalar {
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
             Scalar::Vector(x) => x.kind(),
+            Scalar::Rel(x) => x.rel.kind(),
             Scalar::File(x) => x.kind(),
             Scalar::Top => DataType::ANY,
         }
@@ -120,6 +124,7 @@ impl Rel for Scalar {
     fn schema(&self) -> Schema {
         match self {
             Scalar::Vector(x) => x.schema(),
+            Scalar::Rel(x) => x.rel.schema(),
             Scalar::File(x) => x.schema(),
             x => schema_it(x.kind()),
         }
@@ -128,6 +133,7 @@ impl Rel for Scalar {
     fn len(&self) -> usize {
         match self {
             Scalar::Vector(x) => x.len(),
+            Scalar::Rel(x) => x.rel.len(),
             Scalar::File(x) => x.len(),
             _ => 1,
         }
@@ -136,6 +142,7 @@ impl Rel for Scalar {
     fn cols(&self) -> usize {
         match self {
             Scalar::Vector(x) => x.cols(),
+            Scalar::Rel(x) => x.rel.cols(),
             Scalar::File(x) => x.cols(),
             _ => 1,
         }
@@ -144,6 +151,7 @@ impl Rel for Scalar {
     fn rows(&self) -> Option<usize> {
         match self {
             Scalar::Vector(x) => x.rows(),
+            Scalar::Rel(x) => x.rel.rows(),
             Scalar::File(x) => x.rows(),
             _ => Some(1),
         }
@@ -156,6 +164,7 @@ impl Rel for Scalar {
     fn rel_shape(&self) -> RelShape {
         match self {
             Scalar::Vector(x) => x.rel_shape(),
+            Scalar::Rel(x) => x.rel.rel_shape(),
             Scalar::File(x) => x.rel_shape(),
             _ => RelShape::Scalar,
         }
@@ -164,6 +173,7 @@ impl Rel for Scalar {
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
         match self {
             Scalar::Vector(x) => x.rel_hash(&mut hasher),
+            Scalar::Rel(x) => x.rel.rel_hash(&mut hasher),
             Scalar::File(x) => x.rel_hash(&mut hasher),
             x => x.hash(&mut hasher),
         }

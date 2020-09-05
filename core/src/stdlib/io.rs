@@ -189,7 +189,7 @@ impl Clone for File {
 fn open(of: &[Scalar]) -> Result<Scalar> {
     if let Scalar::UTF8(name) = &of[0] {
         let f = File::new(name.as_str().into(), true, false, false)?;
-        Ok(Scalar::File(f))
+        Ok(Scalar::File(Box::from(f)))
     } else {
         Err(Error::ParamTypeMismatch("open".into()))
     }

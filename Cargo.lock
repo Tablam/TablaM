@@ -175,6 +175,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dyn-clone"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c53dc3a653e0f64081026e4bf048d48fec9fce90c66e8326ca7292df0ff2d82"
+
+[[package]]
 name = "either"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -509,6 +515,7 @@ dependencies = [
  "decorum",
  "derivative",
  "derive_more",
+ "dyn-clone",
  "genawaiter",
  "itertools",
  "rust_decimal",

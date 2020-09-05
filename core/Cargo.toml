@@ -15,8 +15,9 @@ bit-vec =  { version ="0.6.2", features = ["std"] }
 chrono = { version = "0.4.13", features = ["default"] }
 console = "0.12.0"
 decorum = { version = "0.3.1", features = ["std"] }
-derive_more = "0.99.9"
 derivative = "2.1.1"
+derive_more = "0.99.9"
+dyn-clone = "1.0.2"
 genawaiter = "0.99.1"
 itertools = "0.9.0"
 rust_decimal = { version ="1.7.0", features = [] }

@@ -6,6 +6,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use derive_more::{Display, From};
+use dyn_clone::DynClone;
 
 use crate::query::QueryOp;
 use crate::scalar::Scalar;
@@ -302,10 +303,6 @@ pub enum RelShape {
     Table,
 }
 
-pub trait ToHash {
-    fn to_hash(&self, h: &mut dyn Hasher);
-}
-
 pub trait Value: Clone + PartialEq + PartialOrd + Eq + Ord + ToHash {}
 impl<T: Clone + PartialEq + PartialOrd + Eq + Ord + ToHash> Value for T {}
 
@@ -368,7 +365,7 @@ where
     }
 }
 
-pub trait Rel: fmt::Debug {
+pub trait Rel: fmt::Debug + DynClone {
     fn type_name(&self) -> &str;
 
     fn kind(&self) -> DataType;
@@ -399,23 +396,48 @@ pub trait Rel: fmt::Debug {
     }
 }
 
-impl PartialEq for dyn Rel {
+#[derive(Debug, From)]
+pub struct Relation {
+    pub(crate) rel: Box<dyn Rel>,
+}
+
+impl Clone for Relation {
+    fn clone(&self) -> Self {
+        Relation {
+            rel: dyn_clone::clone_box(&*self.rel),
+        }
+    }
+}
+
+impl PartialEq for Relation {
     fn eq(&self, other: &Self) -> bool {
-        self.rel_eq(other)
+        self.rel.rel_eq(&*other.rel)
     }
 }
-impl Eq for dyn Rel {}
+impl Eq for Relation {}
 
-impl PartialOrd for dyn Rel {
+impl PartialOrd for Relation {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.rel_cmp(other))
+        Some(self.rel.rel_cmp(&*other.rel))
     }
 }
 
-impl Ord for dyn Rel {
+impl Ord for Relation {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.rel_cmp(other)
+        self.rel.rel_cmp(&*other.rel)
     }
+}
+
+impl fmt::Display for Relation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.rel.type_name())?;
+        write!(f, "{}", self.rel.schema())?;
+        Ok(())
+    }
+}
+
+pub trait ToHash {
+    fn to_hash(&self, h: &mut dyn Hasher);
 }
 
 impl ToHash for dyn Rel {
@@ -424,17 +446,9 @@ impl ToHash for dyn Rel {
     }
 }
 
-impl fmt::Display for dyn Rel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.type_name())?;
-        write!(f, "{}", self.schema())?;
-        Ok(())
-    }
-}
-
-impl Hash for dyn Rel {
+impl Hash for Relation {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.rel_hash(state);
+        self.rel.rel_hash(state);
     }
 }
 

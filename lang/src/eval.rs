@@ -125,7 +125,7 @@ impl Program {
                 }
                 let result = f.call(params.as_slice())?;
                 match result {
-                    Scalar::None => Expression::Pass,
+                    Scalar::Unit => Expression::Pass,
                     expr => Expression::Value(expr),
                 }
             }

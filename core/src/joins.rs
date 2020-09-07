@@ -63,7 +63,7 @@ pub fn left_join<'a, 'b>(
             if let Some(b) = rhs.get(&a) {
                 co.yield_(combine(&a, &b)).await;
             } else {
-                co.yield_(combine(&a, &Scalar::None.repeat(fields_rhs)))
+                co.yield_(combine(&a, &Scalar::Unit.repeat(fields_rhs)))
                     .await;
             }
         }

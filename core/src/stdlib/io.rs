@@ -212,13 +212,13 @@ fn save_file(of: &[Scalar]) -> Result<Scalar> {
         let s = format!("{}", &of[1]);
         f.write_string(&s)?;
 
-        return Ok(Scalar::None);
+        return Ok(Scalar::Unit);
     };
     Err(Error::ParamTypeMismatch("save_file".into()))
 }
 
 fn fn_open(name: &str, params: &[Param], f: RelFun) -> Function {
-    Function::new(name, params, &[Param::kind(DataType::None)], Box::new(f))
+    Function::new(name, params, &[Param::kind(DataType::Unit)], Box::new(f))
 }
 
 pub fn functions() -> Vec<Function> {

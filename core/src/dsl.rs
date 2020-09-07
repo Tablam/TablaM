@@ -125,5 +125,5 @@ pub fn scalar<T: Into<Scalar>>(x: T) -> Vector {
 }
 
 pub fn some<T: Into<Scalar>>(x: T) -> Scalar {
-    Case::some(x.into()).into()
+    SumType::some(x.into()).into()
 }

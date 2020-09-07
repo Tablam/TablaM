@@ -11,7 +11,7 @@ fn test_vec() {
         &lhs,
         &rhs,
         q,
-        "Vec[it:Int, it_2:Str; 1, None; 2, None; 3, None]",
+        "Vec[it:Int, it_2:Str; 1, Unit; 2, Unit; 3, Unit]",
     );
 
     let rhs = array(&[1, 2, 3]);
@@ -27,7 +27,7 @@ fn test_tree() {
 
     let q = JoinOp::join_left(lhs.schema.clone(), rhs.schema.clone());
 
-    check_join_tree(&lhs, &rhs, q, "Tree[pk key:Int, value:Str, key_2:Float, value_2:Bool; 1, 'a', None, None; 2, 'b', None, None]");
+    check_join_tree(&lhs, &rhs, q, "Tree[pk key:Int, value:Str, key_2:Float, value_2:Bool; 1, 'a', Unit, Unit; 2, 'b', Unit, Unit]");
 
     let rhs = tree_kv2(&[(1, "a"), (2, "b")]);
 

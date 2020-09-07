@@ -10,7 +10,8 @@ use crate::errors;
 use crate::for_impl::*;
 use crate::schema::Schema;
 use crate::stdlib::io::File;
-use crate::sum_type::Case;
+use crate::sum_type::SumType;
+use crate::tuple::RelTuple;
 use crate::types::{DataType, NativeKind, Rel, RelShape, Relation, Tuple};
 use crate::vector::Vector;
 
@@ -21,7 +22,7 @@ pub type Time = chrono::NaiveTime;
 //NOTE: The order of this enum must match DataType
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display, From)]
 pub enum Scalar {
-    None,
+    Unit,
     Bit(u8),
     Bool(bool),
     //Numeric
@@ -41,8 +42,9 @@ pub enum Scalar {
     #[display(fmt = "'{}'", _0)]
     UTF8(Rc<String>),
     //Sum types
-    Sum(Box<Case>),
+    Sum(Box<SumType>),
     //Collections
+    Tuple(Rc<RelTuple>),
     Vector(Rc<Vector>),
     //Lazy computation
     //Seq(Seq<'static>),
@@ -81,7 +83,7 @@ impl Scalar {
 impl Rel for Scalar {
     fn type_name(&self) -> &str {
         match self {
-            Scalar::None => "None",
+            Scalar::Unit => "None",
             Scalar::Bit(_) => "Bit",
             Scalar::Bool(_) => "Bool",
             Scalar::Char(_) => "Char",
@@ -94,6 +96,7 @@ impl Rel for Scalar {
             Scalar::UTF8(_) => "UTF8",
             Scalar::Sum(_) => "Sum",
             Scalar::Vector(x) => x.type_name(),
+            Scalar::Tuple(x) => x.type_name(),
             Scalar::File(x) => x.type_name(),
             Scalar::Rel(_) => "Rel",
             Scalar::Top => "Top",
@@ -102,7 +105,7 @@ impl Rel for Scalar {
 
     fn kind(&self) -> DataType {
         match self {
-            Scalar::None => DataType::None,
+            Scalar::Unit => DataType::Unit,
             Scalar::Bit(_) => DataType::Bit,
             Scalar::Bool(_) => DataType::Bool,
             Scalar::Char(_) => DataType::Char,
@@ -114,6 +117,7 @@ impl Rel for Scalar {
             Scalar::Time(_) => DataType::Time,
             Scalar::UTF8(_) => DataType::UTF8,
             Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
+            Scalar::Tuple(x) => x.kind(),
             Scalar::Vector(x) => x.kind(),
             Scalar::Rel(x) => x.rel.kind(),
             Scalar::File(x) => x.kind(),
@@ -124,6 +128,7 @@ impl Rel for Scalar {
     fn schema(&self) -> Schema {
         match self {
             Scalar::Vector(x) => x.schema(),
+            Scalar::Tuple(x) => x.schema(),
             Scalar::Rel(x) => x.rel.schema(),
             Scalar::File(x) => x.schema(),
             x => schema_it(x.kind()),
@@ -133,6 +138,7 @@ impl Rel for Scalar {
     fn len(&self) -> usize {
         match self {
             Scalar::Vector(x) => x.len(),
+            Scalar::Tuple(x) => x.len(),
             Scalar::Rel(x) => x.rel.len(),
             Scalar::File(x) => x.len(),
             _ => 1,
@@ -142,6 +148,7 @@ impl Rel for Scalar {
     fn cols(&self) -> usize {
         match self {
             Scalar::Vector(x) => x.cols(),
+            Scalar::Tuple(x) => x.cols(),
             Scalar::Rel(x) => x.rel.cols(),
             Scalar::File(x) => x.cols(),
             _ => 1,
@@ -151,6 +158,7 @@ impl Rel for Scalar {
     fn rows(&self) -> Option<usize> {
         match self {
             Scalar::Vector(x) => x.rows(),
+            Scalar::Tuple(x) => x.rows(),
             Scalar::Rel(x) => x.rel.rows(),
             Scalar::File(x) => x.rows(),
             _ => Some(1),
@@ -164,6 +172,7 @@ impl Rel for Scalar {
     fn rel_shape(&self) -> RelShape {
         match self {
             Scalar::Vector(x) => x.rel_shape(),
+            Scalar::Tuple(x) => x.rel_shape(),
             Scalar::Rel(x) => x.rel.rel_shape(),
             Scalar::File(x) => x.rel_shape(),
             _ => RelShape::Scalar,
@@ -173,6 +182,7 @@ impl Rel for Scalar {
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
         match self {
             Scalar::Vector(x) => x.rel_hash(&mut hasher),
+            Scalar::Tuple(x) => x.rel_hash(&mut hasher),
             Scalar::Rel(x) => x.rel.rel_hash(&mut hasher),
             Scalar::File(x) => x.rel_hash(&mut hasher),
             x => x.hash(&mut hasher),
@@ -245,6 +255,12 @@ impl From<&str> for Scalar {
     }
 }
 
+impl From<&char> for Scalar {
+    fn from(x: &char) -> Self {
+        Scalar::Char(*x)
+    }
+}
+
 impl From<String> for Scalar {
     fn from(x: String) -> Self {
         Scalar::UTF8(Rc::new(x))
@@ -257,8 +273,8 @@ impl From<Box<Scalar>> for Scalar {
     }
 }
 
-impl From<Case> for Scalar {
-    fn from(x: Case) -> Self {
+impl From<SumType> for Scalar {
+    fn from(x: SumType) -> Self {
         Scalar::Sum(Box::new(x))
     }
 }

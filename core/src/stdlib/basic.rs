@@ -11,7 +11,7 @@ fn print_ln(of: &[Scalar]) -> Result<Scalar> {
     for x in of {
         println!("{}", x);
     }
-    Ok(Scalar::None)
+    Ok(Scalar::Unit)
 }
 
 macro_rules! cmp_fn {
@@ -42,16 +42,16 @@ pub fn min(params: &[Scalar]) -> Result<Scalar> {
     if value.rows().unwrap_or(0) != 0 {
         fold(Scalar::Top, params, fn_min)
     } else {
-        Ok(Scalar::None)
+        Ok(Scalar::Unit)
     }
 }
 
 pub fn max(params: &[Scalar]) -> Result<Scalar> {
     let value = &params[0];
     if value.rows().unwrap_or(0) != 0 {
-        fold(Scalar::None, params, fn_max)
+        fold(Scalar::Unit, params, fn_max)
     } else {
-        Ok(Scalar::None)
+        Ok(Scalar::Unit)
     }
 }
 

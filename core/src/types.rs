@@ -77,7 +77,7 @@ pub enum KindGroup {
 //The overall sorting order is defined as:
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub enum DataType {
-    None,
+    Unit, //The BOTTOM type
     Bit,
     Bool,
     // Numeric
@@ -102,6 +102,8 @@ pub enum DataType {
     Sum(Box<DataType>),
     #[display(fmt = "{}", _0)]
     Vec(KindFlat),
+    #[display(fmt = "{}", _0)]
+    Tuple(KindFlat),
     #[display(fmt = "Tree({})", _0)]
     Tree(KindRel),
     #[display(fmt = "Map({})", _0)]
@@ -111,7 +113,7 @@ pub enum DataType {
     // Planed: Blob
     // For list, dynamic
     #[display(fmt = "Any")]
-    ANY,
+    ANY, //The TOP type
 }
 
 impl DataType {
@@ -131,7 +133,7 @@ impl DataType {
 
     pub fn default_value(&self) -> Scalar {
         match self {
-            DataType::None => Scalar::None,
+            DataType::Unit => Scalar::Unit,
             DataType::Bit => Scalar::Bit(0),
             DataType::Bool => Scalar::Bool(false),
             DataType::I64 => Scalar::I64(0),
@@ -142,13 +144,14 @@ impl DataType {
             DataType::DateTime => unimplemented!(),
             DataType::Char => Scalar::Char(char::default()),
             DataType::UTF8 => Scalar::UTF8(Rc::new("".into())),
-            DataType::ANY => Scalar::None,
+            DataType::ANY => Scalar::Unit,
             DataType::Variadic(_) => unimplemented!(),
             DataType::Sum(_) => unimplemented!(),
             DataType::Vec(_) => unimplemented!(),
             DataType::Tree(_) => unimplemented!(),
             DataType::Map(_) => unimplemented!(),
             DataType::Seq(_) => unimplemented!(),
+            DataType::Tuple(_) => unimplemented!(),
         }
     }
 }

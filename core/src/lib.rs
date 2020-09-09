@@ -45,8 +45,9 @@ pub mod prelude {
     pub use crate::scalar::{fold_fn2, Scalar};
     pub use crate::schema::*;
     pub use crate::stdlib::*;
-    pub use crate::sum_type::SumType;
+    pub use crate::sum_type::SumVariant;
     pub use crate::tree::Tree;
+    pub use crate::tuple::RelTuple;
     pub use crate::types::{
         BinOp, Column, ColumnAlias, DataType, KindGroup, LogicOp, NativeKind, Rel, RelShape, Tuple,
     };

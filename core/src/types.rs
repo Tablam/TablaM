@@ -99,7 +99,7 @@ pub enum DataType {
     #[display(fmt = "{}...", _0)]
     Variadic(Box<DataType>),
     #[display(fmt = "Enum({})", _0)]
-    Sum(Box<DataType>),
+    Sum(KindFlat),
     #[display(fmt = "{}", _0)]
     Vec(KindFlat),
     #[display(fmt = "{}", _0)]

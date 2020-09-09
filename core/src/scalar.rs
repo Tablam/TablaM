@@ -10,7 +10,7 @@ use crate::errors;
 use crate::for_impl::*;
 use crate::schema::Schema;
 use crate::stdlib::io::File;
-use crate::sum_type::SumType;
+use crate::sum_type::SumVariant;
 use crate::tuple::RelTuple;
 use crate::types::{DataType, NativeKind, Rel, RelShape, Relation, Tuple};
 use crate::vector::Vector;
@@ -42,7 +42,7 @@ pub enum Scalar {
     #[display(fmt = "'{}'", _0)]
     UTF8(Rc<String>),
     //Sum types
-    Sum(Box<SumType>),
+    Sum(Box<SumVariant>),
     //Collections
     Tuple(Rc<RelTuple>),
     Vector(Rc<Vector>),
@@ -116,7 +116,7 @@ impl Rel for Scalar {
             Scalar::I64(_) => DataType::I64,
             Scalar::Time(_) => DataType::Time,
             Scalar::UTF8(_) => DataType::UTF8,
-            Scalar::Sum(x) => DataType::Sum(Box::new(x.value.kind())),
+            Scalar::Sum(x) => x.kind(),
             Scalar::Tuple(x) => x.kind(),
             Scalar::Vector(x) => x.kind(),
             Scalar::Rel(x) => x.rel.kind(),
@@ -273,8 +273,8 @@ impl From<Box<Scalar>> for Scalar {
     }
 }
 
-impl From<SumType> for Scalar {
-    fn from(x: SumType) -> Self {
+impl From<SumVariant> for Scalar {
+    fn from(x: SumVariant) -> Self {
         Scalar::Sum(Box::new(x))
     }
 }

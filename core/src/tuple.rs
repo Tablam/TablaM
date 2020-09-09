@@ -6,7 +6,7 @@ use crate::types::format_list;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RelTuple {
-    data: BTreeMap<String, Scalar>,
+    pub data: BTreeMap<String, Scalar>,
 }
 
 impl RelTuple {

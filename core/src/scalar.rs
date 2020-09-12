@@ -8,9 +8,11 @@ use rust_decimal::Decimal;
 use crate::dsl::schema_it;
 use crate::errors;
 use crate::for_impl::*;
+use crate::map::Map;
 use crate::schema::Schema;
 use crate::stdlib::io::File;
 use crate::sum_type::SumVariant;
+use crate::tree::Tree;
 use crate::tuple::RelTuple;
 use crate::types::{DataType, NativeKind, Rel, RelShape, Relation, Tuple};
 use crate::vector::Vector;
@@ -46,6 +48,8 @@ pub enum Scalar {
     //Collections
     Tuple(Rc<RelTuple>),
     Vector(Rc<Vector>),
+    Tree(Rc<Tree>),
+    Map(Rc<Map>),
     //Lazy computation
     //Seq(Seq<'static>),
     //Objects
@@ -97,6 +101,8 @@ impl Rel for Scalar {
             Scalar::Sum(_) => "Sum",
             Scalar::Vector(x) => x.type_name(),
             Scalar::Tuple(x) => x.type_name(),
+            Scalar::Tree(x) => x.type_name(),
+            Scalar::Map(x) => x.type_name(),
             Scalar::File(x) => x.type_name(),
             Scalar::Rel(_) => "Rel",
             Scalar::Top => "Top",
@@ -119,6 +125,8 @@ impl Rel for Scalar {
             Scalar::Sum(x) => x.kind(),
             Scalar::Tuple(x) => x.kind(),
             Scalar::Vector(x) => x.kind(),
+            Scalar::Tree(x) => x.kind(),
+            Scalar::Map(x) => x.kind(),
             Scalar::Rel(x) => x.rel.kind(),
             Scalar::File(x) => x.kind(),
             Scalar::Top => DataType::ANY,
@@ -129,6 +137,8 @@ impl Rel for Scalar {
         match self {
             Scalar::Vector(x) => x.schema(),
             Scalar::Tuple(x) => x.schema(),
+            Scalar::Tree(x) => x.schema(),
+            Scalar::Map(x) => x.schema(),
             Scalar::Rel(x) => x.rel.schema(),
             Scalar::File(x) => x.schema(),
             x => schema_it(x.kind()),
@@ -139,6 +149,8 @@ impl Rel for Scalar {
         match self {
             Scalar::Vector(x) => x.len(),
             Scalar::Tuple(x) => x.len(),
+            Scalar::Tree(x) => x.len(),
+            Scalar::Map(x) => x.len(),
             Scalar::Rel(x) => x.rel.len(),
             Scalar::File(x) => x.len(),
             _ => 1,
@@ -149,6 +161,8 @@ impl Rel for Scalar {
         match self {
             Scalar::Vector(x) => x.cols(),
             Scalar::Tuple(x) => x.cols(),
+            Scalar::Tree(x) => x.cols(),
+            Scalar::Map(x) => x.cols(),
             Scalar::Rel(x) => x.rel.cols(),
             Scalar::File(x) => x.cols(),
             _ => 1,
@@ -159,6 +173,8 @@ impl Rel for Scalar {
         match self {
             Scalar::Vector(x) => x.rows(),
             Scalar::Tuple(x) => x.rows(),
+            Scalar::Tree(x) => x.rows(),
+            Scalar::Map(x) => x.rows(),
             Scalar::Rel(x) => x.rel.rows(),
             Scalar::File(x) => x.rows(),
             _ => Some(1),
@@ -173,6 +189,8 @@ impl Rel for Scalar {
         match self {
             Scalar::Vector(x) => x.rel_shape(),
             Scalar::Tuple(x) => x.rel_shape(),
+            Scalar::Tree(x) => x.rel_shape(),
+            Scalar::Map(x) => x.rel_shape(),
             Scalar::Rel(x) => x.rel.rel_shape(),
             Scalar::File(x) => x.rel_shape(),
             _ => RelShape::Scalar,
@@ -183,6 +201,8 @@ impl Rel for Scalar {
         match self {
             Scalar::Vector(x) => x.rel_hash(&mut hasher),
             Scalar::Tuple(x) => x.rel_hash(&mut hasher),
+            Scalar::Tree(x) => x.rel_hash(&mut hasher),
+            Scalar::Map(x) => x.rel_hash(&mut hasher),
             Scalar::Rel(x) => x.rel.rel_hash(&mut hasher),
             Scalar::File(x) => x.rel_hash(&mut hasher),
             x => x.hash(&mut hasher),

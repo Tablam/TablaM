@@ -3,7 +3,7 @@ use indexmap::set::IndexSet;
 use crate::for_impl::*;
 use crate::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Map {
     pub schema: Schema,
     pk: usize,
@@ -123,6 +123,12 @@ impl PartialOrd for Map {
 impl Ord for Map {
     fn cmp(&self, other: &Self) -> Ordering {
         self.compare(other)
+    }
+}
+
+impl PartialEq for Map {
+    fn eq(&self, other: &Self) -> bool {
+        self.compare(other) == Ordering::Equal
     }
 }
 

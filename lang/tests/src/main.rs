@@ -1,3 +1,3 @@
-mod basic;
 mod eval;
-mod utils;
+mod lexer;
+mod parser;

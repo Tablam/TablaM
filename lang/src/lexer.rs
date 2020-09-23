@@ -147,12 +147,26 @@ pub enum Token {
     #[display(fmt = "{}", _0)]
     #[regex(r"[[:lower:]][_[[:lower:]][[:digit:]]]*", |lex| parse_token_data::<String>(lex))]
     Variable(String),
-    #[display(fmt = ":=")]
-    #[token(":=")]
-    Assignment,
     #[display(fmt = ":")]
     #[token(":")]
     TypeDefiner,
+
+    //Assignments
+    #[display(fmt = ":=")]
+    #[token(":=")]
+    Assignment,
+    #[display(fmt = "+=")]
+    #[token("+=")]
+    PlusEqual,
+    #[display(fmt = "-=")]
+    #[token("-=")]
+    MinusEqual,
+    #[display(fmt = "*=")]
+    #[token("*=")]
+    MultiplicationEqual,
+    #[display(fmt = "/=")]
+    #[token("/=")]
+    DivisionEqual,
 
     //Boolean
     #[display(fmt = "true")]
@@ -210,6 +224,9 @@ pub enum Token {
     #[display(fmt = "{}", _0)]
     #[regex(r"\d+", |lex| parse_token_data::<i64>(lex))]
     Integer(i64),
+    #[display(fmt = "{}b", _0)]
+    #[regex(r"[01]+b", |lex| parse_token_data_without_suffix::<String>(lex, 1))]
+    Bit(String),
 
     //Arithmetic operators
     #[display(fmt = "+")]
@@ -224,18 +241,6 @@ pub enum Token {
     #[display(fmt = "/")]
     #[token("/")]
     Division,
-    #[display(fmt = "+=")]
-    #[token("+=")]
-    PlusEqual,
-    #[display(fmt = "-=")]
-    #[token("-=")]
-    MinusEqual,
-    #[display(fmt = "*=")]
-    #[token("*=")]
-    MultiplicationEqual,
-    #[display(fmt = "/=")]
-    #[token("/=")]
-    DivisionEqual,
 
     //Collections
     #[display(fmt = "[")]

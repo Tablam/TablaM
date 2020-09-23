@@ -86,6 +86,58 @@ fn test_assignment() {
             (Token::Integer(1i64), "1", 11..12),
         ],
     );
+
+    let source = "int += 1";
+    assert_lex(
+        source,
+        &[
+            (Token::Variable("int".to_string()), "int", 0..3),
+            (Token::PlusEqual, "+=", 4..6),
+            (Token::Integer(1), "1", 7..8),
+        ],
+    );
+
+    let source = "int += 2 * 1";
+    assert_lex(
+        source,
+        &[
+            (Token::Variable("int".to_string()), "int", 0..3),
+            (Token::PlusEqual, "+=", 4..6),
+            (Token::Integer(2), "2", 7..8),
+            (Token::Multiplication, "*", 9..10),
+            (Token::Integer(1), "1", 11..12),
+        ],
+    );
+
+    let source = "int -= n";
+    assert_lex(
+        source,
+        &[
+            (Token::Variable("int".to_string()), "int", 0..3),
+            (Token::MinusEqual, "-=", 4..6),
+            (Token::Variable("n".to_string()), "n", 7..8),
+        ],
+    );
+
+    let source = "int /= n";
+    assert_lex(
+        source,
+        &[
+            (Token::Variable("int".to_string()), "int", 0..3),
+            (Token::DivisionEqual, "/=", 4..6),
+            (Token::Variable("n".to_string()), "n", 7..8),
+        ],
+    );
+
+    let source = "int *= n";
+    assert_lex(
+        source,
+        &[
+            (Token::Variable("int".to_string()), "int", 0..3),
+            (Token::MultiplicationEqual, "*=", 4..6),
+            (Token::Variable("n".to_string()), "n", 7..8),
+        ],
+    );
 }
 
 #[test]
@@ -258,4 +310,29 @@ fn test_numbers() {
             (Token::Variable("money".to_string()), "money", 84..89)
         ],
     );
+
+    let source = "let b := 1b";
+    assert_lex(
+        source,
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("b".to_string()), "b", 4..5),
+            (Token::Assignment, ":=", 6..8),
+            (Token::Bit("1".to_string()), "1b", 9..11),
+        ],
+    );
+
+    let source = "let b := 101001b";
+    assert_lex(
+        source,
+        &[
+            (Token::Let, "let", 0..3),
+            (Token::Variable("b".to_string()), "b", 4..5),
+            (Token::Assignment, ":=", 6..8),
+            (Token::Bit("101001".to_string()), "101001b", 9..16),
+        ],
+    );
+
+    // let result: Vec<_> = Token::lexer(source).spanned().collect();
+    // dbg!(result);
 }

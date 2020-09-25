@@ -181,8 +181,16 @@ impl Rel for File {
 
 impl Clone for File {
     fn clone(&self) -> Self {
-        //TODO: Fix this ugly hack
-        Self::new(self.path.clone(), self.read, self.write, self.create).unwrap()
+        //This never fail, according to impl of file
+        let f = self.f.try_clone().expect("Fail to clone");
+        File {
+            f,
+            schema: self.schema.clone(),
+            path: self.path.clone(),
+            read: self.read,
+            write: self.write,
+            create: self.create,
+        }
     }
 }
 

@@ -43,6 +43,12 @@ impl<T: fmt::Debug> fmt::Debug for RefCount<T> {
     }
 }
 
+impl<T: std::io::Read> std::io::Read for &RefCount<T> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.v.borrow_mut().read(buf)
+    }
+}
+
 //TODO: Look if this is ok...
 impl<'a, T> Deref for RefCount<T> {
     type Target = T;
@@ -52,6 +58,7 @@ impl<'a, T> Deref for RefCount<T> {
         unsafe { self.as_ptr().as_ref().unwrap() }
     }
 }
+
 impl<T: PartialEq> PartialEq for RefCount<T> {
     fn eq(&self, other: &Self) -> bool {
         self.deref() == other.deref()

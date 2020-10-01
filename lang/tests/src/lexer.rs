@@ -282,6 +282,23 @@ fn test_collections() {
 fn test_strings() {
     assert_lex(r#""a""#, &[(Token::String("a".into()), r#""a""#, 0..3)]);
     assert_lex("'a'", &[(Token::String("a".into()), "'a'", 0..3)]);
+
+    let source = r#" """prueba de multiline "string" 
+    con {cualquiera} string""" "#;
+    assert_lex(
+        source,
+        &[(
+            Token::Multiline(
+                "prueba de multiline string \n    con {cualquiera} string".to_string(),
+            ),
+            "\"\"\"prueba de multiline string \n    con {cualquiera} string\"\"\"",
+            1..62,
+        )],
+    );
+
+    let source = r#""""1 {{1+2}}""""#;
+    let result: Vec<_> = Token::lexer(source).spanned().collect();
+    dbg!(result);
 }
 
 #[test]
@@ -332,7 +349,4 @@ fn test_numbers() {
             (Token::Bit("101001".to_string()), "101001b", 9..16),
         ],
     );
-
-    // let result: Vec<_> = Token::lexer(source).spanned().collect();
-    // dbg!(result);
 }

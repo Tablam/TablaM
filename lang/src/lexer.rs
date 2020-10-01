@@ -72,10 +72,44 @@ where
     Some(parsed_value)
 }
 
-fn parse_token_quotes(lexer: &mut Lexer<Token>) -> Option<String> {
+fn parse_token_without_prefix_suffix(
+    lexer: &mut Lexer<Token>,
+    prefix_len: usize,
+    suffix_len: usize,
+) -> Option<String> {
     let parsed_value: String = lexer.slice().parse().unwrap();
 
-    Some(parsed_value[1..parsed_value.len() - 1].to_string())
+    Some(parsed_value[prefix_len..parsed_value.len() - suffix_len].to_string())
+}
+
+fn parse_token_quotes(lexer: &mut Lexer<Token>) -> Option<String> {
+    parse_token_without_prefix_suffix(lexer, 1, 1)
+}
+
+fn parse_format_token(
+    lexer: &mut Lexer<Token>,
+    starts_with_quotes: bool,
+    ends_with_quotes: bool,
+    starts_with_braces: bool,
+    ends_with_braces: bool,
+) -> Option<String> {
+    let mut prefix = 0;
+    let mut suffix = 0;
+
+    if starts_with_braces {
+        prefix = 2
+    }
+    if starts_with_quotes {
+        prefix = 3
+    }
+    if ends_with_braces {
+        suffix = 2
+    }
+    if ends_with_quotes {
+        suffix = 3
+    }
+
+    parse_token_without_prefix_suffix(lexer, prefix, suffix)
 }
 
 fn parse_aliased_column(lexer: &mut Lexer<Token>) -> Option<Alias> {
@@ -119,14 +153,28 @@ pub enum Token {
     //Strings, capture with both single and double quote
     #[display(fmt = "{}", _0)]
     #[regex(
-        r#""([^"\\]|\\t|\\u|\\n|\\")*"|'([^'\\]|\\t|\\u|\\n|\\')*'"#,
+        r#""([^"\\]|\\t|\\u|\\n)*"|'([^'\\]|\\t|\\u|\\n)*'"#,
         parse_token_quotes
     )]
     String(String),
-    /*
-       #[regex(r#""""[\w\d\s[^\s"{}]]+""""#)]
-       Multiline,
-    */
+
+    //Multiline and formatting
+    #[display(fmt = "{}", _0)]
+    #[regex(r#""""[\w\d\s[^\s"]]+""""#, |lex| parse_format_token(lex, true, true, false, false))]
+    Multiline(String),
+    #[display(fmt = "{}", _0)]
+    #[regex(r#""""[\w\d\s]*\{\{"#, |lex| parse_format_token(lex, true, false, false, true))]
+    StartFormatting(String),
+    #[display(fmt = "{}", _0)]
+    #[regex(r#"[\w\d\s]*\{\{"#, |lex| parse_format_token(lex, false, false, false, true))]
+    StartInternalFormatting(String),
+    #[display(fmt = "{}", _0)]
+    #[regex(r#"\}\}[\w\d\s]*"#, |lex| parse_format_token(lex, false, false, true, false))]
+    EndInternalFormatting(String),
+    #[display(fmt = "{}", _0)]
+    #[regex(r#"\}\}[\w\d\s]*""""#, |lex| parse_format_token(lex, false, true, true, false))]
+    EndFormatting(String),
+
     //Dates
     #[display(fmt = "DateTime")]
     #[regex(r#"dt"\d\d\d\d-(0[1-9]|1[012])-([12][0-9]|3[01]|0[1-9])T([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]""#)]

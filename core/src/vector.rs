@@ -173,7 +173,7 @@ impl Vector {
                 data.push(apply(&[initial.clone(), x.clone()])?);
             }
 
-            Ok(Self::new_vector(data, self.kind()))
+            Ok(Self::new_table(data, self.schema.clone()))
         } else {
             Err(Error::RankNotMatch)
         }

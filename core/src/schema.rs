@@ -165,9 +165,9 @@ impl Schema {
 
         match select {
             ProjectDef::Select(_) => {
-                for (i, _) in self.fields.iter().enumerate() {
+                for (i, f) in fields.into_iter().enumerate() {
                     if to_select.contains(&i) {
-                        selected.push(fields[i].clone());
+                        selected.push(f);
                         pos.push(i);
                     }
                 }

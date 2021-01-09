@@ -12,8 +12,8 @@ edition = "2018"
 [dependencies]
 tablam = { path = "../core" }
 logos = "0.11.4"
-rustyline = "6.2.0"
-seahorse = "1.0.0"
+rustyline = "7.1.0"
+seahorse = "1.1.1"
 
 [[bin]]
 name = "tablam"

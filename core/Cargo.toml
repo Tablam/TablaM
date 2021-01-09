@@ -11,14 +11,14 @@ categories = ["interpreter", "language", "relational", "tablam"]
 edition = "2018"
 
 [dependencies]
-bit-vec =  { version ="0.6.2", features = ["std"] }
-chrono = { version = "0.4.13", features = ["default"] }
-console = "0.12.0"
+bit-vec =  { version = "0.6.3", features = ["std"] }
+chrono = { version = "0.4.19", features = ["default"] }
+console = "0.14.0"
 decorum = { version = "0.3.1", features = ["std"] }
-derivative = "2.1.1"
-derive_more = "0.99.9"
-dyn-clone = "1.0.2"
+derivative = "2.1.3"
+derive_more = "0.99.11"
+dyn-clone = "1.0.4"
 genawaiter = "0.99.1"
-itertools = "0.9.0"
-indexmap = { version ="1.6.0", features = [] }
-rust_decimal = { version ="1.7.0", features = [] }
+itertools = "0.10.0"
+indexmap = { version = "1.6.1", features = [] }
+rust_decimal = { version = "1.9.0", features = [] }

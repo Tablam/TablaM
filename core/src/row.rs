@@ -1,7 +1,7 @@
 use crate::for_impl::*;
 use crate::prelude::*;
 
-#[derive(Debug, Clone, Ord)]
+#[derive(Debug, Clone)]
 pub struct RowPk {
     pub pk: usize,
     pub data: Vec<Scalar>,
@@ -13,7 +13,11 @@ impl RowPk {
     }
 
     pub fn pk(&self) -> &Scalar {
-        &self.data[self.pk]
+        if self.data.is_empty() {
+            &Scalar::Unit
+        } else {
+            &self.data[self.pk]
+        }
     }
 }
 
@@ -32,7 +36,13 @@ impl Hash for RowPk {
 
 impl PartialOrd for RowPk {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.pk().cmp(&other.pk()))
+        Some(self.data.cmp(&other.data))
+    }
+}
+
+impl Ord for RowPk {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.data.cmp(&other.data)
     }
 }
 

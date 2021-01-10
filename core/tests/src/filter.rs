@@ -36,3 +36,13 @@ fn test_tree() {
 
     check_query_tree(&rel, q, "Tree[pk key:Int, value:Int; 3, 4; 5, 6]");
 }
+
+#[test]
+fn test_names() {
+    let rel = array(&[1, 2, 3]);
+    let q = rel
+        .query()
+        .select(&[coln("it")])
+        .eq(qcol_name("it"), qscalar(1));
+    check_query_vec(&rel, q, "Vec[it:Int; 1]");
+}

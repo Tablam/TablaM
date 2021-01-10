@@ -47,6 +47,10 @@ pub fn qscalar<T: Into<Scalar>>(x: T) -> Comparable {
     Comparable::Scalar(x.into())
 }
 
+pub fn qcol_name(name: &str) -> Comparable {
+    Comparable::Name(name.to_string())
+}
+
 pub fn to_vec<T>(x: &[T]) -> Vec<Scalar>
 where
     T: Into<Scalar> + Clone,

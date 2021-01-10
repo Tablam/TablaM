@@ -37,6 +37,14 @@ fn test_rename() {
 }
 
 #[test]
+fn test_names() {
+    let rel = array(&[1, 2, 3]);
+
+    let q = rel.query().select(&[coln("it")]);
+    check_query_vec(&rel, q, "Vec[it:Int; 1; 2; 3]");
+}
+
+#[test]
 fn test_tree() {
     let rel = tree_kv(&[1, 2, 3, 4, 5, 6]);
 
@@ -67,6 +75,5 @@ fn test_file() {
     let q = q.execute(rel.rows_iter());
 
     let v = Vector::from_iter(q.schema, q.iter);
-    dbg!(&v);
     assert_eq!(&format!("{}", v), "Vec[id:Str; '1']");
 }

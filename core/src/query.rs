@@ -27,16 +27,22 @@ pub enum CmOp {
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display, From)]
 pub enum Comparable {
     #[display(fmt = "#{}", _0)]
+    Name(String),
+    #[display(fmt = "#{}", _0)]
     Column(usize),
     #[display(fmt = "{}", _0)]
     Scalar(Scalar),
 }
 
 impl Comparable {
-    fn get_value<'a>(&'a self, row: &'a [Scalar]) -> &'a Scalar {
+    fn get_value<'a>(&'a self, schema: &Schema, row: &'a [Scalar]) -> &'a Scalar {
         match self {
             Comparable::Column(pos) => &row[*pos],
             Comparable::Scalar(x) => x,
+            Comparable::Name(name) => {
+                let (pos, _) = schema.resolve_name(&Column::Name(name.into()));
+                &row[pos]
+            }
         }
     }
 }
@@ -56,9 +62,9 @@ impl fmt::Display for CompareOp {
 
 macro_rules! cmp_fn {
     ($name:ident, $fun:ident) => {
-        pub fn $name(row: &[Scalar], lhs: &Comparable, rhs: &Comparable) -> bool {
-            let lhs = lhs.get_value(row);
-            let rhs = rhs.get_value(row);
+        pub fn $name(schema: &Schema, row: &[Scalar], lhs: &Comparable, rhs: &Comparable) -> bool {
+            let lhs = lhs.get_value(schema, row);
+            let rhs = rhs.get_value(schema, row);
             lhs.$fun(rhs)
         }
     };
@@ -71,7 +77,7 @@ impl CompareOp {
     cmp_fn!(fn_greater, gt);
     cmp_fn!(fn_greater_eq, ge);
 
-    pub fn get_fn(&self) -> &dyn Fn(&[Scalar], &Comparable, &Comparable) -> bool {
+    pub fn get_fn(&self) -> &dyn Fn(&Schema, &[Scalar], &Comparable, &Comparable) -> bool {
         match self.op {
             CmOp::Eq => &Self::fn_eq,
             CmOp::NotEq => &Self::fn_not_eq,
@@ -211,9 +217,10 @@ impl QueryOp {
         for q in self.query {
             result = match q {
                 Query::Filter(cmp) => {
+                    let schema2 = schema.clone();
                     let iter = result.filter(move |row| {
                         let apply = cmp.get_fn();
-                        (apply)(row, &cmp.lhs, &cmp.rhs)
+                        (apply)(&schema2, row, &cmp.lhs, &cmp.rhs)
                     });
                     Box::new(iter)
                 }

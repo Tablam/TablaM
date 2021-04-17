@@ -34,3 +34,8 @@ fn test_ifs() {
     run_ok("let a:=true\nif a do 1 else 2 end", "1");
     run_ok("let a:=true\n let b:= if a do 1 else 2 end\nb", "1");
 }
+
+#[test]
+fn test_whiles() {
+    run_ok("let a:=true\nwhile a do a:=false\n end", "pass");
+}

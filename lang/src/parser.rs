@@ -173,6 +173,7 @@ impl<'source> Parser<'source> {
                 Column::Alias(Box::new(ColumnAlias::rename_name(&alias.from, &alias.to))).into()
             }
             Token::If => self.parse_if()?,
+            Token::While => self.parse_where()?,
             token => return Err(ErrorLang::Unimplemented(token.clone())),
         };
         Ok(expr)
@@ -551,6 +552,31 @@ impl<'source> Parser<'source> {
             Box::new(op),
             Box::new(Expression::Block(if_true.into())),
             Box::new(Expression::Block(if_else.into())),
+        ))
+    }
+
+    fn parse_where(&mut self) -> Return {
+        let op = self.parse_bool_op()?;
+
+        self.check_and_accept_next(Token::Start)?;
+
+        let mut block = Vec::new();
+        while let Some(t) = self.peek() {
+            if t == Token::End {
+                break;
+            }
+            block.push(self.parse_ast(0)?);
+        }
+
+        if self.peek() == Some(Token::End) {
+            self.accept();
+        } else {
+            return Err(ErrorLang::Eof);
+        }
+
+        Ok(Expression::While(
+            Box::new(op),
+            Box::new(Expression::Block(block.into())),
         ))
     }
 }

@@ -402,18 +402,7 @@ impl<'source> Parser<'source> {
                     self._check_field_count(&mut line_pos, &mut field_count, fields.len())
                 {
                     return Err(err);
-                } /*
-                  if END_OF_ROW.contains(&self.peek()) {
-                      if field_count != fields.len() {
-                          return Err(ErrorLang::FieldCountNotMatch(
-                              fields.len(),
-                              line_pos,
-                              field_count,
-                          ));
-                      }
-                      line_pos += 1;
-                      field_count = 0;
-                  }*/
+                }
             }
 
             if Token::EndVector

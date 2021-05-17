@@ -1,11 +1,11 @@
 use crate::prelude::*;
 
-// fn print(of: &[Scalar]) -> Result<Scalar> {
-//     for x in of {
-//         print!("{}", x);
-//     }
-//     Ok(Scalar::None)
-// }
+fn print(of: &[Scalar]) -> Result<Scalar> {
+    for x in of {
+        print!("{}", x);
+    }
+    Ok(Scalar::Unit)
+}
 
 fn print_ln(of: &[Scalar]) -> Result<Scalar> {
     for x in of {
@@ -69,9 +69,8 @@ fn cmp_values(name: &str, param: DataType, f: RelFun) -> Function {
 }
 
 pub fn functions() -> Vec<Function> {
-    //Temporal Hack for submission : In repl.it print not work.
     vec![
-        basic_fn_variadic("print", DataType::ANY, print_ln),
+        basic_fn_variadic("print", DataType::ANY, print),
         basic_fn_variadic("println", DataType::ANY, print_ln),
         cmp_values("min", DataType::ANY, min),
         cmp_values("max", DataType::ANY, max),

@@ -24,6 +24,13 @@ pub enum ErrorLang {
         _2
     )]
     Unexpected(Token, Token, TokenData),
+    #[display(
+        fmt = "The field count not match, the header row declare {} columns, but at row {}, it have {} columns",
+        _0,
+        _1,
+        _2
+    )]
+    FieldCountNotMatch(usize, usize, usize),
     #[display(fmt = "Unexpected item: {}", _0)]
     UnexpectedItem(Expression),
     #[display(fmt = "Syntax query error: {}", _0)]

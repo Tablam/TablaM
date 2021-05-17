@@ -9,6 +9,7 @@ use tablam::prelude::{
     Column, ColumnAlias, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
 };
 use tablam::types::Rel;
+const END_OF_ROW: [Option<Token>; 2] = [Some(Token::RowSeparator), Some(Token::EndVector)];
 
 pub struct Parser<'source> {
     scanner: Scanner<'source>,
@@ -335,24 +336,86 @@ impl<'source> Parser<'source> {
         Ok(FunctionCall::new(name, &params).into())
     }
 
+    fn _check_field_count(
+        &mut self,
+        line_pos: &mut usize,
+        field_count: &mut usize,
+        expected: usize,
+    ) -> Option<ErrorLang> {
+        if END_OF_ROW.contains(&self.peek()) {
+            if *field_count != expected {
+                return Some(ErrorLang::FieldCountNotMatch(
+                    expected,
+                    *line_pos,
+                    *field_count,
+                ));
+            }
+            *line_pos = *line_pos + 1;
+            *field_count = 0;
+        }
+        None
+    }
+
     fn parse_vector(&mut self) -> Return {
         let mut fields = Vec::<Field>::new();
         let mut data = Vec::<Scalar>::new();
+        let mut is_header = true;
+        let mut field_count = 0usize;
+        let mut line_pos = 0usize;
         loop {
             //if empty vector or ends in ; or ,
             if let Some(Token::EndVector) = self.peek() {
+                if let Some(err) =
+                    self._check_field_count(&mut line_pos, &mut field_count, fields.len())
+                {
+                    return Err(err);
+                }
                 self.accept();
                 break;
             }
-
-            //dbg!("other");
             let cell = self.parse_ast(0)?;
-            match cell.clone() {
-                Expression::ParameterDefinition(field) => fields.push(field.into()),
-                Expression::Value(scalar) => data.push(scalar),
-                _ => return Err(ErrorLang::UnexpectedItem(cell)),
+
+            if is_header {
+                //I'm parsing a header definition name:kind,... or infering from values [1,2..]
+                match cell.clone() {
+                    Expression::ParameterDefinition(field) => fields.push(field.into()),
+                    Expression::Value(scalar) => {
+                        fields.push(Field::new_owned(
+                            format!("col{}", fields.len()),
+                            scalar.kind(),
+                        ));
+                        data.push(scalar)
+                    }
+                    _ => return Err(ErrorLang::UnexpectedItem(cell)),
+                };
+                if END_OF_ROW.contains(&self.peek()) {
+                    is_header = false;
+                    line_pos += 1;
+                }
+            } else {
+                match cell.clone() {
+                    Expression::Value(scalar) => data.push(scalar),
+                    _ => return Err(ErrorLang::UnexpectedItem(cell)),
+                }
+                field_count += 1;
+                if let Some(err) =
+                    self._check_field_count(&mut line_pos, &mut field_count, fields.len())
+                {
+                    return Err(err);
+                } /*
+                  if END_OF_ROW.contains(&self.peek()) {
+                      if field_count != fields.len() {
+                          return Err(ErrorLang::FieldCountNotMatch(
+                              fields.len(),
+                              line_pos,
+                              field_count,
+                          ));
+                      }
+                      line_pos += 1;
+                      field_count = 0;
+                  }*/
             }
-            //dbg!(cell);
+
             if Token::EndVector
                 == self.match_at_least_one(vec![
                     Token::Separator,

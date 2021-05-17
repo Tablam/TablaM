@@ -473,15 +473,19 @@ fn test_parser() {
         String::from("print( := 'world',  := 'hello',  := 2,  := 5)")
     );
 
-    /*let input = "let n := [9; 8; 10]";
+    let input = "let n := [9; 8; 10]";
     let mut parser = Parser::new(input);
     let result = parser.parse();
-    println!("{}", input);
-    dbg!(result);
-    dbg!(result.expect("not getting expression").to_string());
     assert_eq!(
         result.expect("not getting expression").to_string(),
-        String::from("let complex := Vec[real:Dec, img:Int; 1, 3; 3, 4; 4, 5]")
-       );
-     */
+        String::from("let n := Vec[it:Int; 9; 8; 10]")
+    );
+
+    let input = "let n := [1, 2; 3, 4]";
+    let mut parser = Parser::new(input);
+    let result = parser.parse();
+    assert_eq!(
+        result.expect("not getting expression").to_string(),
+        String::from("let n := Vec[col0:Int, col1:Int; 1, 2; 3, 4]")
+    );
 }

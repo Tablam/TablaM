@@ -23,7 +23,7 @@ fn print_welcome() {
 }
 
 fn run_file(c: &Context) {
-    if let Some(f) = c.args.iter().next() {
+    if let Some(f) = c.args.first() {
         let path = PathBuf::from(f);
         match File::open(path) {
             Ok(mut f) => {

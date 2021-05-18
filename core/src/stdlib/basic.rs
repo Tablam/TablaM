@@ -1,3 +1,4 @@
+#![allow(clippy::unnecessary_wraps)]
 use crate::prelude::*;
 
 fn print(of: &[Scalar]) -> Result<Scalar> {
@@ -59,7 +60,7 @@ fn basic_fn_variadic(name: &str, kind: DataType, f: RelFun) -> Function {
     Function::new_single(
         name,
         Param::kind(DataType::Variadic(Box::new(kind))),
-        DataType::ANY,
+        DataType::Any,
         Box::new(f),
     )
 }
@@ -70,9 +71,9 @@ fn cmp_values(name: &str, param: DataType, f: RelFun) -> Function {
 
 pub fn functions() -> Vec<Function> {
     vec![
-        basic_fn_variadic("print", DataType::ANY, print),
-        basic_fn_variadic("println", DataType::ANY, print_ln),
-        cmp_values("min", DataType::ANY, min),
-        cmp_values("max", DataType::ANY, max),
+        basic_fn_variadic("print", DataType::Any, print),
+        basic_fn_variadic("println", DataType::Any, print_ln),
+        cmp_values("min", DataType::Any, min),
+        cmp_values("max", DataType::Any, max),
     ]
 }

@@ -58,8 +58,8 @@ pub struct File {
 }
 
 impl File {
-    pub fn map_err<T>(of: std::io::Result<T>, path: &PathBuf) -> Result<T> {
-        of.map_err(|e| Error::file_err(e, path.clone()))
+    pub fn map_err<T>(of: std::io::Result<T>, path: PathBuf) -> Result<T> {
+        of.map_err(|e| Error::file_err(e, path))
     }
 
     pub fn new(path: PathBuf, read: bool, write: bool, create: bool) -> Result<Self> {
@@ -69,20 +69,20 @@ impl File {
             .create(create)
             .open(&path);
 
-        let f = Self::map_err(f, &path)?;
+        let f = Self::map_err(f, path.clone())?;
         let schema = if let Some(header) = BufReader::new(&f).lines().next() {
             match header {
                 Ok(header) => {
                     let mut fields = Vec::new();
                     for f in header.split(',') {
-                        fields.push(Field::new(f, DataType::UTF8));
+                        fields.push(Field::new(f, DataType::Utf8));
                     }
                     Schema::new(fields, None)
                 }
                 Err(e) => return Err(Error::file_err(e, path)),
             }
         } else {
-            Schema::new_single("line", DataType::UTF8)
+            Schema::new_single("line", DataType::Utf8)
         };
         let mut f = File {
             f,
@@ -98,17 +98,17 @@ impl File {
 
     pub fn read_to_string(&mut self) -> Result<String> {
         let mut x = String::new();
-        Self::map_err(self.f.read_to_string(&mut x), &self.path)?;
+        Self::map_err(self.f.read_to_string(&mut x), self.path.clone())?;
         Ok(x)
     }
 
     pub fn write_string(&mut self, content: &str) -> Result<()> {
-        Self::map_err(self.f.write_all(content.as_bytes()), &self.path)?;
+        Self::map_err(self.f.write_all(content.as_bytes()), self.path.clone())?;
         Ok(())
     }
 
     pub fn seek_start(&mut self, pos: u64) -> Result<()> {
-        Self::map_err(self.f.seek(SeekFrom::Start(pos)), &self.path)?;
+        Self::map_err(self.f.seek(SeekFrom::Start(pos)), self.path.clone())?;
         Ok(())
     }
 
@@ -195,7 +195,7 @@ impl Clone for File {
 }
 
 fn open(of: &[Scalar]) -> Result<Scalar> {
-    if let Scalar::UTF8(name) = &of[0] {
+    if let Scalar::Utf8(name) = &of[0] {
         let f = File::new(name.as_str().into(), true, false, false)?;
         Ok(Scalar::File(Box::from(f)))
     } else {
@@ -231,15 +231,15 @@ fn fn_open(name: &str, params: &[Param], f: RelFun) -> Function {
 
 pub fn functions() -> Vec<Function> {
     vec![
-        fn_open("open", &[Param::kind(DataType::UTF8)], open),
+        fn_open("open", &[Param::kind(DataType::Utf8)], open),
         fn_open(
             "read_to_string",
-            &[Param::kind(DataType::UTF8)],
+            &[Param::kind(DataType::Utf8)],
             read_to_string,
         ),
         fn_open(
             "save",
-            &[Param::kind(DataType::ANY), Param::kind(DataType::UTF8)],
+            &[Param::kind(DataType::Any), Param::kind(DataType::Utf8)],
             save_file,
         ),
     ]

@@ -137,20 +137,11 @@ impl Expression {
     }
 
     pub fn is_eof(&self) -> bool {
-        match self {
-            Expression::Eof => true,
-            _ => false,
-        }
+        matches!(self, Expression::Eof)
     }
 
     pub fn is_indexed_column(&self) -> bool {
-        match self {
-            Expression::Column(col) => match col {
-                Column::Pos(_) => true,
-                _ => false,
-            },
-            _ => false,
-        }
+        matches!(self, Expression::Column(Column::Pos(_)))
     }
 
     pub fn create_bool_condition_qry(operator: Token, left: Self, right: Self) -> Self {

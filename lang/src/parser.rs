@@ -149,7 +149,7 @@ impl<'source> Parser<'source> {
             Token::Integer(number) => Expression::Value(Scalar::I64(*number)),
             Token::Float(number) => Expression::Value(Scalar::F64(*number)),
             Token::Decimal(decimal) => Expression::Value(Scalar::Decimal(*decimal)),
-            Token::String(text) => Expression::Value(Scalar::UTF8(Rc::new(text.into()))),
+            Token::String(text) => Expression::Value(Scalar::Utf8(Rc::new(text.into()))),
             Token::Var => self.parse_var()?,
             Token::Let => self.parse_let()?,
             Token::Variable(name) => {
@@ -350,7 +350,7 @@ impl<'source> Parser<'source> {
                     *field_count,
                 ));
             }
-            *line_pos = *line_pos + 1;
+            *line_pos += 1;
             *field_count = 0;
         }
         None
@@ -418,7 +418,7 @@ impl<'source> Parser<'source> {
 
         if data.is_empty() {
             return Ok(Expression::Value(Scalar::Vector(Rc::new(
-                Vector::new_empty(DataType::ANY),
+                Vector::new_empty(DataType::Any),
             ))));
         }
 
@@ -439,7 +439,7 @@ impl<'source> Parser<'source> {
         let collection = Expression::Variable(identifier);
         let mut operations = QueryOperation::new(
             collection,
-            QueryOp::new(Schema::new_single("", DataType::ANY)),
+            QueryOp::new(Schema::new_single("", DataType::Any)),
         );
         loop {
             operations = match self.peek() {
@@ -465,7 +465,7 @@ impl<'source> Parser<'source> {
                 }
                 Some(Token::Distinct) => {
                     self.accept();
-                    self.parse_distinct_qry(operations)?
+                    self.parse_distinct_qry(operations)
                 }
                 _ => break,
             }
@@ -474,8 +474,8 @@ impl<'source> Parser<'source> {
         Ok(Expression::QueryOperation(operations))
     }
 
-    fn parse_distinct_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {
-        Ok(operations.distinct())
+    fn parse_distinct_qry(&mut self, operations: QueryOperation) -> QueryOperation {
+        operations.distinct()
     }
 
     fn parse_skip_qry(&mut self, operations: QueryOperation) -> ReturnT<QueryOperation> {

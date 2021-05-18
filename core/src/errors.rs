@@ -19,8 +19,8 @@ pub enum Error {
     #[display(fmt = "The schemas must match exactly (field count, names & types)")]
     SchemaNotMatchExact,
     #[display(fmt = "IO Error: {}", _0)]
-    IOError(std::io::Error),
-    FileIOError(FileError),
+    IoError(std::io::Error),
+    FileIoError(FileError),
     #[display(fmt = "File Error: {}", _0)]
     FileError(std::io::Error, String),
     RankNotMatch,
@@ -34,7 +34,7 @@ pub enum Error {
 
 impl Error {
     pub fn file_err(e: std::io::Error, path: std::path::PathBuf) -> Self {
-        Error::FileIOError(FileError::new(e, path))
+        Error::FileIoError(FileError::new(e, path))
     }
 }
 

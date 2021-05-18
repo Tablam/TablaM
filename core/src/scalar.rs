@@ -42,7 +42,7 @@ pub enum Scalar {
     #[display(fmt = "'{}'", _0)]
     Char(char),
     #[display(fmt = "'{}'", _0)]
-    UTF8(Rc<String>),
+    Utf8(Rc<String>),
     //Sum types
     Sum(Box<SumVariant>),
     //Collections
@@ -97,7 +97,7 @@ impl Rel for Scalar {
             Scalar::F64(_) => "F64",
             Scalar::I64(_) => "I64",
             Scalar::Time(_) => "Time",
-            Scalar::UTF8(_) => "UTF8",
+            Scalar::Utf8(_) => "Utf8",
             Scalar::Sum(_) => "Sum",
             Scalar::Vector(x) => x.type_name(),
             Scalar::Tuple(x) => x.type_name(),
@@ -121,7 +121,7 @@ impl Rel for Scalar {
             Scalar::F64(_) => DataType::F64,
             Scalar::I64(_) => DataType::I64,
             Scalar::Time(_) => DataType::Time,
-            Scalar::UTF8(_) => DataType::UTF8,
+            Scalar::Utf8(_) => DataType::Utf8,
             Scalar::Sum(x) => x.kind(),
             Scalar::Tuple(x) => x.kind(),
             Scalar::Vector(x) => x.kind(),
@@ -129,7 +129,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.kind(),
             Scalar::Rel(x) => x.rel.kind(),
             Scalar::File(x) => x.kind(),
-            Scalar::Top => DataType::ANY,
+            Scalar::Top => DataType::Any,
         }
     }
 
@@ -246,7 +246,7 @@ macro_rules! kind_native {
 
 impl NativeKind for &str {
     fn kind() -> DataType {
-        DataType::UTF8
+        DataType::Utf8
     }
 }
 
@@ -255,7 +255,7 @@ kind_native!(bool, Bool);
 kind_native!(Decimal, Decimal);
 kind_native!(R64, F64);
 kind_native!(f64, F64);
-kind_native!(String, UTF8);
+kind_native!(String, Utf8);
 
 impl From<i32> for Scalar {
     fn from(x: i32) -> Self {
@@ -271,7 +271,7 @@ impl From<f64> for Scalar {
 
 impl From<&str> for Scalar {
     fn from(x: &str) -> Self {
-        Scalar::UTF8(Rc::new(x.into()))
+        Scalar::Utf8(Rc::new(x.into()))
     }
 }
 
@@ -283,7 +283,7 @@ impl From<&char> for Scalar {
 
 impl From<String> for Scalar {
     fn from(x: String) -> Self {
-        Scalar::UTF8(Rc::new(x))
+        Scalar::Utf8(Rc::new(x))
     }
 }
 
@@ -335,7 +335,7 @@ convert!(Decimal, Scalar::Decimal);
 impl From<Scalar> for String {
     fn from(i: Scalar) -> Self {
         match i {
-            Scalar::UTF8(x) => x.to_string(),
+            Scalar::Utf8(x) => x.to_string(),
             _ => unreachable!("{:?}", i),
         }
     }

@@ -94,7 +94,7 @@ pub enum DataType {
     // Text
     Char,
     #[display(fmt = "Str")]
-    UTF8,
+    Utf8,
     // Complex
     #[display(fmt = "{}...", _0)]
     Variadic(Box<DataType>),
@@ -113,7 +113,7 @@ pub enum DataType {
     // Planed: Blob
     // For list, dynamic
     #[display(fmt = "Any")]
-    ANY, //The TOP type
+    Any, //The TOP type
 }
 
 impl DataType {
@@ -126,7 +126,7 @@ impl DataType {
             DataType::Date => KindGroup::Dates,
             DataType::DateTime => KindGroup::Dates,
             DataType::Char => KindGroup::Strings,
-            DataType::UTF8 => KindGroup::Strings,
+            DataType::Utf8 => KindGroup::Strings,
             _ => KindGroup::Other,
         }
     }
@@ -143,8 +143,8 @@ impl DataType {
             DataType::Date => unimplemented!(),
             DataType::DateTime => unimplemented!(),
             DataType::Char => Scalar::Char(char::default()),
-            DataType::UTF8 => Scalar::UTF8(Rc::new("".into())),
-            DataType::ANY => Scalar::Unit,
+            DataType::Utf8 => Scalar::Utf8(Rc::new("".into())),
+            DataType::Any => Scalar::Unit,
             DataType::Variadic(_) => unimplemented!(),
             DataType::Sum(_) => unimplemented!(),
             DataType::Vec(_) => unimplemented!(),
@@ -168,7 +168,7 @@ impl FromStr for DataType {
             "Date" => Ok(DataType::Date),
             "Time" => Ok(DataType::Time),
             "DateTime" => Ok(DataType::DateTime),
-            "Str" => Ok(DataType::UTF8),
+            "Str" => Ok(DataType::Utf8),
             "Char" => Ok(DataType::Char),
             x => Err(x.to_string()),
         }

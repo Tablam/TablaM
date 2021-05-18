@@ -40,7 +40,7 @@ fn increase_current_line(lexer: &mut Lexer<Token>) -> Skip {
     Skip
 }
 
-fn parse_token_data_without_suffix<T>(lexer: &mut Lexer<Token>, suffix_len: usize) -> Option<T>
+fn parse_token_data_without_suffix<T>(lexer: &mut Lexer<Token>, suffix_len: usize) -> T
 where
     T: std::fmt::Debug + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Debug,
@@ -48,10 +48,10 @@ where
     let value = lexer.slice();
     let parsed_value: T = value[..value.len() - suffix_len].parse::<T>().unwrap();
 
-    Some(parsed_value)
+    parsed_value
 }
 
-fn parse_token_data_without_prefix<T>(lexer: &mut Lexer<Token>, prefix_len: usize) -> Option<T>
+fn parse_token_data_without_prefix<T>(lexer: &mut Lexer<Token>, prefix_len: usize) -> T
 where
     T: std::fmt::Debug + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Debug,
@@ -59,35 +59,35 @@ where
     let value = lexer.slice();
     let parsed_value: T = value[prefix_len..value.len()].parse::<T>().unwrap();
 
-    Some(parsed_value)
+    parsed_value
 }
 
-fn parse_token_data<T>(lexer: &mut Lexer<Token>) -> Option<T>
+fn parse_token_data<T>(lexer: &mut Lexer<Token>) -> T
 where
     T: std::fmt::Debug + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Debug,
 {
     let parsed_value: T = lexer.slice().parse().unwrap();
 
-    Some(parsed_value)
+    parsed_value
 }
 
-fn parse_token_quotes(lexer: &mut Lexer<Token>) -> Option<String> {
+fn parse_token_quotes(lexer: &mut Lexer<Token>) -> String {
     let parsed_value: String = lexer.slice().parse().unwrap();
 
-    Some(parsed_value[1..parsed_value.len() - 1].to_string())
+    parsed_value[1..parsed_value.len() - 1].to_string()
 }
 
-fn parse_aliased_column(lexer: &mut Lexer<Token>) -> Option<Alias> {
+fn parse_aliased_column(lexer: &mut Lexer<Token>) -> Alias {
     let target: String = lexer.slice().parse().unwrap();
     let delimiter = " as #";
     let init = target.find(delimiter).expect("As not found");
     let column = target[1..init].to_string();
     let alias = target[init + delimiter.len()..].to_string();
-    Some(Alias {
+    Alias {
         from: column,
         to: alias,
-    })
+    }
 }
 
 pub(crate) fn extract_token_data(lexer: &mut Lexer<Token>) -> TokenData {
@@ -354,17 +354,17 @@ impl Token {
     }
 
     pub fn is_literal_or_value(&self) -> bool {
-        match self {
+        matches!(
+            self,
             Token::String(_)
-            | Token::Constant(_)
-            | Token::Variable(_)
-            | Token::True
-            | Token::False
-            | Token::Float(_)
-            | Token::Decimal(_)
-            | Token::Integer(_) => true,
-            _ => false,
-        }
+                | Token::Constant(_)
+                | Token::Variable(_)
+                | Token::True
+                | Token::False
+                | Token::Float(_)
+                | Token::Decimal(_)
+                | Token::Integer(_)
+        )
     }
 
     pub fn is_binary_operator(&self) -> bool {

@@ -3,6 +3,7 @@ mod cross;
 mod diff;
 mod distinct;
 mod filter;
+mod functions;
 mod intersect;
 mod join_left;
 mod limits;

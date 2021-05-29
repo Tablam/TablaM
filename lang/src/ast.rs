@@ -84,7 +84,7 @@ pub enum Expression {
 
     #[from]
     #[display(fmt = "{}", _0)]
-    Function(Function),
+    Function(FunctionDef),
     #[from]
     #[display(fmt = "{}", _0)]
     FunctionCall(FunctionCall),
@@ -292,6 +292,18 @@ impl ParamCall {
 }
 
 #[derive(Debug, Clone, From)]
+pub struct FunctionDef(Function);
+
+impl fmt::Display for FunctionDef {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "fun {}", self.0.name)?;
+        format_list(&self.0.params, self.0.params.len(), "(", ")", f)?;
+        format_list(&self.0.result, self.0.result.len(), " = ", "", f)?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, From)]
 pub struct FunctionCall {
     pub name: String,
     pub params: Vec<ParamCall>,
@@ -374,7 +386,7 @@ impl Environment {
         match self.functions.get(name) {
             Some(function) => {
                 if let Expression::Function(f) = function {
-                    Ok(f.clone())
+                    Ok(f.0.clone())
                 } else {
                     Err(ErrorLang::FunctionNotFound(name.to_string()))
                 }

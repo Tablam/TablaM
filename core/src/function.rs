@@ -6,13 +6,13 @@ use std::str::FromStr;
 use derive_more::{Display, From};
 
 use crate::prelude::*;
-use crate::types::format_list;
+use crate::types::{cmp, cmp_eq};
+use std::any::Any;
 
 //pub type RelFun = fn(&[Scalar]) -> Result<Scalar>;
 pub type RelFun = for<'a> fn(&'a [Scalar]) -> Result<Scalar>;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{}:{}", name, kind)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Param {
     pub name: String,
     pub kind: DataType,
@@ -41,11 +41,28 @@ impl Param {
     }
 }
 
-#[derive(Clone, From)]
+impl From<&Param> for Field {
+    fn from(x: &Param) -> Self {
+        Field::new(&x.name, x.kind.clone())
+    }
+}
+
+impl fmt::Display for Param {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.name.is_empty() {
+            write!(f, "{}", &self.kind)
+        } else {
+            write!(f, "{}: {}", &self.name, &self.kind)
+        }
+    }
+}
+
+#[derive(Clone, From, Display)]
+#[display(fmt = "Fun()")]
 pub struct Function {
     pub name: String,
-    params: Vec<Param>,
-    result: Vec<Param>,
+    pub params: Vec<Param>,
+    pub result: Vec<Param>,
     f: Box<RelFun>,
 }
 
@@ -90,12 +107,49 @@ impl Function {
     }
 }
 
-impl fmt::Display for Function {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "fun {}", self.name)?;
-        format_list(&self.params, self.params.len(), "(", ")", f)?;
-        format_list(&self.result, self.params.len(), " = ", "", f)?;
-        Ok(())
+impl Rel for Function {
+    fn type_name(&self) -> &str {
+        "Fun"
+    }
+
+    fn kind(&self) -> DataType {
+        DataType::Fun(self.into())
+    }
+
+    fn schema(&self) -> Schema {
+        Schema::new(self.params.iter().map(|x| x.into()).collect(), None)
+    }
+
+    fn len(&self) -> usize {
+        0
+    }
+
+    fn cols(&self) -> usize {
+        self.params.len()
+    }
+
+    fn rows(&self) -> Option<usize> {
+        None
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn rel_shape(&self) -> RelShape {
+        RelShape::Table
+    }
+
+    fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
+        self.hash(&mut hasher)
+    }
+
+    fn rel_eq(&self, other: &dyn Rel) -> bool {
+        cmp_eq(self, other)
+    }
+
+    fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
+        cmp(self, other)
     }
 }
 

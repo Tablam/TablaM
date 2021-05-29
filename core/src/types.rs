@@ -8,6 +8,8 @@ use std::str::FromStr;
 use derive_more::{Display, From};
 use dyn_clone::DynClone;
 
+use crate::function::Param;
+use crate::prelude::Function;
 use crate::query::QueryOp;
 use crate::scalar::Scalar;
 use crate::schema::Schema;
@@ -65,6 +67,35 @@ impl From<Vec<DataType>> for KindRel {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct KindFun {
+    params: Vec<Param>,
+    result: Vec<Param>,
+}
+
+impl From<&Function> for KindFun {
+    fn from(x: &Function) -> Self {
+        KindFun {
+            params: x.params.clone(),
+            result: x.result.clone(),
+        }
+    }
+}
+
+impl fmt::Display for KindFun {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_list(&self.params, self.params.len(), "(", ")", f)?;
+        match self.result.len() {
+            0 => Ok(()),
+            1 => {
+                let p = self.result.first().unwrap();
+                write!(f, "= {}", p)
+            }
+            _ => format_list(&self.result, self.result.len(), "= (", ")", f),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum KindGroup {
     Numbers,
@@ -101,15 +132,17 @@ pub enum DataType {
     #[display(fmt = "Enum({})", _0)]
     Sum(KindFlat),
     #[display(fmt = "{}", _0)]
-    Vec(KindFlat),
-    #[display(fmt = "{}", _0)]
     Tuple(KindFlat),
+    #[display(fmt = "{}", _0)]
+    Vec(KindFlat),
     #[display(fmt = "Tree({})", _0)]
     Tree(KindRel),
     #[display(fmt = "Map({})", _0)]
     Map(KindRel),
     #[display(fmt = "Seq({})", _0)]
     Seq(KindRel),
+    #[display(fmt = "Fun({})", _0)]
+    Fun(KindFun),
     // Planed: Blob
     // For list, dynamic
     #[display(fmt = "Any")]
@@ -152,6 +185,7 @@ impl DataType {
             DataType::Map(_) => unimplemented!(),
             DataType::Seq(_) => unimplemented!(),
             DataType::Tuple(_) => unimplemented!(),
+            DataType::Fun(_) => unreachable!(),
         }
     }
 }

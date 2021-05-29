@@ -9,6 +9,7 @@ use crate::dsl::schema_it;
 use crate::errors;
 use crate::for_impl::*;
 use crate::map::Map;
+use crate::prelude::Function;
 use crate::schema::Schema;
 use crate::stdlib::io::File;
 use crate::sum_type::SumVariant;
@@ -53,6 +54,7 @@ pub enum Scalar {
     //Lazy computation
     //Seq(Seq<'static>),
     //Objects
+    Fun(Box<Function>),
     File(Box<File>),
     Rel(Relation),
     Top,
@@ -104,6 +106,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.type_name(),
             Scalar::Map(x) => x.type_name(),
             Scalar::File(x) => x.type_name(),
+            Scalar::Fun(x) => x.type_name(),
             Scalar::Rel(_) => "Rel",
             Scalar::Top => "Top",
         }
@@ -129,6 +132,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.kind(),
             Scalar::Rel(x) => x.rel.kind(),
             Scalar::File(x) => x.kind(),
+            Scalar::Fun(x) => x.kind(),
             Scalar::Top => DataType::Any,
         }
     }
@@ -141,6 +145,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.schema(),
             Scalar::Rel(x) => x.rel.schema(),
             Scalar::File(x) => x.schema(),
+            Scalar::Fun(x) => x.schema(),
             x => schema_it(x.kind()),
         }
     }
@@ -153,6 +158,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.len(),
             Scalar::Rel(x) => x.rel.len(),
             Scalar::File(x) => x.len(),
+            Scalar::Fun(x) => x.len(),
             _ => 1,
         }
     }
@@ -165,6 +171,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.cols(),
             Scalar::Rel(x) => x.rel.cols(),
             Scalar::File(x) => x.cols(),
+            Scalar::Fun(x) => x.cols(),
             _ => 1,
         }
     }
@@ -177,6 +184,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.rows(),
             Scalar::Rel(x) => x.rel.rows(),
             Scalar::File(x) => x.rows(),
+            Scalar::Fun(x) => x.rows(),
             _ => Some(1),
         }
     }
@@ -193,6 +201,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.rel_shape(),
             Scalar::Rel(x) => x.rel.rel_shape(),
             Scalar::File(x) => x.rel_shape(),
+            Scalar::Fun(x) => x.rel_shape(),
             _ => RelShape::Scalar,
         }
     }
@@ -205,6 +214,7 @@ impl Rel for Scalar {
             Scalar::Map(x) => x.rel_hash(&mut hasher),
             Scalar::Rel(x) => x.rel.rel_hash(&mut hasher),
             Scalar::File(x) => x.rel_hash(&mut hasher),
+            Scalar::Fun(x) => x.rel_hash(&mut hasher),
             x => x.hash(&mut hasher),
         }
     }
@@ -302,6 +312,12 @@ impl From<SumVariant> for Scalar {
 impl From<Vector> for Scalar {
     fn from(x: Vector) -> Self {
         Scalar::Vector(Rc::new(x))
+    }
+}
+
+impl From<Function> for Scalar {
+    fn from(x: Function) -> Self {
+        Scalar::Fun(Box::new(x))
     }
 }
 

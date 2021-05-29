@@ -34,7 +34,7 @@ math_op!(math_minus, Sub::sub);
 math_op!(math_mul, Mul::mul);
 math_op!(math_div, Div::div);
 
-fn math_fn(name: &str, kind: DataType, f: RelFun) -> Function {
+pub fn math_fn(name: &str, kind: DataType, f: RelFun) -> Function {
     Function::new_bin_op(name, "left", "right", kind, Box::new(f))
 }
 

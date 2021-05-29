@@ -15,7 +15,7 @@ impl Program {
         let mut env = Environment::new(None);
 
         for f in tablam::stdlib::std_functions() {
-            env.add_function(f.name.clone(), Expression::Function(f));
+            env.add_function(f.name.clone(), Expression::Function(f.into()));
         }
 
         Program {

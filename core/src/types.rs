@@ -1,42 +1,81 @@
-use std::any::Any;
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use std::str::FromStr;
 
 use derive_more::{Display, From};
-use dyn_clone::DynClone;
 
-use crate::function::Param;
-use crate::prelude::Function;
-use crate::query::QueryOp;
-use crate::scalar::Scalar;
-use crate::schema::Schema;
+use crate::for_impl::*;
+use crate::function::Function;
+use crate::relation::{Rel, ToHash};
+use crate::row::{Col, Row};
+use crate::scalar::{Date, DateTime, Scalar, Time};
+use crate::schema::{Field, Schema};
+use crate::utils::format_list;
 
-pub fn format_list<I>(
-    list: impl IntoIterator<Item = I>,
-    total: usize,
-    start: &str,
-    end: &str,
-    f: &mut fmt::Formatter<'_>,
-) -> fmt::Result
-where
-    I: fmt::Display,
-{
-    write!(f, "{}", start)?;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RelShape {
+    Scalar,
+    Vector,
+    Table,
+    Iter,
+}
 
-    for (pos, x) in list.into_iter().enumerate() {
-        if pos < total - 1 {
-            write!(f, "{}, ", x)?;
-        } else {
-            write!(f, "{}", x)?;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ShapeLen {
+    Scalar,
+    Vec(usize),
+    Table(usize, usize),
+    Iter(usize, Option<usize>),
+}
+
+impl ShapeLen {
+    pub fn rows(&self) -> Option<usize> {
+        match self {
+            ShapeLen::Scalar => Some(1),
+            ShapeLen::Vec(x) => Some(*x),
+            ShapeLen::Table(_, x) => Some(*x),
+            ShapeLen::Iter(_, x) => *x,
         }
     }
 
-    write!(f, "{}", end)
+    pub fn cols(&self) -> usize {
+        match self {
+            ShapeLen::Scalar => 1,
+            ShapeLen::Vec(_) => 1,
+            ShapeLen::Table(x, _) => *x,
+            ShapeLen::Iter(x, _) => *x,
+        }
+    }
+
+    pub fn is_scalar(&self) -> bool {
+        self.cols() == 1 && self.rows() == Some(1)
+    }
+
+    fn is_bounded(&self) -> bool {
+        self.rows().is_some()
+    }
 }
 
+impl From<ShapeLen> for RelShape {
+    fn from(of: ShapeLen) -> Self {
+        match of {
+            ShapeLen::Scalar => RelShape::Scalar,
+            ShapeLen::Vec(cols) => {
+                if cols == 1 {
+                    RelShape::Scalar
+                } else {
+                    RelShape::Vector
+                }
+            }
+            ShapeLen::Table(_, _) => {
+                if of.is_scalar() {
+                    RelShape::Scalar
+                } else {
+                    RelShape::Table
+                }
+            }
+            ShapeLen::Iter(_, _) => RelShape::Iter,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KindFlat(Vec<DataType>);
 
@@ -69,15 +108,15 @@ impl From<Vec<DataType>> for KindRel {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KindFun {
-    params: Vec<Param>,
-    result: Vec<Param>,
+    params: Vec<Field>,
+    result: Box<Field>,
 }
 
 impl From<&Function> for KindFun {
     fn from(x: &Function) -> Self {
         KindFun {
-            params: x.params.clone(),
-            result: x.result.clone(),
+            params: x.head.fields.clone(),
+            result: Box::new(x.head.result.clone()),
         }
     }
 }
@@ -85,14 +124,8 @@ impl From<&Function> for KindFun {
 impl fmt::Display for KindFun {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         format_list(&self.params, self.params.len(), "(", ")", f)?;
-        match self.result.len() {
-            0 => Ok(()),
-            1 => {
-                let p = self.result.first().unwrap();
-                write!(f, "= {}", p)
-            }
-            _ => format_list(&self.result, self.result.len(), "= (", ")", f),
-        }
+
+        write!(f, "= {}", self.result)
     }
 }
 
@@ -109,7 +142,6 @@ pub enum KindGroup {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub enum DataType {
     Unit, //The BOTTOM type
-    Bit,
     Bool,
     // Numeric
     #[display(fmt = "Int")]
@@ -134,7 +166,9 @@ pub enum DataType {
     #[display(fmt = "{}", _0)]
     Tuple(KindFlat),
     #[display(fmt = "{}", _0)]
-    Vec(KindFlat),
+    Vec(Box<DataType>),
+    #[display(fmt = "{}", _0)]
+    Vec2d(KindFlat),
     #[display(fmt = "Tree({})", _0)]
     Tree(KindRel),
     #[display(fmt = "Map({})", _0)]
@@ -150,16 +184,27 @@ pub enum DataType {
 }
 
 impl DataType {
+    pub fn shape(&self) -> RelShape {
+        match self {
+            DataType::I64
+            | DataType::F64
+            | DataType::Decimal
+            | DataType::Time
+            | DataType::Date
+            | DataType::DateTime
+            | DataType::Char
+            | DataType::Utf8 => RelShape::Scalar,
+            DataType::Vec(_) => RelShape::Vector,
+            DataType::Seq(_) => RelShape::Iter,
+            _ => RelShape::Table,
+        }
+    }
+
     pub fn kind_group(&self) -> KindGroup {
         match self {
-            DataType::I64 => KindGroup::Numbers,
-            DataType::F64 => KindGroup::Numbers,
-            DataType::Decimal => KindGroup::Numbers,
-            DataType::Time => KindGroup::Dates,
-            DataType::Date => KindGroup::Dates,
-            DataType::DateTime => KindGroup::Dates,
-            DataType::Char => KindGroup::Strings,
-            DataType::Utf8 => KindGroup::Strings,
+            DataType::I64 | DataType::F64 | DataType::Decimal => KindGroup::Numbers,
+            DataType::Time | DataType::Date | DataType::DateTime => KindGroup::Dates,
+            DataType::Char | DataType::Utf8 => KindGroup::Strings,
             _ => KindGroup::Other,
         }
     }
@@ -167,25 +212,31 @@ impl DataType {
     pub fn default_value(&self) -> Scalar {
         match self {
             DataType::Unit => Scalar::Unit,
-            DataType::Bit => Scalar::Bit(0),
             DataType::Bool => Scalar::Bool(false),
             DataType::I64 => Scalar::I64(0),
             DataType::F64 => Scalar::F64(0.0.into()),
             DataType::Decimal => Scalar::Decimal(0.into()),
-            DataType::Time => unimplemented!(),
-            DataType::Date => unimplemented!(),
-            DataType::DateTime => unimplemented!(),
+            DataType::Time => Scalar::Time(Time::from_hms(0, 0, 0)),
+            DataType::Date => Scalar::Date(Date::from_utc(
+                chrono::MIN_DATE.naive_utc(),
+                chrono::FixedOffset::east(0),
+            )),
+            DataType::DateTime => Scalar::DateTime(DateTime::from_utc(
+                chrono::MIN_DATETIME.naive_utc(),
+                chrono::FixedOffset::east(0),
+            )),
             DataType::Char => Scalar::Char(char::default()),
             DataType::Utf8 => Scalar::Utf8(Rc::new("".into())),
-            DataType::Any => Scalar::Unit,
             DataType::Variadic(_) => unimplemented!(),
             DataType::Sum(_) => unimplemented!(),
             DataType::Vec(_) => unimplemented!(),
+            DataType::Vec2d(_) => unreachable!(),
             DataType::Tree(_) => unimplemented!(),
             DataType::Map(_) => unimplemented!(),
             DataType::Seq(_) => unimplemented!(),
             DataType::Tuple(_) => unimplemented!(),
             DataType::Fun(_) => unreachable!(),
+            DataType::Any => Scalar::Unit,
         }
     }
 }
@@ -195,15 +246,16 @@ impl FromStr for DataType {
 
     fn from_str(input: &str) -> Result<DataType, Self::Err> {
         match input {
+            "Unit" => Ok(DataType::Unit),
             "Bool" => Ok(DataType::Bool),
-            "Dec" => Ok(DataType::Decimal),
             "Int" => Ok(DataType::I64),
             "Float" => Ok(DataType::F64),
-            "Date" => Ok(DataType::Date),
+            "Dec" => Ok(DataType::Decimal),
             "Time" => Ok(DataType::Time),
+            "Date" => Ok(DataType::Date),
             "DateTime" => Ok(DataType::DateTime),
-            "Str" => Ok(DataType::Utf8),
             "Char" => Ok(DataType::Char),
+            "Str" => Ok(DataType::Utf8),
             x => Err(x.to_string()),
         }
     }
@@ -225,7 +277,7 @@ pub enum BinOp {
     Minus,
     #[display(fmt = "*")]
     Mul,
-    #[display(fmt = "+")]
+    #[display(fmt = "/")]
     Div,
 }
 
@@ -247,6 +299,93 @@ pub enum LogicOp {
     Less,
     #[display(fmt = "<=")]
     LessEqual,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
+pub enum CmOp {
+    #[display(fmt = "=")]
+    Eq,
+    #[display(fmt = "<>")]
+    NotEq,
+    #[display(fmt = "<")]
+    Less,
+    #[display(fmt = "<=")]
+    LessEq,
+    #[display(fmt = ">")]
+    Greater,
+    #[display(fmt = ">=")]
+    GreaterEq,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display, From)]
+pub enum Comparable {
+    #[display(fmt = "#{}", _0)]
+    Name(String),
+    #[display(fmt = "#{}", _0)]
+    Column(usize),
+    #[display(fmt = "{}", _0)]
+    Scalar(Scalar),
+}
+
+impl Comparable {
+    fn get_value<'a>(&'a self, schema: &Schema, row: &'a [Scalar]) -> &'a Scalar {
+        match self {
+            Comparable::Column(pos) => &row[*pos],
+            Comparable::Scalar(x) => x,
+            Comparable::Name(name) => {
+                let (pos, _) = schema.resolve_name(&Column::Name(name.into()));
+                &row[pos]
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub struct CompareOp {
+    pub op: CmOp,
+    pub lhs: Comparable,
+    pub rhs: Comparable,
+}
+
+impl fmt::Display for CompareOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {} {}", self.lhs, self.op, self.rhs)
+    }
+}
+
+macro_rules! cmp_fn {
+    ($name:ident, $fun:ident) => {
+        pub fn $name(schema: &Schema, row: &[Scalar], lhs: &Comparable, rhs: &Comparable) -> bool {
+            let lhs = lhs.get_value(schema, row);
+            let rhs = rhs.get_value(schema, row);
+            lhs.$fun(rhs)
+        }
+    };
+}
+impl CompareOp {
+    cmp_fn!(fn_eq, eq);
+    cmp_fn!(fn_not_eq, ne);
+    cmp_fn!(fn_less, lt);
+    cmp_fn!(fn_less_eq, le);
+    cmp_fn!(fn_greater, gt);
+    cmp_fn!(fn_greater_eq, ge);
+
+    pub fn get_fn(&self) -> &dyn Fn(&Schema, &[Scalar], &Comparable, &Comparable) -> bool {
+        match self.op {
+            CmOp::Eq => &Self::fn_eq,
+            CmOp::NotEq => &Self::fn_not_eq,
+            CmOp::Less => &Self::fn_less,
+            CmOp::LessEq => &Self::fn_less_eq,
+            CmOp::Greater => &Self::fn_greater,
+            CmOp::GreaterEq => &Self::fn_greater_eq,
+        }
+    }
+}
+
+impl CompareOp {
+    pub fn new(op: CmOp, lhs: Comparable, rhs: Comparable) -> Self {
+        CompareOp { op, lhs, rhs }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -333,13 +472,6 @@ pub enum Column {
     Alias(Box<ColumnAlias>),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RelShape {
-    Scalar,
-    Vec,
-    Table,
-}
-
 pub trait Value: Clone + PartialEq + PartialOrd + Eq + Ord + ToHash {}
 impl<T: Clone + PartialEq + PartialOrd + Eq + Ord + ToHash> Value for T {}
 
@@ -373,126 +505,15 @@ pub fn as_t_cloned<T: Clone + 'static>(of: &dyn Rel) -> Option<T> {
     None
 }
 
-pub fn is_t<T: 'static>(of: &dyn Rel) -> bool {
-    std::any::TypeId::of::<T>() == of.as_any().type_id()
+pub enum ScalarNative<'a, T> {
+    One(&'a T),
+    Slice(&'a [T]),
 }
-
-pub fn cmp_eq<T: 'static>(of: &T, other: &dyn Rel) -> bool
-where
-    T: PartialEq + fmt::Debug,
-{
-    //dbg!(&of.type_id(), &other.as_any().type_id());
-    let y = other.as_any();
-
-    if let Some(x) = y.downcast_ref::<T>() {
-        of == x
-    } else {
-        false
-    }
-}
-
-pub fn cmp<T: 'static>(of: &T, other: &dyn Rel) -> Ordering
-where
-    T: Ord + Rel,
-{
-    if let Some(x) = other.as_any().downcast_ref::<T>() {
-        of.cmp(&x)
-    } else {
-        of.schema().cmp(&other.schema())
-    }
-}
-
-pub trait Rel: fmt::Debug + DynClone {
-    fn type_name(&self) -> &str;
-
-    fn kind(&self) -> DataType;
-
-    fn schema(&self) -> Schema;
-
-    fn len(&self) -> usize;
-
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-    fn is_scalar(&self) -> bool {
-        self.cols() == 1 && self.rows() == Some(1)
-    }
-
-    fn cols(&self) -> usize;
-    fn rows(&self) -> Option<usize>;
-
-    fn as_any(&self) -> &dyn Any;
-
-    fn rel_shape(&self) -> RelShape;
-    fn rel_hash(&self, hasher: &mut dyn Hasher);
-    fn rel_eq(&self, other: &dyn Rel) -> bool;
-    fn rel_cmp(&self, other: &dyn Rel) -> Ordering;
-
-    fn query(&self) -> QueryOp {
-        QueryOp::new(self.schema())
-    }
-}
-
-#[derive(Debug, From)]
-pub struct Relation {
-    pub(crate) rel: Box<dyn Rel>,
-}
-
-impl Clone for Relation {
-    fn clone(&self) -> Self {
-        Relation {
-            rel: dyn_clone::clone_box(&*self.rel),
-        }
-    }
-}
-
-impl PartialEq for Relation {
-    fn eq(&self, other: &Self) -> bool {
-        self.rel.rel_eq(&*other.rel)
-    }
-}
-impl Eq for Relation {}
-
-impl PartialOrd for Relation {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.rel.rel_cmp(&*other.rel))
-    }
-}
-
-impl Ord for Relation {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.rel.rel_cmp(&*other.rel)
-    }
-}
-
-impl fmt::Display for Relation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.rel.type_name())?;
-        write!(f, "{}", self.rel.schema())?;
-        Ok(())
-    }
-}
-
-pub trait ToHash {
-    fn to_hash(&self, h: &mut dyn Hasher);
-}
-
-impl ToHash for dyn Rel {
-    fn to_hash(&self, h: &mut dyn Hasher) {
-        self.rel_hash(h)
-    }
-}
-
-impl Hash for Relation {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.rel.rel_hash(state);
-    }
-}
-
 //Type Alias...
 pub type Pos = Vec<usize>;
 pub type Tuple = Vec<Scalar>;
 pub type BoolExpr = dyn Fn(&dyn Rel) -> bool;
 pub type MapExpr = dyn Fn(&dyn Rel) -> Box<dyn Rel>;
-pub type Iter<'a> = dyn Iterator<Item = Tuple> + 'a;
-pub type Iter2 = dyn Iterator<Item = Vec<Scalar>>;
+pub type IterScalar<'a> = dyn Iterator<Item = &'a Scalar> + 'a;
+pub type IterRows<'a> = dyn Iterator<Item = Row<'a>> + 'a;
+pub type IterCols<'a> = dyn Iterator<Item = Col<'a>> + 'a;

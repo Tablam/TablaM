@@ -1,3 +1,4 @@
+use crate::function::FunctionDec;
 use crate::types::DataType;
 use derive_more::{Display, From};
 
@@ -30,6 +31,8 @@ pub enum Error {
     ParamTypeMismatch(String),
     #[display(fmt = "The function was called with {} params when need {}", _0, _1)]
     ParamCount(usize, usize),
+    #[display(fmt = "The function {}.name is not found", _0)]
+    FunctionNotFound(FunctionDec),
 }
 
 impl Error {
@@ -38,4 +41,4 @@ impl Error {
     }
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type ResultT<T> = std::result::Result<T, Error>;

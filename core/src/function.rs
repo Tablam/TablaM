@@ -1,106 +1,145 @@
-use core::cmp::Ordering;
-use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::str::FromStr;
+use crate::for_impl::*;
+use crate::prelude::*;
 
 use derive_more::{Display, From};
 
-use crate::prelude::*;
-use crate::types::{cmp, cmp_eq};
-use std::any::Any;
-
-//pub type RelFun = fn(&[Scalar]) -> Result<Scalar>;
-pub type RelFun = for<'a> fn(&'a [Scalar]) -> Result<Scalar>;
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Param {
-    pub name: String,
-    pub kind: DataType,
+pub enum FunCall<'a> {
+    Nullary,
+    Unary(&'a Scalar),
+    Binary(&'a Scalar, &'a Scalar),
+    Many(&'a [Scalar]),
 }
 
-impl Param {
-    pub fn new(name: &str, kind: DataType) -> Self {
-        Param {
-            name: name.to_string(),
-            kind,
+impl<'a> FunCall<'a> {
+    fn len(&self) -> usize {
+        match self {
+            FunCall::Nullary => 0,
+            FunCall::Unary(_) => 1,
+            FunCall::Binary(_, _) => 2,
+            FunCall::Many(x) => x.len(),
         }
     }
 
-    pub fn from_str(name: &str, kind: &str) -> Self {
-        Param {
-            name: name.to_string(),
-            kind: DataType::from_str(kind).expect("DataType not implemented"),
-        }
-    }
-
-    pub fn kind(kind: DataType) -> Self {
-        Param {
-            name: "".to_string(),
-            kind,
-        }
-    }
-}
-
-impl From<&Param> for Field {
-    fn from(x: &Param) -> Self {
-        Field::new(&x.name, x.kind.clone())
-    }
-}
-
-impl fmt::Display for Param {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.name.is_empty() {
-            write!(f, "{}", &self.kind)
+    fn unpack_binary(&self) -> (&Scalar, &Scalar) {
+        if let FunCall::Binary(a, b) = self {
+            (a, b)
         } else {
-            write!(f, "{}: {}", &self.name, &self.kind)
+            unreachable!()
         }
+    }
+
+    fn kind(&self) -> Vec<DataType> {
+        match self {
+            FunCall::Nullary => vec![],
+            FunCall::Unary(x) => vec![x.kind()],
+            FunCall::Binary(a, b) => vec![a.kind(), b.kind()],
+            FunCall::Many(x) => x.iter().map(|x| x.kind()).collect(),
+        }
+    }
+}
+
+pub trait RelFun: for<'a> Fn(FunCall<'a>) -> ResultT<Scalar> {
+    fn clone_object(&self) -> Box<dyn RelFun>;
+}
+
+impl<F> RelFun for F
+where
+    F: 'static + Clone + for<'a> Fn(FunCall<'a>) -> ResultT<Scalar>,
+{
+    fn clone_object(&self) -> Box<dyn RelFun> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn RelFun> {
+    fn clone(&self) -> Self {
+        self.clone_object()
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, From)]
+pub struct Params<'a> {
+    pub params: &'a [Scalar],
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
+#[display(fmt = "Fun()")]
+pub struct FunctionDec {
+    pub name: String,
+    pub fields: Vec<Field>,
+    pub result: Field,
+}
+
+impl FunctionDec {
+    pub fn new(name: &str, fields: &[Field], result: &Field) -> Self {
+        FunctionDec {
+            name: name.to_string(),
+            fields: fields.to_vec(),
+            result: result.clone(),
+        }
+    }
+
+    pub fn new_bin_op(name: &str, left: &str, right: &str, kind: DataType) -> Self {
+        let lhs = Field::new(left, kind.clone());
+        let rhs = Field::new(right, kind.clone());
+        let ret = Field::new("", kind);
+
+        Self::new(name, &[lhs, rhs], &ret)
+    }
+
+    pub fn new_single(name: &str, field: Field, ret: DataType) -> Self {
+        let ret = Field::new("", ret);
+
+        Self::new(name, &[field], &ret)
+    }
+
+    pub fn new_variadic(name: &str, kind: DataType) -> Self {
+        Self::new_single(
+            name,
+            Field::new_positional(DataType::Variadic(Box::new(kind))),
+            DataType::Any,
+        )
+    }
+
+    pub fn new_for_not_found(name: &str, params: FunCall) -> Self {
+        let fields = params
+            .kind()
+            .iter()
+            .map(|x| Field::new_positional(x.clone()))
+            .collect::<Vec<_>>();
+
+        Self::new(name, &fields, &Field::new_positional(DataType::Any))
+    }
+
+    pub fn check_call(&self, params: &FunCall) -> ResultT<()> {
+        if params.len() != self.fields.len() {
+            return Err(Error::ParamCount(params.len(), self.fields.len()));
+        }
+
+        Ok(())
     }
 }
 
 #[derive(Clone, From, Display)]
 #[display(fmt = "Fun()")]
 pub struct Function {
-    pub name: String,
-    pub params: Vec<Param>,
-    pub result: Vec<Param>,
-    f: Box<RelFun>,
+    pub head: FunctionDec,
+    f: Box<dyn RelFun>,
 }
 
 impl Function {
-    pub fn new(name: &str, params: &[Param], result: &[Param], f: Box<RelFun>) -> Self {
-        Function {
-            name: name.to_string(),
-            params: params.to_vec(),
-            result: result.to_vec(),
-            f,
-        }
+    pub fn new(head: FunctionDec, f: Box<dyn RelFun>) -> Self {
+        Function { head, f }
     }
 
-    pub fn new_bin_op(name: &str, left: &str, right: &str, kind: DataType, f: Box<RelFun>) -> Self {
-        let lhs = Param::new(left, kind.clone());
-        let rhs = Param::new(right, kind.clone());
-        let ret = Param::new("", kind);
-
-        Self::new(name, &[lhs, rhs], &[ret], f)
-    }
-
-    pub fn new_single(name: &str, param: Param, ret: DataType, f: Box<RelFun>) -> Self {
-        let ret = Param::new("", ret);
-
-        Self::new(name, &[param], &[ret], f)
-    }
-
-    pub fn call(&self, params: &[Scalar]) -> Result<Scalar> {
-        if params.len() != self.params.len() {
-            return Err(Error::ParamCount(params.len(), self.params.len()));
-        }
+    pub fn call(&self, params: FunCall) -> ResultT<Scalar> {
         (self.f)(params)
     }
 
     pub fn key(&self) -> String {
         let mut key = String::new();
-        key += &self.name;
-        for p in &self.params {
+        key += &self.head.name;
+        for p in &self.head.fields {
             key += &*format!("_{}", p.kind);
         }
         key
@@ -117,29 +156,23 @@ impl Rel for Function {
     }
 
     fn schema(&self) -> Schema {
-        Schema::new(self.params.iter().map(|x| x.into()).collect(), None)
+        Schema::new(self.head.fields.clone(), None)
     }
 
     fn len(&self) -> usize {
         0
     }
 
-    fn cols(&self) -> usize {
-        self.params.len()
-    }
-
-    fn rows(&self) -> Option<usize> {
-        None
+    fn size(&self) -> ShapeLen {
+        ShapeLen::Iter(1, None)
     }
 
     fn as_any(&self) -> &dyn Any {
         self
     }
-
     fn rel_shape(&self) -> RelShape {
         RelShape::Table
     }
-
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
         self.hash(&mut hasher)
     }
@@ -151,17 +184,58 @@ impl Rel for Function {
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
         cmp(self, other)
     }
+
+    fn iter(&self) -> Box<IterScalar<'_>> {
+        unimplemented!()
+    }
+
+    fn cols(&self) -> Box<IterCols<'_>> {
+        unimplemented!()
+    }
+
+    fn rows(&self) -> Box<IterRows<'_>> {
+        unimplemented!()
+    }
+}
+
+pub trait IntoFunction<Args, Out> {
+    fn into_fun(self) -> (usize, Box<dyn RelFun>);
+}
+
+impl<F, A, B, Out> IntoFunction<(A, B), Out> for F
+where
+    A: From<Scalar>,
+    B: From<Scalar>,
+    Out: Into<Scalar>,
+    F: Fn(A, B) -> Out + Clone + 'static,
+{
+    fn into_fun(self) -> (usize, Box<dyn RelFun>) {
+        let f = move |args: FunCall| {
+            assert_eq!(args.len(), 2);
+            let (a, b) = args.unpack_binary();
+            let a: A = a.clone().into();
+            let b: B = b.clone().into();
+            Ok((self)(a, b).into())
+        };
+        (2, Box::new(f))
+    }
+}
+
+impl fmt::Debug for FunctionDec {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "fun {}({:?})={:?}", self.name, self.fields, self.result)
+    }
 }
 
 impl fmt::Debug for Function {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "fun {}({:?})={:?}", self.name, self.params, self.result)
+        write!(f, "{:?}", &self.head)
     }
 }
 
 impl PartialEq for Function {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.params == other.params && self.result == other.result
+        self.head == other.head
     }
 }
 
@@ -169,28 +243,18 @@ impl Eq for Function {}
 
 impl PartialOrd for Function {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(
-            self.name
-                .cmp(&other.name)
-                .then(self.params.cmp(&other.params))
-                .then(self.result.cmp(&other.result)),
-        )
+        Some(self.head.cmp(&other.head))
     }
 }
 
 impl Ord for Function {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.name
-            .cmp(&other.name)
-            .then(self.params.cmp(&other.params))
-            .then(self.result.cmp(&other.result))
+        self.head.cmp(&other.head)
     }
 }
 
 impl Hash for Function {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-        self.params.hash(state);
-        self.result.hash(state);
+        self.head.hash(state);
     }
 }

@@ -1,233 +1,65 @@
-use core::convert::Into;
+use std::fmt::Debug;
 
 use crate::for_impl::*;
 use crate::prelude::*;
-use crate::refcount::RefCount;
-use crate::row::fmt_row;
 
-/// Calculate the appropriated index in the flat array
-#[inline]
-pub fn index(col_count: usize, row: usize, col: usize) -> usize {
-    //  _row_count: usize,
-    // println!(
-    //     "pos Row:{}, Col:{}, R:{}, C:{} = {}",
-    //     row,
-    //     col,
-    //     row_count,
-    //     col_count,
-    //     row * col_count + col
-    // );
-    //    Layout::Col => col * row_count + row,
-    //    Layout::Row => row * col_count + col,
+use derive_more::From;
+use ndarray::{ArrayD, IxDyn, ShapeError};
 
-    row * col_count + col
+fn _make_vector<T>(rows: usize, cols: usize, data: Vec<T>) -> Result<ArrayD<T>, ShapeError> {
+    ArrayD::from_shape_vec(IxDyn(&[rows, cols]), data)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Shape {
-    pub cols: usize,
-    pub rows: usize,
-    pub stride: usize,
-    pub start: usize,
-    pub end: usize,
+fn _make_scalar<T>(data: T) -> Result<ArrayD<T>, ShapeError> {
+    ArrayD::from_shape_vec(IxDyn(&[1]), vec![data])
 }
 
-impl Shape {
-    pub fn scalar() -> Self {
-        Shape {
-            cols: 1,
-            rows: 1,
-            stride: 1,
-            start: 0,
-            end: 1,
-        }
-    }
-
-    pub fn vector(rows: usize) -> Self {
-        Shape {
-            cols: 1,
-            rows,
-            stride: 1,
-            start: 0,
-            end: rows,
-        }
-    }
-
-    pub fn table(rows: usize, cols: usize) -> Self {
-        Shape {
-            cols,
-            rows,
-            stride: if cols == 1 { 1 } else { rows },
-            start: 0,
-            end: rows * cols,
-        }
-    }
-
-    pub fn column(&self, col: usize) -> Shape {
-        let mut shape = *self;
-        shape.start = col;
-        shape.cols = 1;
-        shape.stride = 1;
-        shape
-    }
-
-    pub fn row(&self, row: usize) -> Shape {
-        let mut shape = *self;
-        shape.start = row;
-        shape.end = row;
-        shape
-    }
-
-    pub fn len(&self) -> usize {
-        (self.cols * self.rows) / self.stride
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, From)]
 pub struct Vector {
-    pub shape: Shape,
     pub schema: Schema,
-    pub data: RefCount<Vec<Scalar>>,
+    pub data: ArrayD<Scalar>,
 }
 
 impl Vector {
+    pub fn new(schema: Schema, data: ArrayD<Scalar>) -> Self {
+        Vector { schema, data }
+    }
+
     pub fn new_empty(kind: DataType) -> Self {
         Self::new_vector(vec![], kind)
     }
 
     pub fn new_scalar(data: Scalar) -> Self {
-        let shape = Shape::scalar();
         let schema = schema_it(data.kind());
         Vector {
-            data: RefCount::new(vec![data]),
+            data: _make_scalar(data).unwrap(),
             schema,
-            shape,
         }
     }
 
     pub fn new_vector(data: Vec<Scalar>, kind: DataType) -> Self {
-        let shape = Shape::vector(data.len());
         Vector {
-            data: RefCount::new(data),
+            data: _make_vector(1, data.len(), data).unwrap(),
             schema: schema_it(kind),
-            shape,
         }
     }
 
     pub fn new_table(data: Vec<Scalar>, schema: Schema) -> Self {
-        let shape = Shape::table(data.len(), schema.len());
+        let cols = schema.len();
         Vector {
-            data: RefCount::new(data),
+            data: _make_vector(data.len() / cols, data.len(), data).unwrap(),
             schema,
-            shape,
         }
-    }
-
-    pub fn from_slice<T>(data: &[T], schema: Schema) -> Self
-    where
-        T: Into<Scalar> + Clone,
-    {
-        let shape = Shape::table(data.len(), 1);
-        Vector {
-            data: RefCount::new(data.iter().cloned().map(Into::into).collect()),
-            schema,
-            shape,
-        }
-    }
-
-    pub fn from_iter<T>(schema: Schema, xs: impl Iterator<Item = Vec<T>>) -> Self
-    where
-        T: Into<Scalar> + Clone,
-    {
-        let mut iter = xs.peekable();
-        let cols = iter.peek().map(|x| x.len()).unwrap_or(0);
-        if cols != 0 {
-            assert_eq!(
-                schema.len(),
-                cols,
-                "The schema columns not match the data in rows"
-            );
-        }
-
-        let data: Vec<Scalar> = iter.flat_map(|x| to_vec(&x)).collect();
-        let shape = Shape::table(if cols > 0 { data.len() / cols } else { 0 }, cols);
-
-        Vector {
-            data: RefCount::new(data),
-            schema,
-            shape,
-        }
-    }
-
-    pub fn fold_fn<F>(&self, initial: &Scalar, apply: F) -> Result<Self>
-    where
-        F: Fn(&[Scalar]) -> Result<Scalar>,
-    {
-        if self.rel_shape() != RelShape::Table {
-            let mut data: Vec<Scalar> = Vec::with_capacity(self._rows());
-            for x in self.data.iter() {
-                data.push(apply(&[initial.clone(), x.clone()])?);
-            }
-
-            Ok(Self::new_table(data, self.schema.clone()))
-        } else {
-            Err(Error::RankNotMatch)
-        }
-    }
-
-    pub fn index(&self, row: usize, col: usize) -> usize {
-        index(self.shape.cols, row, col)
-    }
-
-    pub fn value(&self, row: usize, col: usize) -> &Scalar {
-        &self.data[self.index(row, col)]
-    }
-
-    pub fn col(&self, pos: usize) -> Vector {
-        let mut col = self.clone();
-        col.shape = col.shape.column(pos);
-        col
-    }
-
-    fn _rows(&self) -> usize {
-        if self.shape.cols > 0 {
-            self.data.len() / self.shape.cols
-        } else {
-            0
-        }
-    }
-
-    pub fn row(&self, row: usize) -> &[Scalar] {
-        let start = self.index(row, 0);
-        let end = start + self.shape.cols;
-        &self.data[start..end]
-    }
-
-    pub fn rows_iter(&self) -> VectorIter<'_> {
-        VectorIter::new_rows(self)
-    }
-
-    pub fn col_iter(&self, col: usize) -> VectorIter<'_> {
-        VectorIter::new_col(self, col)
     }
 }
 
 impl Rel for Vector {
     fn type_name(&self) -> &str {
-        "Vec"
+        "Vector"
     }
 
     fn kind(&self) -> DataType {
-        let kinds = self.schema.kind();
-        if kinds.len() == 1 {
-            kinds[0].clone()
-        } else {
-            DataType::Vec(kinds.into())
-        }
+        DataType::Vec2d(self.schema.kind().into())
     }
 
     fn schema(&self) -> Schema {
@@ -238,12 +70,18 @@ impl Rel for Vector {
         self.data.len()
     }
 
-    fn cols(&self) -> usize {
-        self.schema.len()
-    }
-
-    fn rows(&self) -> Option<usize> {
-        Some(self._rows())
+    fn size(&self) -> ShapeLen {
+        let cols = self.schema.len();
+        if cols > 0 {
+            let rows = self.data.shape();
+            if rows.is_empty() {
+                ShapeLen::Vec(cols)
+            } else {
+                ShapeLen::Table(cols, rows[0])
+            }
+        } else {
+            ShapeLen::Vec(0)
+        }
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -251,19 +89,11 @@ impl Rel for Vector {
     }
 
     fn rel_shape(&self) -> RelShape {
-        if self.shape.cols == 1 {
-            if self.shape.rows == 1 {
-                RelShape::Scalar
-            } else {
-                RelShape::Vec
-            }
-        } else {
-            RelShape::Table
-        }
+        RelShape::Vector
     }
 
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
-        self.data.hash(&mut hasher)
+        self.hash(&mut hasher)
     }
 
     fn rel_eq(&self, other: &dyn Rel) -> bool {
@@ -273,63 +103,54 @@ impl Rel for Vector {
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
         cmp(self, other)
     }
-}
 
-pub struct VectorIter<'a> {
-    data: &'a Vector,
-    pos: usize,
-    stride: usize,
-    len: usize,
-    end: usize,
-}
-
-impl<'a> VectorIter<'a> {
-    pub fn new(data: &'a Vector, stride: usize, len: usize, start: usize, end: usize) -> Self {
-        VectorIter {
-            data,
-            pos: start,
-            len,
-            stride,
-            end,
-        }
+    fn iter(&self) -> Box<IterScalar<'_>> {
+        Box::new(self.data.iter())
     }
 
-    pub fn new_rows(data: &'a Vector) -> Self {
-        Self::new(data, 0, data.cols(), 0, data.data.len())
+    fn cols(&self) -> Box<IterCols<'_>> {
+        unimplemented!()
     }
 
-    pub fn new_col(data: &'a Vector, col: usize) -> Self {
-        let rows = data._rows();
-        Self::new(data, rows - 1, 1, col, data.data.len())
+    fn rows(&self) -> Box<IterRows<'_>> {
+        Box::new(self.data.rows().into_iter().map(Row::Vector))
     }
 }
 
-//TODO: Implement the rest of methods, and support exact sized iterators...
-impl<'a> Iterator for VectorIter<'a> {
-    type Item = Tuple;
+impl PartialOrd for Vector {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.end {
-            let start = self.pos;
-            let end = start + self.len;
-            self.pos = end + self.stride;
-
-            Some(self.data.data[start..end].to_vec())
-        } else {
-            None
-        }
+impl Ord for Vector {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.size()
+            .cmp(&other.size())
+            .then(self.schema.cmp(&other.schema))
+            .then_with(|| {
+                for (a, b) in self.data.iter().zip(other.data.iter()) {
+                    let result = a.cmp(b);
+                    if result != Ordering::Equal {
+                        return result;
+                    };
+                }
+                Ordering::Equal
+            })
     }
 }
 
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.cols() > 0 {
+        let size = self.size();
+        if size.cols() > 0 {
             write!(f, "Vec[{};", self.schema)?;
-            let total = self._rows();
-            for (row_pos, row) in self.rows_iter().enumerate() {
-                fmt_row(&row, f)?;
+            let total = size.rows().unwrap_or_default();
+            for (row_pos, row) in self.rows().enumerate() {
                 if row_pos < total - 1 {
-                    write!(f, ";")?;
+                    write!(f, "{} ;", row)?;
+                } else {
+                    write!(f, "{}", row)?;
                 }
             }
             write!(f, "]")

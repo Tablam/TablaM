@@ -7,7 +7,7 @@ mod basic;
 // mod intersect;
 // mod join_left;
 // mod limits;
-// mod map;
+mod map;
 // mod math;
 // mod select;
 // mod sum_types;

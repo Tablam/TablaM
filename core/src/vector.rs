@@ -69,12 +69,6 @@ impl Vector {
     pub fn row(&self, row: usize) -> ArrayView<'_, Scalar, IxDyn> {
         self.data.index_axis(Axis(0), row)
     }
-
-    pub fn col(&self, col: usize) -> Box<IterScalar<'_>> {
-        let axis = if self.size().cols() == 1 { 0 } else { 1 };
-
-        Box::new(self.data.index_axis(Axis(axis), col).into_iter())
-    }
 }
 
 impl Rel for Vector {
@@ -130,8 +124,13 @@ impl Rel for Vector {
         Box::new(self.data.iter())
     }
 
-    fn cols(&self) -> Box<IterCols<'_>> {
-        unimplemented!()
+    fn col(&self, pos: usize) -> Col<'_> {
+        let axis = if self.size().cols() == 1 { 0 } else { 1 };
+
+        Col::new(
+            pos,
+            Box::new(self.data.index_axis(Axis(axis), pos).into_iter()),
+        )
     }
 
     fn rows(&self) -> Box<IterRows<'_>> {

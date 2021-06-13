@@ -8,7 +8,7 @@ fn test_scalar() {
     assert_eq!(rel.schema, schema_it(DataType::I64));
     assert_eq!(rel.kind(), DataType::I64);
     assert_eq!(rel.row(0).as_slice().unwrap(), &[int(1)]);
-    assert_eq!(rel.col(0).cloned().collect::<Vec<_>>(), &[int(1)]);
+    assert_eq!(rel.col(0).iter.cloned().collect::<Vec<_>>(), &[int(1)]);
 
     assert_eq!(&format!("{}", rel), "Vec[it:Int; 1]");
 }
@@ -21,7 +21,7 @@ fn test_vec() {
     assert_eq!(rel.schema, schema_it(DataType::I64));
     assert_eq!(rel.kind(), DataType::Vec(Box::new(DataType::I64)));
     assert_eq!(rel.row(0).as_slice().unwrap(), &[int(1)]);
-    assert_eq!(rel.col(0).cloned().collect::<Vec<_>>(), &[int(1)]);
+    assert_eq!(rel.col(0).iter.cloned().collect::<Vec<_>>(), &[int(1)]);
 
     assert_eq!(&format!("{}", rel), "Vec[it:Int; 1; 2; 3]");
 }
@@ -77,6 +77,6 @@ fn test_iter() {
         vec![&[int(1), int(2), int(3)], &[int(4), int(5), int(6)]]
     );
 
-    let col: Vec<_> = rel.col(1).cloned().collect();
+    let col: Vec<_> = rel.col(1).iter.cloned().collect();
     assert_eq!(col, vec![int(2), int(5)]);
 }

@@ -79,8 +79,8 @@ impl Rel for Tree {
         Box::new(self.data.iter().map(|x: &RowPk| x.data.iter()).flatten())
     }
 
-    fn cols(&self) -> Box<IterCols<'_>> {
-        unimplemented!()
+    fn col(&self, pos: usize) -> Col<'_> {
+        todo!()
     }
 
     fn rows(&self) -> Box<IterRows<'_>> {

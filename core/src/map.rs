@@ -72,7 +72,7 @@ impl Rel for Map {
     }
 
     fn size(&self) -> ShapeLen {
-        todo!()
+        ShapeLen::Table(self.schema.len(), self.data.len())
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -98,8 +98,9 @@ impl Rel for Map {
         Box::new(self.data.iter().map(|x: &RowPk| x.data.iter()).flatten())
     }
 
-    fn cols(&self) -> Box<IterCols<'_>> {
-        unimplemented!()
+    fn col(&self, pos: usize) -> Col<'_> {
+        let iter = self.data.iter().map(move |x: &RowPk| &x.data[pos]);
+        Col::new(pos, Box::new(iter))
     }
 
     fn rows(&self) -> Box<IterRows<'_>> {

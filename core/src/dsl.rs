@@ -84,44 +84,44 @@ where
     Vector::from_iter(schema, xs)
 }
 
-// pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree
-// where
-//     T: Into<Scalar> + Clone + NativeKind,
-// {
-//     Tree::from_iter(schema, xs.map(|x| to_vec(x)))
-// }
-//
-// pub fn tree_kv<T>(data: &[T]) -> Tree
-// where
-//     T: Into<Scalar> + Clone + NativeKind,
-// {
-//     assert_eq!(data.len() % 2, 0, "Must be a even number");
-//     let schema = schema_kv(T::kind(), T::kind());
-//     let xs = data.chunks(2).map(|x| to_vec(x));
-//     Tree::from_iter(schema, xs)
-// }
-//
-// pub fn tree_kv2<K, V>(data: &[(K, V)]) -> Tree
-// where
-//     K: Into<Scalar> + Clone + NativeKind,
-//     V: Into<Scalar> + Clone + NativeKind,
-// {
-//     let schema = schema_kv(K::kind(), V::kind());
-//     let xs = data
-//         .iter()
-//         .map(|(k, v)| vec![k.clone().into(), v.clone().into()]);
-//     Tree::from_iter(schema, xs)
-// }
-//
-// pub fn map_kv<T>(data: &[T]) -> Map
-// where
-//     T: Into<Scalar> + Clone + NativeKind,
-// {
-//     assert_eq!(data.len() % 2, 0, "Must be a even number");
-//     let schema = schema_kv(T::kind(), T::kind());
-//     let xs = data.chunks(2).map(|x| to_vec(x));
-//     Map::from_iter(schema, xs)
-// }
+pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    Tree::from_iter(schema, xs.map(|x| to_vec(x)))
+}
+
+pub fn tree_kv<T>(data: &[T]) -> Tree
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    assert_eq!(data.len() % 2, 0, "Must be a even number");
+    let schema = schema_kv(T::kind(), T::kind());
+    let xs = data.chunks(2).map(|x| to_vec(x));
+    Tree::from_iter(schema, xs)
+}
+
+pub fn tree_kv2<K, V>(data: &[(K, V)]) -> Tree
+where
+    K: Into<Scalar> + Clone + NativeKind,
+    V: Into<Scalar> + Clone + NativeKind,
+{
+    let schema = schema_kv(K::kind(), V::kind());
+    let xs = data
+        .iter()
+        .map(|(k, v)| vec![k.clone().into(), v.clone().into()]);
+    Tree::from_iter(schema, xs)
+}
+
+pub fn map_kv<T>(data: &[T]) -> Map
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    assert_eq!(data.len() % 2, 0, "Must be a even number");
+    let schema = schema_kv(T::kind(), T::kind());
+    let xs = data.chunks(2).map(|x| to_vec(x));
+    Map::from_iter(schema, xs)
+}
 
 pub fn rows_to_vec(rel: &dyn Rel) -> Vec<Vec<Scalar>> {
     rel.rows().map(|x| x.to_vec()).collect()

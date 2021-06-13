@@ -2,8 +2,15 @@ use crate::for_impl::*;
 use crate::ndarray::ArrayView1;
 use crate::prelude::*;
 
-pub enum Col<'a> {
-    Scalar(&'a Scalar),
+pub struct Col<'a> {
+    pub pos: usize,
+    pub iter: Box<IterScalar<'a>>,
+}
+
+impl<'a> Col<'a> {
+    pub fn new(pos: usize, iter: Box<IterScalar<'a>>) -> Self {
+        Col { pos, iter }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

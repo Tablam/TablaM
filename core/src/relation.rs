@@ -37,7 +37,7 @@ pub trait Rel: fmt::Debug + DynClone {
     // }
 
     fn iter(&self) -> Box<IterScalar<'_>>;
-    fn cols(&self) -> Box<IterCols<'_>>;
+    fn col(&self, pos: usize) -> Col<'_>;
     fn rows(&self) -> Box<IterRows<'_>>;
 }
 

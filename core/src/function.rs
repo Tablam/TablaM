@@ -187,8 +187,8 @@ impl Rel for Function {
         unimplemented!()
     }
 
-    fn cols(&self) -> Box<IterCols<'_>> {
-        unimplemented!()
+    fn col(&self, pos: usize) -> Col<'_> {
+        todo!()
     }
 
     fn rows(&self) -> Box<IterRows<'_>> {

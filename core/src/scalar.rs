@@ -46,10 +46,6 @@ impl Scalar {
     pub fn repeat(&self, times: usize) -> Tuple {
         (0..times).map(|_| self.clone()).collect()
     }
-
-    pub fn iter(&self) -> impl Iterator<Item = Row<'_>> + '_ {
-        std::iter::once(self).map(Row::Scalar)
-    }
 }
 
 impl Rel for Scalar {
@@ -194,16 +190,16 @@ impl Rel for Scalar {
         }
     }
 
-    fn cols(&self) -> Box<IterCols<'_>> {
+    fn col(&self, pos: usize) -> Col<'_> {
         match self {
-            Scalar::Vector(x) => x.cols(),
-            //Scalar::Tuple(x) => x.rel_hash(&mut hasher),
-            Scalar::Tree(x) => x.cols(),
-            Scalar::Map(x) => x.cols(),
-            Scalar::Rel(x) => x.rel.cols(),
-            //Scalar::File(x) => x.cols(),
-            Scalar::Fun(x) => x.cols(),
-            x => Box::new(std::iter::once(Col::Scalar(x))),
+            Scalar::Vector(x) => x.col(pos),
+            //Scalar::Tuple(x) => x.x.col(pos),
+            Scalar::Tree(x) => x.col(pos),
+            Scalar::Map(x) => x.col(pos),
+            Scalar::Rel(x) => x.rel.col(pos),
+            //Scalar::File(x) => x.col(pos),
+            Scalar::Fun(x) => x.col(pos),
+            x => Col::new(pos, Box::new(std::iter::once(x))),
         }
     }
 

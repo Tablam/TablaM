@@ -59,31 +59,31 @@ where
     x.iter().cloned().map(Into::into).collect()
 }
 
-//
-// pub fn array<T>(x: &[T]) -> Vector
-// where
-//     T: Into<Scalar> + Clone + NativeKind,
-// {
-//     Vector::from_slice(x, schema_it(T::kind()))
-// }
-//
-// pub fn narray<'a, T: 'a>(columns: usize, xs: impl Iterator<Item = &'a [T]>) -> Vector
-// where
-//     T: Into<Scalar> + Clone + NativeKind,
-// {
-//     let schema = if columns == 0 {
-//         schema_it(T::kind())
-//     } else {
-//         Schema::new(
-//             (0..columns)
-//                 .map(|i| Field::new(&format!("col_{}", i), T::kind()))
-//                 .collect(),
-//             None,
-//         )
-//     };
-//     Vector::from_iter(schema, xs.map(to_vec))
-// }
-//
+pub fn array<T>(x: &[T]) -> Vector
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    Vector::from_iter(schema_it(T::kind()), x.iter())
+}
+
+pub fn narray<'a, T: 'a>(columns: usize, xs: impl Iterator<Item = &'a T>) -> Vector
+where
+    T: Into<Scalar> + Clone + NativeKind,
+{
+    let schema = if columns == 0 {
+        schema_it(T::kind())
+    } else {
+        Schema::new(
+            (0..columns)
+                .map(|i| Field::new(&format!("col_{}", i), T::kind()))
+                .collect(),
+            None,
+        )
+    };
+
+    Vector::from_iter(schema, xs)
+}
+
 // pub fn tree<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a [T]>) -> Tree
 // where
 //     T: Into<Scalar> + Clone + NativeKind,
@@ -123,6 +123,10 @@ where
 //     Map::from_iter(schema, xs)
 // }
 
+pub fn rows_to_vec(rel: &dyn Rel) -> Vec<Vec<Scalar>> {
+    rel.rows().map(|x| x.to_vec()).collect()
+}
+
 pub fn int(x: i64) -> Scalar {
     x.into()
 }
@@ -136,9 +140,9 @@ pub fn dec(x: Decimal) -> Scalar {
     x.into()
 }
 
-// pub fn scalar<T: Into<Scalar>>(x: T) -> Vector {
-//     Vector::new_scalar(x.into())
-// }
+pub fn scalar<T: Into<Scalar>>(x: T) -> Vector {
+    Vector::new_scalar(x.into())
+}
 
 pub fn some<T: Into<Scalar>>(x: T) -> Scalar {
     SumVariant::some(x.into()).into()

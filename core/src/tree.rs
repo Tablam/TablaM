@@ -6,21 +6,19 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Tree {
     pub schema: Schema,
-    pk: usize,
     data: BTreeSet<RowPk>,
 }
 
 impl Tree {
     pub fn new(schema: Schema, data: BTreeSet<RowPk>) -> Self {
-        let pk = check_pk(&schema);
-        Tree { schema, pk, data }
+        check_pk(&schema);
+        Tree { schema, data }
     }
 
     pub fn empty(schema: Schema) -> Self {
-        let pk = check_pk(&schema);
+        check_pk(&schema);
         Tree {
             schema,
-            pk,
             data: BTreeSet::new(),
         }
     }
@@ -38,14 +36,6 @@ impl Tree {
     fn _rows(&self) -> usize {
         self.data.len()
     }
-
-    pub fn rows_iter(&self) -> impl Iterator<Item = Tuple> + '_ {
-        self.data.iter().map(|x| x.data.clone())
-    }
-
-    pub fn col_iter(&self, col: usize) -> impl Iterator<Item = Tuple> + '_ {
-        self.data.iter().map(move |x| x.data[col..col + 1].to_vec())
-    }
 }
 
 impl Rel for Tree {
@@ -62,23 +52,15 @@ impl Rel for Tree {
     }
 
     fn len(&self) -> usize {
-        self.data.len() * self.cols()
+        self.data.len() * self.schema.len()
     }
 
-    fn cols(&self) -> usize {
-        self.schema.len()
-    }
-
-    fn rows(&self) -> Option<usize> {
-        Some(self._rows())
+    fn size(&self) -> ShapeLen {
+        todo!()
     }
 
     fn as_any(&self) -> &dyn Any {
         self
-    }
-
-    fn rel_shape(&self) -> RelShape {
-        RelShape::Table
     }
 
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
@@ -92,22 +74,22 @@ impl Rel for Tree {
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
         cmp(self, other)
     }
+
+    fn iter(&self) -> Box<IterScalar<'_>> {
+        Box::new(self.data.iter().map(|x: &RowPk| x.data.iter()).flatten())
+    }
+
+    fn cols(&self) -> Box<IterCols<'_>> {
+        unimplemented!()
+    }
+
+    fn rows(&self) -> Box<IterRows<'_>> {
+        Box::new(self.data.iter().map(Row::Tuple))
+    }
 }
 
 impl fmt::Display for Tree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.cols() > 0 {
-            write!(f, "Tree[{};", self.schema)?;
-            let total = self._rows();
-            for (row_pos, row) in self.data.iter().enumerate() {
-                write!(f, "{}", row)?;
-                if row_pos < total - 1 {
-                    write!(f, ";")?;
-                }
-            }
-            write!(f, "]")
-        } else {
-            write!(f, "Tree[]")
-        }
+        fmt_table(self.type_name(), &self.schema, self.size(), self.rows(), f)
     }
 }

@@ -2,9 +2,9 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::sync::Mutex;
 
-use crate::prelude::Rel;
+use crate::prelude::{Rel, Row, Schema};
 use crate::scalar::Scalar;
-use crate::types::ScalarNative;
+use crate::types::{ScalarNative, ShapeLen};
 
 use slotmap::{DefaultKey, SlotMap};
 
@@ -79,18 +79,42 @@ where
     write!(f, "{}", end)
 }
 
+pub fn fmt_table<'a>(
+    name: &str,
+    schema: &Schema,
+    size: ShapeLen,
+    iter: impl Iterator<Item = Row<'a>>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
+    if size.cols() > 0 {
+        write!(f, "{}[{};", name, schema)?;
+        let total = size.rows().unwrap_or_default();
+        for (row_pos, row) in iter.enumerate() {
+            if row_pos < total - 1 {
+                write!(f, "{};", row)?;
+            } else {
+                write!(f, "{}", row)?;
+            }
+        }
+        write!(f, "]")
+    } else {
+        write!(f, "{}[]", name)
+    }
+}
+
 pub fn fmt_row<'a>(
     iter: impl Iterator<Item = &'a Scalar>,
     f: &mut fmt::Formatter<'_>,
 ) -> fmt::Result {
-    let mut empty = true;
+    let mut exist = false;
     for x in iter {
-        empty = false;
+        if exist {
+            write!(f, ",")?;
+        }
+        exist = true;
         write!(f, " {}", x)?;
     }
-    if !empty {
-        write!(f, ",")?;
-    }
+
     Ok(())
 }
 

@@ -6,6 +6,7 @@ pub enum Col<'a> {
     Scalar(&'a Scalar),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Row<'a> {
     Scalar(&'a Scalar),
     Vector(ArrayView1<'a, Scalar>),
@@ -33,8 +34,12 @@ impl<'a> Row<'a> {
         }
     }
 
-    fn iter(&self) -> Box<IterScalar<'a>> {
-        unimplemented!()
+    pub fn to_vec(&self) -> Vec<Scalar> {
+        match self {
+            Row::Scalar(x) => vec![(**x).clone()],
+            Row::Vector(x) => x.into_iter().cloned().collect(),
+            Row::Tuple(x) => x.data.clone(),
+        }
     }
 }
 
@@ -91,6 +96,10 @@ impl fmt::Display for RowPk {
 
 impl fmt::Display for Row<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt_row(self.iter(), f)
+        match self {
+            Row::Scalar(x) => write!(f, " {}", x),
+            Row::Vector(x) => fmt_row(x.into_iter(), f),
+            Row::Tuple(x) => fmt_row(x.data.iter(), f),
+        }
     }
 }

@@ -6,21 +6,19 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Eq)]
 pub struct Map {
     pub schema: Schema,
-    pk: usize,
     data: IndexSet<RowPk>,
 }
 
 impl Map {
     pub fn new(schema: Schema, data: IndexSet<RowPk>) -> Self {
-        let pk = check_pk(&schema);
-        Map { schema, pk, data }
+        check_pk(&schema);
+        Map { schema, data }
     }
 
     pub fn empty(schema: Schema) -> Self {
-        let pk = check_pk(&schema);
+        check_pk(&schema);
         Map {
             schema,
-            pk,
             data: IndexSet::new(),
         }
     }
@@ -39,18 +37,10 @@ impl Map {
         self.data.len()
     }
 
-    pub fn rows_iter(&self) -> impl Iterator<Item = Tuple> + '_ {
-        self.data.iter().map(|x| x.data.clone())
-    }
-
-    pub fn col_iter(&self, col: usize) -> impl Iterator<Item = Tuple> + '_ {
-        self.data.iter().map(move |x| x.data[col..col + 1].to_vec())
-    }
-
     pub fn compare(&self, other: &Self) -> Ordering {
-        self.pk
-            .cmp(&other.pk)
-            .then(self.data.len().cmp(&other.data.len()))
+        self.data
+            .len()
+            .cmp(&other.data.len())
             .then(self.schema.cmp(&other.schema))
             .then_with(|| {
                 for (a, b) in self.data.iter().zip(other.data.iter()) {
@@ -78,27 +68,18 @@ impl Rel for Map {
     }
 
     fn len(&self) -> usize {
-        self.data.len() * self.cols()
+        self.data.len() * self.schema.len()
     }
 
-    fn cols(&self) -> usize {
-        self.schema.len()
-    }
-
-    fn rows(&self) -> Option<usize> {
-        Some(self._rows())
+    fn size(&self) -> ShapeLen {
+        todo!()
     }
 
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn rel_shape(&self) -> RelShape {
-        RelShape::Table
-    }
-
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
-        self.pk.hash(&mut hasher);
         self.schema.hash(&mut hasher);
         for row in &self.data {
             row.hash(&mut hasher);
@@ -111,6 +92,18 @@ impl Rel for Map {
 
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering {
         cmp(self, other)
+    }
+
+    fn iter(&self) -> Box<IterScalar<'_>> {
+        Box::new(self.data.iter().map(|x: &RowPk| x.data.iter()).flatten())
+    }
+
+    fn cols(&self) -> Box<IterCols<'_>> {
+        unimplemented!()
+    }
+
+    fn rows(&self) -> Box<IterRows<'_>> {
+        Box::new(self.data.iter().map(Row::Tuple))
     }
 }
 
@@ -134,7 +127,6 @@ impl PartialEq for Map {
 
 impl Hash for Map {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.pk.hash(state);
         self.schema.hash(state);
         for row in &self.data {
             row.hash(state);
@@ -144,18 +136,6 @@ impl Hash for Map {
 
 impl fmt::Display for Map {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.cols() > 0 {
-            write!(f, "Map[{};", self.schema)?;
-            let total = self._rows();
-            for (row_pos, row) in self.data.iter().enumerate() {
-                write!(f, "{}", row)?;
-                if row_pos < total - 1 {
-                    write!(f, ";")?;
-                }
-            }
-            write!(f, "]")
-        } else {
-            write!(f, "Map[]")
-        }
+        fmt_table(self.type_name(), &self.schema, self.size(), self.rows(), f)
     }
 }

@@ -3,8 +3,9 @@ use std::fmt::Debug;
 use crate::for_impl::*;
 use crate::prelude::*;
 
+use crate::ndarray::ArrayView;
 use derive_more::From;
-use ndarray::{ArrayD, IxDyn, ShapeError};
+use ndarray::{ArrayD, Axis, IxDyn, ShapeError};
 
 fn _make_vector<T>(rows: usize, cols: usize, data: Vec<T>) -> Result<ArrayD<T>, ShapeError> {
     ArrayD::from_shape_vec(IxDyn(&[rows, cols]), data)
@@ -46,20 +47,48 @@ impl Vector {
 
     pub fn new_table(data: Vec<Scalar>, schema: Schema) -> Self {
         let cols = schema.len();
+        let rows = if cols > 0 && data.len() > 0 {
+            data.len() / cols
+        } else {
+            0
+        };
         Vector {
-            data: _make_vector(data.len() / cols, data.len(), data).unwrap(),
+            data: _make_vector(rows, cols, data).unwrap(),
             schema,
         }
+    }
+
+    pub fn from_iter<'a, T: 'a>(schema: Schema, xs: impl Iterator<Item = &'a T>) -> Self
+    where
+        T: Into<Scalar> + Clone,
+    {
+        let data = xs.cloned().map(Into::into).collect();
+        Self::new_table(data, schema)
+    }
+
+    pub fn row(&self, row: usize) -> ArrayView<'_, Scalar, IxDyn> {
+        self.data.index_axis(Axis(0), row)
+    }
+
+    pub fn col(&self, col: usize) -> Box<IterScalar<'_>> {
+        let axis = if self.size().cols() == 1 { 0 } else { 1 };
+
+        Box::new(self.data.index_axis(Axis(axis), col).into_iter())
     }
 }
 
 impl Rel for Vector {
     fn type_name(&self) -> &str {
-        "Vector"
+        "Vec"
     }
 
     fn kind(&self) -> DataType {
-        DataType::Vec2d(self.schema.kind().into())
+        match self.size() {
+            ShapeLen::Scalar => self.schema.fields[0].kind.clone(),
+            ShapeLen::Vec(_) => DataType::Vec(Box::new(self.schema.fields[0].kind.clone())),
+            ShapeLen::Table(_, _) => DataType::Vec2d(self.schema.kind().into()),
+            ShapeLen::Iter(_, _) => unreachable!(),
+        }
     }
 
     fn schema(&self) -> Schema {
@@ -72,24 +101,17 @@ impl Rel for Vector {
 
     fn size(&self) -> ShapeLen {
         let cols = self.schema.len();
-        if cols > 0 {
-            let rows = self.data.shape();
-            if rows.is_empty() {
-                ShapeLen::Vec(cols)
-            } else {
-                ShapeLen::Table(cols, rows[0])
-            }
-        } else {
-            ShapeLen::Vec(0)
+        let rows = *self.data.shape().first().unwrap_or(&0);
+        match (cols, rows) {
+            (0, _) => ShapeLen::Vec(0),
+            (1, 1) => ShapeLen::Scalar,
+            (1, y) => ShapeLen::Vec(y),
+            (x, y) => ShapeLen::Table(x, y),
         }
     }
 
     fn as_any(&self) -> &dyn Any {
         self
-    }
-
-    fn rel_shape(&self) -> RelShape {
-        RelShape::Vector
     }
 
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
@@ -142,20 +164,6 @@ impl Ord for Vector {
 
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let size = self.size();
-        if size.cols() > 0 {
-            write!(f, "Vec[{};", self.schema)?;
-            let total = size.rows().unwrap_or_default();
-            for (row_pos, row) in self.rows().enumerate() {
-                if row_pos < total - 1 {
-                    write!(f, "{} ;", row)?;
-                } else {
-                    write!(f, "{}", row)?;
-                }
-            }
-            write!(f, "]")
-        } else {
-            write!(f, "Vec[]")
-        }
+        fmt_table(self.type_name(), &self.schema, self.size(), self.rows(), f)
     }
 }

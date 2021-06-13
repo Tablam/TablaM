@@ -185,7 +185,7 @@ impl Schema {
     }
 }
 
-pub(crate) fn check_pk(schema: &Schema) -> usize {
+pub fn check_pk(schema: &Schema) -> usize {
     schema.pk.expect("Relation need a pk")
 }
 

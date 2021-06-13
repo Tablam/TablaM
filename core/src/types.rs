@@ -4,6 +4,7 @@ use derive_more::{Display, From};
 
 use crate::for_impl::*;
 use crate::function::Function;
+use crate::prelude::Vector;
 use crate::relation::{Rel, ToHash};
 use crate::row::{Col, Row};
 use crate::scalar::{Date, DateTime, Scalar, Time};
@@ -229,7 +230,7 @@ impl DataType {
             DataType::Utf8 => Scalar::Utf8(Rc::new("".into())),
             DataType::Variadic(_) => unimplemented!(),
             DataType::Sum(_) => unimplemented!(),
-            DataType::Vec(_) => unimplemented!(),
+            DataType::Vec(x) => Rc::new(Vector::new_empty(*x.clone())).into(),
             DataType::Vec2d(_) => unreachable!(),
             DataType::Tree(_) => unimplemented!(),
             DataType::Map(_) => unimplemented!(),

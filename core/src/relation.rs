@@ -22,7 +22,6 @@ pub trait Rel: fmt::Debug + DynClone {
 
     fn as_any(&self) -> &dyn Any;
 
-    fn rel_shape(&self) -> RelShape;
     fn rel_hash(&self, hasher: &mut dyn Hasher);
     fn rel_eq(&self, other: &dyn Rel) -> bool;
     fn rel_cmp(&self, other: &dyn Rel) -> Ordering;

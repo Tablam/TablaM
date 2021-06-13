@@ -170,9 +170,7 @@ impl Rel for Function {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn rel_shape(&self) -> RelShape {
-        RelShape::Table
-    }
+
     fn rel_hash(&self, mut hasher: &mut dyn Hasher) {
         self.hash(&mut hasher)
     }

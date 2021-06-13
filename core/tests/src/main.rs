@@ -14,4 +14,4 @@ mod basic;
 // mod tree;
 // mod union;
 // mod utils;
-// mod vector;
+mod vector;

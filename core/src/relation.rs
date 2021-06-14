@@ -32,13 +32,14 @@ pub trait Rel: fmt::Debug + DynClone {
     fn as_string(&self) -> Option<ScalarNative<Rc<String>>> {
         None
     }
-    // fn query(&self) -> QueryOp {
-    //     QueryOp::new(self.schema())
-    // }
 
     fn iter(&self) -> Box<IterScalar<'_>>;
     fn col(&self, pos: usize) -> Col<'_>;
     fn rows(&self) -> Box<IterRows<'_>>;
+
+    fn query(&self) -> QueryOp {
+        QueryOp::new(self.schema())
+    }
 }
 
 #[derive(Debug, From)]

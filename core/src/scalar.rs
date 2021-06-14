@@ -217,20 +217,20 @@ impl Rel for Scalar {
     }
 }
 
-pub fn select(of: &[Scalar], cols: &[usize]) -> Tuple {
-    if cols.is_empty() {
+pub fn select<'a>(of: &Row<'a>, cols: Vec<usize>) -> Row<'a> {
+    Row::Joined(if cols.is_empty() {
         vec![]
     } else {
         let mut cells = Vec::with_capacity(cols.len());
         for p in cols {
-            cells.push(of[*p].clone());
+            cells.push(of.get(p).unwrap().clone());
         }
         cells
-    }
+    })
 }
 
-pub fn combine(lhs: &[Scalar], rhs: &[Scalar]) -> Tuple {
-    lhs.iter().chain(rhs.iter()).cloned().collect()
+pub fn combine<'a>(lhs: &Row<'a>, rhs: &Row<'a>) -> Row<'a> {
+    Row::Joined([lhs.to_vec(), rhs.to_vec()].concat())
 }
 
 macro_rules! kind_native {

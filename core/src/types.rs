@@ -510,6 +510,7 @@ pub enum ScalarNative<'a, T> {
     One(&'a T),
     Slice(&'a [T]),
 }
+
 //Type Alias...
 pub type Pos = Vec<usize>;
 pub type Tuple = Vec<Scalar>;

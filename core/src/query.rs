@@ -1,12 +1,11 @@
+use crate::for_impl::*;
+use crate::prelude::*;
+
+use crate::iterators;
+use crate::iterators::Join;
+use crate::scalar::select;
 use derive_more::{Display, From};
 use itertools::Itertools;
-
-use crate::for_impl::*;
-use crate::joins;
-use crate::joins::Join;
-use crate::prelude::*;
-use crate::scalar::select;
-use crate::types::ProjectDef;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
 pub enum CmOp {
@@ -35,16 +34,27 @@ pub enum Comparable {
 }
 
 impl Comparable {
-    fn get_value<'a>(&'a self, schema: &Schema, row: &'a [Scalar]) -> &'a Scalar {
+    fn resolve_pos(&self, schema: &Schema) -> usize {
         match self {
-            Comparable::Column(pos) => &row[*pos],
-            Comparable::Scalar(x) => x,
+            Comparable::Column(pos) => *pos,
+            Comparable::Scalar(_) => unreachable!(),
             Comparable::Name(name) => {
                 let (pos, _) = schema.resolve_name(&Column::Name(name.into()));
-                &row[pos]
+                pos
             }
         }
     }
+    //
+    // fn get_value(&self, schema: &Schema, row: &Row<'_>) -> &Scalar {
+    //     match self {
+    //         Comparable::Column(pos) => row.get(*pos).unwrap(),
+    //         Comparable::Scalar(x) => x,
+    //         Comparable::Name(name) => {
+    //             let (pos, _) = schema.resolve_name(&Column::Name(name.into()));
+    //             row.get(pos).unwrap()
+    //         }
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -60,31 +70,27 @@ impl fmt::Display for CompareOp {
     }
 }
 
-macro_rules! cmp_fn {
-    ($name:ident, $fun:ident) => {
-        pub fn $name(schema: &Schema, row: &[Scalar], lhs: &Comparable, rhs: &Comparable) -> bool {
-            let lhs = lhs.get_value(schema, row);
-            let rhs = rhs.get_value(schema, row);
-            lhs.$fun(rhs)
-        }
-    };
-}
 impl CompareOp {
-    cmp_fn!(fn_eq, eq);
-    cmp_fn!(fn_not_eq, ne);
-    cmp_fn!(fn_less, lt);
-    cmp_fn!(fn_less_eq, le);
-    cmp_fn!(fn_greater, gt);
-    cmp_fn!(fn_greater_eq, ge);
+    pub fn cmp(&self, schema: &Schema, row: &Row<'_>) -> bool {
+        let lhs = if let Comparable::Scalar(x) = &self.lhs {
+            x
+        } else {
+            row.get(self.lhs.resolve_pos(schema)).unwrap()
+        };
 
-    pub fn get_fn(&self) -> &dyn Fn(&Schema, &[Scalar], &Comparable, &Comparable) -> bool {
+        let rhs = if let Comparable::Scalar(x) = &self.rhs {
+            x
+        } else {
+            row.get(self.rhs.resolve_pos(schema)).unwrap()
+        };
+
         match self.op {
-            CmOp::Eq => &Self::fn_eq,
-            CmOp::NotEq => &Self::fn_not_eq,
-            CmOp::Less => &Self::fn_less,
-            CmOp::LessEq => &Self::fn_less_eq,
-            CmOp::Greater => &Self::fn_greater,
-            CmOp::GreaterEq => &Self::fn_greater_eq,
+            CmOp::Eq => lhs == rhs,
+            CmOp::NotEq => lhs != rhs,
+            CmOp::Less => lhs < rhs,
+            CmOp::LessEq => lhs <= rhs,
+            CmOp::Greater => lhs > rhs,
+            CmOp::GreaterEq => lhs >= rhs,
         }
     }
 }
@@ -115,22 +121,22 @@ pub enum Query {
 
 pub struct QueryResult<'a> {
     pub schema: Schema,
-    pub iter: Iter<'a>,
+    pub iter: Box<IterRows<'a>>,
 }
 
 impl<'a> QueryResult<'a> {
-    pub fn new(schema: Schema, iter: Iter<'a>) -> Self {
+    pub fn new(schema: Schema, iter: Box<IterRows<'a>>) -> Self {
         QueryResult { schema, iter }
     }
 }
 
 pub struct QueryResultOwned<'a> {
     pub schema: Schema,
-    pub iter: IterOwned<'a>,
+    pub iter: Box<IterRows<'a>>,
 }
 
 impl<'a> QueryResultOwned<'a> {
-    pub fn new(schema: Schema, iter: IterOwned<'a>) -> Self {
+    pub fn new(schema: Schema, iter: Box<IterRows<'a>>) -> Self {
         QueryResultOwned { schema, iter }
     }
 }
@@ -211,24 +217,21 @@ impl QueryOp {
         self
     }
 
-    pub fn execute<'a>(self, iter: impl Iterator<Item = Tuple> + 'a) -> QueryResult<'a> {
-        let mut result = Box::new(iter) as Iter<'a>;
+    pub fn execute<'a>(self, iter: impl Iterator<Item = Row<'a>> + 'a) -> QueryResult<'a> {
+        let mut result = Box::new(iter) as Box<IterRows<'a>>;
         let mut schema = self.schema;
         for q in self.query {
             result = match q {
                 Query::Filter(cmp) => {
                     let schema2 = schema.clone();
-                    let iter = result.filter(move |row| {
-                        let apply = cmp.get_fn();
-                        (apply)(&schema2, row, &cmp.lhs, &cmp.rhs)
-                    });
+                    let iter = result.filter(move |row| cmp.cmp(&schema2, row));
                     Box::new(iter)
                 }
                 Query::Project(columns) => {
                     let (new, cols) = schema.project(&columns.cols);
                     //dbg!(&schema, &new);
                     schema = new;
-                    let iter = result.map(move |x| select(&x, &cols));
+                    let iter = result.map(move |x| select(&x, cols.clone()));
                     Box::new(iter)
                 }
                 Query::Limit(rows) => {
@@ -269,7 +272,7 @@ impl JoinOp {
         JoinOp::Join(Join::Left, lhs, rhs)
     }
 
-    pub fn union(lhs: Schema, rhs: Schema) -> Result<Self> {
+    pub fn union(lhs: Schema, rhs: Schema) -> ResultT<Self> {
         if lhs == rhs {
             Ok(JoinOp::Union(lhs, rhs))
         } else {
@@ -277,7 +280,7 @@ impl JoinOp {
         }
     }
 
-    pub fn diff(lhs: Schema, rhs: Schema) -> Result<Self> {
+    pub fn diff(lhs: Schema, rhs: Schema) -> ResultT<Self> {
         if lhs == rhs {
             Ok(JoinOp::Diff(lhs, rhs))
         } else {
@@ -285,7 +288,7 @@ impl JoinOp {
         }
     }
 
-    pub fn intersect(lhs: Schema, rhs: Schema) -> Result<Self> {
+    pub fn intersect(lhs: Schema, rhs: Schema) -> ResultT<Self> {
         if lhs == rhs {
             Ok(JoinOp::Intersect(lhs, rhs))
         } else {
@@ -295,21 +298,21 @@ impl JoinOp {
 
     pub fn execute<'a>(
         self,
-        lhs: impl Iterator<Item = Tuple> + 'a,
-        rhs: impl Iterator<Item = Tuple> + 'a,
+        lhs: impl Iterator<Item = Row<'a>> + 'a,
+        rhs: impl Iterator<Item = Row<'a>> + 'a,
     ) -> QueryResultOwned<'a> {
         match self {
             JoinOp::Join(join, ls, rs) => match join {
                 Join::Cross => {
                     let schema = ls.extend(&rs);
 
-                    let iter = joins::cross(lhs, rhs);
+                    let iter = iterators::cross(lhs, rhs);
                     QueryResultOwned::new(schema, Box::new(iter))
                 }
                 Join::Left => {
                     let schema = ls.extend(&rs);
 
-                    let iter = joins::left_join(lhs, rhs, rs.len());
+                    let iter = iterators::left_join(lhs, rhs, rs.len());
                     QueryResultOwned::new(schema, Box::new(iter))
                 }
                 _ => unimplemented!(),
@@ -319,22 +322,19 @@ impl JoinOp {
                 QueryResultOwned::new(ls, Box::new(iter))
             }
             JoinOp::Diff(ls, _) => {
-                let iter = joins::difference(lhs, rhs);
+                let iter = iterators::difference(lhs, rhs);
                 QueryResultOwned::new(ls, Box::new(iter))
             }
             JoinOp::Intersect(ls, _) => {
-                let iter = joins::intersect(lhs, rhs);
+                let iter = iterators::intersect(lhs, rhs);
                 QueryResultOwned::new(ls, Box::new(iter))
             }
         }
     }
 }
 
-pub type Iter<'a> = Box<dyn Iterator<Item = Tuple> + 'a>;
-pub type IterOwned<'a> = Box<dyn Iterator<Item = Vec<Scalar>> + 'a>;
-
-pub type Chain<'a> = Box<dyn Fn(Iter<'a>) -> Iter<'a> + 'a>;
-pub type Combinator<'a> = Box<dyn Fn(Iter, Iter) -> Iter<'a> + 'a>;
+pub type Chain<'a> = Box<dyn Fn(IterRows<'a>) -> IterRows<'a> + 'a>;
+pub type Combinator<'a> = Box<dyn Fn(IterRows<'a>, IterRows<'a>) -> IterRows<'a> + 'a>;
 
 impl fmt::Display for QueryOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

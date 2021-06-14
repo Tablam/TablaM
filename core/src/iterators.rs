@@ -35,36 +35,35 @@ impl Join {
     }
 }
 
-pub fn cross<'a, 'b>(
-    lhs: impl Iterator<Item = Tuple> + 'a,
-    rhs: impl Iterator<Item = Tuple> + 'b,
-) -> impl Iterator<Item = Tuple> {
+pub fn cross<'a>(
+    lhs: impl Iterator<Item = Row<'a>> + 'a,
+    rhs: impl Iterator<Item = Row<'a>> + 'a,
+) -> impl Iterator<Item = Row<'a>> + 'a {
     Gen::new(|co| async move {
         let rhs: Vec<_> = rhs.collect();
         for a in lhs {
             for b in &rhs {
                 // dbg!(&a, b);
-
-                co.yield_(combine(&a, &b)).await;
+                co.yield_(combine(&a, b)).await;
             }
         }
     })
     .into_iter()
 }
 
-pub fn left_join<'a, 'b>(
-    lhs: impl Iterator<Item = Tuple> + 'a,
-    rhs: impl Iterator<Item = Tuple> + 'b,
+pub fn left_join<'a>(
+    lhs: impl Iterator<Item = Row<'a>> + 'a,
+    rhs: impl Iterator<Item = Row<'a>> + 'a,
     fields_rhs: usize,
-) -> impl Iterator<Item = Tuple> {
+) -> impl Iterator<Item = Row<'a>> + 'a {
     Gen::new(|co| async move {
         let rhs: HashSet<_> = rhs.collect();
         for a in lhs {
             if let Some(b) = rhs.get(&a) {
-                co.yield_(combine(&a, &b)).await;
+                co.yield_(combine(&a, b)).await;
             } else {
-                co.yield_(combine(&a, &Scalar::Unit.repeat(fields_rhs)))
-                    .await;
+                let rhs = Scalar::Unit.repeat(fields_rhs);
+                co.yield_(combine(&a, &Row::Joined(rhs))).await;
             }
         }
     })
@@ -72,9 +71,9 @@ pub fn left_join<'a, 'b>(
 }
 
 pub fn difference<'a, 'b>(
-    lhs: impl Iterator<Item = Tuple> + 'a,
-    rhs: impl Iterator<Item = Tuple> + 'b,
-) -> impl Iterator<Item = Tuple> {
+    lhs: impl Iterator<Item = Row<'a>> + 'a,
+    rhs: impl Iterator<Item = Row<'a>> + 'a,
+) -> impl Iterator<Item = Row<'a>> + 'a {
     Gen::new(|co| async move {
         let rhs: HashSet<_> = rhs.collect();
         for a in lhs {
@@ -87,9 +86,9 @@ pub fn difference<'a, 'b>(
 }
 
 pub fn intersect<'a, 'b>(
-    lhs: impl Iterator<Item = Tuple> + 'a,
-    rhs: impl Iterator<Item = Tuple> + 'b,
-) -> impl Iterator<Item = Tuple> {
+    lhs: impl Iterator<Item = Row<'a>> + 'a,
+    rhs: impl Iterator<Item = Row<'a>> + 'a,
+) -> impl Iterator<Item = Row<'a>> + 'a {
     Gen::new(|co| async move {
         let rhs: HashSet<_> = rhs.collect();
         for a in lhs {

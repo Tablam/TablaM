@@ -10,7 +10,7 @@ fn test_empty() {
         DataType::Tree(vec![DataType::I64, DataType::I64].into())
     );
 
-    assert_eq!(&format!("{}", rel), "Tree[pk key:Int, value:Int;]");
+    assert_eq!(&format!("{}", rel), "Tree[pk key:Int, value:Int]");
 }
 
 #[test]

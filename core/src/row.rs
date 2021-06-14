@@ -13,11 +13,12 @@ impl<'a> Col<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Row<'a> {
     Scalar(&'a Scalar),
     Vector(ArrayView1<'a, Scalar>),
     Tuple(&'a RowPk),
+    Joined(Vec<Scalar>),
 }
 
 impl<'a> Row<'a> {
@@ -26,16 +27,18 @@ impl<'a> Row<'a> {
             Row::Scalar(x) => x.len(),
             Row::Vector(x) => x.len(),
             Row::Tuple(x) => x.data.len(),
+            Row::Joined(x) => x.len(),
         }
     }
 
-    fn get(&self, pos: usize) -> Option<&Scalar> {
+    pub fn get(&self, pos: usize) -> Option<&Scalar> {
         if pos < self.len() {
-            Some(match self {
-                Row::Scalar(x) => x,
-                Row::Vector(x) => &x[pos],
-                Row::Tuple(x) => &x.data[pos],
-            })
+            match self {
+                Row::Scalar(x) => Some(x),
+                Row::Vector(x) => Some(&x[pos]),
+                Row::Tuple(x) => Some(&x.data[pos]),
+                Row::Joined(x) => x.get(pos),
+            }
         } else {
             None
         }
@@ -46,6 +49,7 @@ impl<'a> Row<'a> {
             Row::Scalar(x) => vec![(**x).clone()],
             Row::Vector(x) => x.into_iter().cloned().collect(),
             Row::Tuple(x) => x.data.clone(),
+            Row::Joined(x) => x.clone(),
         }
     }
 }
@@ -107,6 +111,7 @@ impl fmt::Display for Row<'_> {
             Row::Scalar(x) => write!(f, " {}", x),
             Row::Vector(x) => fmt_row(x.into_iter(), f),
             Row::Tuple(x) => fmt_row(x.data.iter(), f),
+            Row::Joined(x) => fmt_row(x.iter(), f),
         }
     }
 }

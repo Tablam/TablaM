@@ -7,7 +7,7 @@ fn test_vec() {
     let rhs = array(&[4, 5, 6]);
     let q = JoinOp::intersect(lhs.schema.clone(), rhs.schema.clone()).unwrap();
 
-    check_join_vec(&lhs, &rhs, q, "Vec[it:Int;]");
+    check_join_vec(&lhs, &rhs, q, "Vec[it:Int]");
 
     let rhs = array(&[4, 2, 6]);
     let q = JoinOp::intersect(lhs.schema.clone(), rhs.schema.clone()).unwrap();

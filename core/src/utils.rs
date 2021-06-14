@@ -87,8 +87,11 @@ pub fn fmt_table<'a>(
     f: &mut fmt::Formatter<'_>,
 ) -> fmt::Result {
     if size.cols() > 0 {
-        write!(f, "{}[{};", name, schema)?;
+        write!(f, "{}[{}", name, schema)?;
         let total = size.rows().unwrap_or_default();
+        if total > 0 {
+            write!(f, ";")?;
+        }
         for (row_pos, row) in iter.enumerate() {
             if row_pos < total - 1 {
                 write!(f, "{};", row)?;

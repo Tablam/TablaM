@@ -16,6 +16,7 @@ mod function;
 mod iterators;
 mod map;
 mod modules;
+mod query;
 mod refcount;
 mod relation;
 mod row;
@@ -45,6 +46,7 @@ pub mod prelude {
     pub use crate::errors::{Error, ResultT};
     pub use crate::map::Map;
     pub use crate::modules::*;
+    pub use crate::query::*;
     pub use crate::relation::{Rel, RelationDyn, ToHash};
     pub use crate::row::*;
     pub use crate::scalar::{Date, DateTime, Scalar, Time};

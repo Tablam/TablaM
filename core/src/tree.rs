@@ -56,7 +56,7 @@ impl Rel for Tree {
     }
 
     fn size(&self) -> ShapeLen {
-        todo!()
+        ShapeLen::Table(self.schema.len(), self.data.len())
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -80,7 +80,8 @@ impl Rel for Tree {
     }
 
     fn col(&self, pos: usize) -> Col<'_> {
-        todo!()
+        let iter = self.data.iter().map(move |x: &RowPk| &x.data[pos]);
+        Col::new(pos, Box::new(iter))
     }
 
     fn rows(&self) -> Box<IterRows<'_>> {

@@ -11,7 +11,7 @@ mod map;
 // mod math;
 // mod select;
 // mod sum_types;
-// mod tree;
+mod tree;
 // mod union;
 // mod utils;
 mod vector;

@@ -194,6 +194,20 @@ impl Rel for Function {
     fn rows(&self) -> Box<IterRows<'_>> {
         unimplemented!()
     }
+
+    fn from_query(_of: QueryResult<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        unreachable!()
+    }
+
+    fn from_joins(_of: QueryResultOwned<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        unreachable!()
+    }
 }
 
 pub trait IntoFunction<Args, Out> {

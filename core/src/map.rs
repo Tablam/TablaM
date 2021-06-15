@@ -106,6 +106,20 @@ impl Rel for Map {
     fn rows(&self) -> Box<IterRows<'_>> {
         Box::new(self.data.iter().map(Row::Tuple))
     }
+
+    fn from_query(_of: QueryResult<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        unreachable!()
+    }
+
+    fn from_joins(_of: QueryResultOwned<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        unreachable!()
+    }
 }
 
 impl PartialOrd for Map {

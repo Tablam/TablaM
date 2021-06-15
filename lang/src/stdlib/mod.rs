@@ -1,4 +1,4 @@
-use crate::function::Function;
+use tablam::function::Function;
 
 pub mod basic;
 pub mod io;

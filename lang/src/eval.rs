@@ -5,6 +5,7 @@ use tablam::prelude::*;
 
 use crate::parser::Parser;
 use crate::prelude::*;
+use tablam::function::FunCall;
 
 pub struct Program {
     env: Rc<RefCell<Environment>>,
@@ -14,8 +15,8 @@ impl Program {
     pub fn new() -> Self {
         let mut env = Environment::new(None);
 
-        for f in tablam::stdlib::std_functions() {
-            env.add_function(f.name.clone(), Expression::Function(f.into()));
+        for f in stdlib::std_functions() {
+            env.add_function(f.head.name.clone(), Expression::Function(f.into()));
         }
 
         Program {
@@ -113,7 +114,7 @@ impl Program {
                 let lhs = self.eval_value(&op.left)?;
                 let rhs = self.eval_value(&op.right)?;
 
-                Expression::Value(f.call(&[lhs, rhs])?)
+                Expression::Value(f.call(FunCall::Binary(&lhs, &rhs))?)
             }
             Expression::FunctionCall(call) => {
                 let f = self.env().find_function(&call.name)?;
@@ -123,7 +124,7 @@ impl Program {
                     let expr = self.eval_value(&p.value)?;
                     params.push(expr);
                 }
-                let result = f.call(params.as_slice())?;
+                let result = f.call(FunCall::Many(params.as_slice()))?;
                 match result {
                     Scalar::Unit => Expression::Pass,
                     expr => Expression::Value(expr),
@@ -156,9 +157,9 @@ impl Program {
                 let rel = self.eval_value(&query.collection)?;
                 let mut q = query.query;
                 q.schema = rel.schema();
-                let q = q.execute(rel.rows_iter());
-                let rel = Vector::from_iter(q.schema, q.iter);
-                Expression::Value(rel.into())
+                let q = q.execute(rel.rows());
+                let rel = Vector::from_query(q);
+                Expression::Value(Scalar::Vector(Rc::new(rel)))
             }
             x => unimplemented!("{}", x),
         };

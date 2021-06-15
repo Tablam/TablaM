@@ -1,14 +1,10 @@
 #![allow(dead_code)]
 
-use std::mem::discriminant;
-use std::rc::Rc;
-
 use crate::ast::*;
+use crate::for_impl::{discriminant, Rc};
 use crate::lexer::*;
-use tablam::prelude::{
-    Column, ColumnAlias, DataType, Field, Param, QueryOp, Scalar, Schema, Vector,
-};
-use tablam::types::Rel;
+use tablam::prelude::*;
+
 const END_OF_ROW: [Option<Token>; 2] = [Some(Token::RowSeparator), Some(Token::EndVector)];
 
 pub struct Parser<'source> {
@@ -288,7 +284,7 @@ impl<'source> Parser<'source> {
         self.accept();
         let result = self.check_and_accept_next(Token::Type(String::from("")));
         if let Ok(Token::Type(type_param)) = result {
-            return Ok(Expression::ParameterDefinition(Param::from_str(
+            return Ok(Expression::ParameterDefinition(Field::from_str(
                 name,
                 type_param.as_str(),
             )));

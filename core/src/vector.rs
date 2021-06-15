@@ -47,7 +47,7 @@ impl Vector {
 
     pub fn new_table(data: Vec<Scalar>, schema: Schema) -> Self {
         let cols = schema.len();
-        let rows = if cols > 0 && data.len() > 0 {
+        let rows = if cols > 0 && !data.is_empty() {
             data.len() / cols
         } else {
             0
@@ -135,6 +135,22 @@ impl Rel for Vector {
 
     fn rows(&self) -> Box<IterRows<'_>> {
         Box::new(self.data.rows().into_iter().map(Row::Vector))
+    }
+
+    fn from_query(of: QueryResult<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        let rows = of.iter.map(|x| x.to_vec()).flatten().collect();
+        Vector::new_table(rows, of.schema)
+    }
+
+    fn from_joins(of: QueryResultOwned<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        let rows = of.iter.map(|x| x.to_vec()).flatten().collect();
+        Vector::new_table(rows, of.schema)
     }
 }
 

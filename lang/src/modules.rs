@@ -1,9 +1,9 @@
 use crate::for_impl::*;
-use crate::function::{FunCall, Function, FunctionDec};
-use crate::prelude::*;
+use tablam::function::{FunCall, Function, FunctionDec};
+use tablam::prelude::*;
 
-use derivative::Derivative;
 use enum_map::EnumMap;
+use tablam::derivative::Derivative;
 
 pub trait RelCallable: fmt::Debug {
     fn name(&self) -> &str;

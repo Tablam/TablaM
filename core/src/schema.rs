@@ -2,6 +2,7 @@ use crate::for_impl::*;
 use std::ops::Index;
 
 use crate::types::*;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Field {
@@ -23,6 +24,13 @@ impl Field {
 
     pub fn new_positional(kind: DataType) -> Self {
         Self::new("", kind)
+    }
+
+    pub fn from_str(name: &str, kind: &str) -> Self {
+        Field {
+            name: name.to_string(),
+            kind: DataType::from_str(kind).expect("DataType not implemented"),
+        }
     }
 
     pub fn name(&self) -> &String {

@@ -40,6 +40,12 @@ pub trait Rel: fmt::Debug + DynClone {
     fn query(&self) -> QueryOp {
         QueryOp::new(self.schema())
     }
+    fn from_query(of: QueryResult) -> Self
+    where
+        Self: Sized;
+    fn from_joins(of: QueryResultOwned) -> Self
+    where
+        Self: Sized;
 }
 
 #[derive(Debug, From)]

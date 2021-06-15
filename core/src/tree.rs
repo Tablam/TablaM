@@ -87,6 +87,20 @@ impl Rel for Tree {
     fn rows(&self) -> Box<IterRows<'_>> {
         Box::new(self.data.iter().map(Row::Tuple))
     }
+
+    fn from_query(of: QueryResult<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        Tree::from_iter(of.schema, of.iter.map(|x| x.to_vec()))
+    }
+
+    fn from_joins(of: QueryResultOwned<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        Tree::from_iter(of.schema, of.iter.map(|x| x.to_vec()))
+    }
 }
 
 impl fmt::Display for Tree {

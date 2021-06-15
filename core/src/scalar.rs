@@ -1,6 +1,7 @@
 use crate::for_impl::*;
 use crate::prelude::*;
 
+use crate::file::File;
 use crate::function::Function;
 use derive_more::{Display, From, TryInto};
 
@@ -38,6 +39,7 @@ pub enum Scalar {
     Seq(Rc<Seq>),
     //Objects
     Fun(Box<Function>),
+    File(Box<File>),
     Rel(RelationDyn),
     Top,
 }
@@ -66,7 +68,7 @@ impl Rel for Scalar {
             //Scalar::Tuple(x) => x.type_name(),
             Scalar::Tree(x) => x.type_name(),
             Scalar::Map(x) => x.type_name(),
-            // Scalar::File(x) => x.type_name(),
+            Scalar::File(x) => x.type_name(),
             Scalar::Fun(x) => x.type_name(),
             Scalar::Rel(x) => x.rel.type_name(),
             Scalar::Seq(_) => "Seq",
@@ -92,7 +94,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.kind(),
             Scalar::Map(x) => x.kind(),
             Scalar::Rel(x) => x.rel.kind(),
-            //Scalar::File(x) => x.kind(),
+            Scalar::File(x) => x.kind(),
             Scalar::Fun(x) => x.kind(),
             Scalar::Seq(x) => DataType::Seq(x.schema.kind().into()),
             Scalar::Top => DataType::Any,
@@ -106,7 +108,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.schema(),
             Scalar::Map(x) => x.schema(),
             Scalar::Rel(x) => x.rel.schema(),
-            //Scalar::File(x) => x.schema(),
+            Scalar::File(x) => x.schema(),
             Scalar::Fun(x) => x.schema(),
             x => schema_it(x.kind()),
         }
@@ -119,7 +121,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.len(),
             Scalar::Map(x) => x.len(),
             Scalar::Rel(x) => x.rel.len(),
-            //Scalar::File(x) => x.len(),
+            Scalar::File(x) => x.len(),
             Scalar::Fun(x) => x.len(),
             _ => 1,
         }
@@ -132,7 +134,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.size(),
             Scalar::Map(x) => x.size(),
             Scalar::Rel(x) => x.rel.size(),
-            //Scalar::File(x) => x.size(),
+            Scalar::File(x) => x.size(),
             Scalar::Fun(x) => x.size(),
             _ => ShapeLen::Scalar,
         }
@@ -149,7 +151,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.rel_hash(&mut hasher),
             Scalar::Map(x) => x.rel_hash(&mut hasher),
             Scalar::Rel(x) => x.rel.rel_hash(&mut hasher),
-            //Scalar::File(x) => x.rel_hash(&mut hasher),
+            Scalar::File(x) => x.rel_hash(&mut hasher),
             Scalar::Fun(x) => x.rel_hash(&mut hasher),
             x => x.hash(&mut hasher),
         }
@@ -184,7 +186,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.iter(),
             Scalar::Map(x) => x.iter(),
             Scalar::Rel(x) => x.rel.iter(),
-            //Scalar::File(x) => x.iter(),
+            Scalar::File(x) => x.iter(),
             Scalar::Fun(x) => x.iter(),
             x => Box::new(std::iter::once(x)),
         }
@@ -197,7 +199,7 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.col(pos),
             Scalar::Map(x) => x.col(pos),
             Scalar::Rel(x) => x.rel.col(pos),
-            //Scalar::File(x) => x.col(pos),
+            Scalar::File(x) => x.col(pos),
             Scalar::Fun(x) => x.col(pos),
             x => Col::new(pos, Box::new(std::iter::once(x))),
         }
@@ -210,9 +212,33 @@ impl Rel for Scalar {
             Scalar::Tree(x) => x.rows(),
             Scalar::Map(x) => x.rows(),
             Scalar::Rel(x) => x.rel.rows(),
-            //Scalar::File(x) => x.cols(),
+            Scalar::File(x) => x.rows(),
             Scalar::Fun(x) => x.rows(),
             x => Box::new(std::iter::once(Row::Scalar(x))),
+        }
+    }
+
+    fn from_query(of: QueryResult<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        let rows: Vec<_> = of.iter.map(|x| x.to_vec()).flatten().collect();
+        if rows.len() == 1 {
+            rows[0].clone()
+        } else {
+            Scalar::Vector(Rc::new(Vector::new_table(rows, of.schema)))
+        }
+    }
+
+    fn from_joins(of: QueryResultOwned<'_>) -> Self
+    where
+        Self: Sized,
+    {
+        let rows: Vec<_> = of.iter.map(|x| x.to_vec()).flatten().collect();
+        if rows.len() == 1 {
+            rows[0].clone()
+        } else {
+            Scalar::Vector(Rc::new(Vector::new_table(rows, of.schema)))
         }
     }
 }

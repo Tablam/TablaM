@@ -8,7 +8,7 @@ use crate::prelude::Vector;
 use crate::relation::{Rel, ToHash};
 use crate::row::{Col, Row};
 use crate::scalar::{Date, DateTime, Scalar, Time};
-use crate::schema::{Field, Schema};
+use crate::schema::Field;
 use crate::utils::format_list;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -178,6 +178,7 @@ pub enum DataType {
     Seq(KindRel),
     #[display(fmt = "Fun({})", _0)]
     Fun(KindFun),
+    File,
     // Planed: Blob
     // For list, dynamic
     #[display(fmt = "Any")]
@@ -237,6 +238,9 @@ impl DataType {
             DataType::Seq(_) => unimplemented!(),
             DataType::Tuple(_) => unimplemented!(),
             DataType::Fun(_) => unreachable!(),
+            DataType::File => {
+                unimplemented!()
+            }
             DataType::Any => Scalar::Unit,
         }
     }
@@ -328,19 +332,6 @@ pub enum Comparable {
     Scalar(Scalar),
 }
 
-impl Comparable {
-    fn get_value<'a>(&'a self, schema: &Schema, row: &'a [Scalar]) -> &'a Scalar {
-        match self {
-            Comparable::Column(pos) => &row[*pos],
-            Comparable::Scalar(x) => x,
-            Comparable::Name(name) => {
-                let (pos, _) = schema.resolve_name(&Column::Name(name.into()));
-                &row[pos]
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct CompareOp {
     pub op: CmOp,
@@ -351,35 +342,6 @@ pub struct CompareOp {
 impl fmt::Display for CompareOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {} {}", self.lhs, self.op, self.rhs)
-    }
-}
-
-macro_rules! cmp_fn {
-    ($name:ident, $fun:ident) => {
-        pub fn $name(schema: &Schema, row: &[Scalar], lhs: &Comparable, rhs: &Comparable) -> bool {
-            let lhs = lhs.get_value(schema, row);
-            let rhs = rhs.get_value(schema, row);
-            lhs.$fun(rhs)
-        }
-    };
-}
-impl CompareOp {
-    cmp_fn!(fn_eq, eq);
-    cmp_fn!(fn_not_eq, ne);
-    cmp_fn!(fn_less, lt);
-    cmp_fn!(fn_less_eq, le);
-    cmp_fn!(fn_greater, gt);
-    cmp_fn!(fn_greater_eq, ge);
-
-    pub fn get_fn(&self) -> &dyn Fn(&Schema, &[Scalar], &Comparable, &Comparable) -> bool {
-        match self.op {
-            CmOp::Eq => &Self::fn_eq,
-            CmOp::NotEq => &Self::fn_not_eq,
-            CmOp::Less => &Self::fn_less,
-            CmOp::LessEq => &Self::fn_less_eq,
-            CmOp::Greater => &Self::fn_greater,
-            CmOp::GreaterEq => &Self::fn_greater_eq,
-        }
     }
 }
 

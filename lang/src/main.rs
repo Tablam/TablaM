@@ -1,12 +1,12 @@
 use std::env;
+use std::fs::File;
+use std::path::PathBuf;
 
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use seahorse::{App, Command, Context};
 
-use std::fs::File;
-use std::path::PathBuf;
-use tablam::stdlib::io::read_file_to_string;
+use tablam::prelude::read_file_to_string;
 use tablam_lang::ast::Expression;
 use tablam_lang::eval::Program;
 

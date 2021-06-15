@@ -2,6 +2,7 @@ use logos::{Lexer, Logos, Skip, Span};
 
 use std::iter::Peekable;
 use tablam::derive_more::Display;
+use tablam::for_impl::{Decimal, R64};
 use tablam::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Display)]

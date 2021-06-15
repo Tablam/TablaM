@@ -8,15 +8,14 @@ pub extern crate rust_decimal;
 pub extern crate slotmap;
 #[macro_use]
 extern crate lazy_static;
-extern crate enum_map;
 
 mod dsl;
-mod errors;
-mod function;
+pub mod errors;
+mod file;
+pub mod function;
 mod iterators;
 mod map;
-mod modules;
-mod query;
+pub mod query;
 mod refcount;
 mod relation;
 mod row;
@@ -29,7 +28,7 @@ mod types;
 mod utils;
 mod vector;
 
-mod for_impl {
+pub mod for_impl {
     pub use decorum::R64;
     pub use rust_decimal::Decimal;
     pub use std::any::Any;
@@ -44,8 +43,9 @@ mod for_impl {
 pub mod prelude {
     pub use crate::dsl::*;
     pub use crate::errors::{Error, ResultT};
+    pub use crate::file::*;
+    pub use crate::function::*;
     pub use crate::map::Map;
-    pub use crate::modules::*;
     pub use crate::query::*;
     pub use crate::relation::{Rel, RelationDyn, ToHash};
     pub use crate::row::*;

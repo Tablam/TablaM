@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-use std::mem::discriminant;
+use crate::for_impl::*;
+use crate::prelude::*;
 
 use tablam::derive_more::{Display, From};
-use tablam::prelude::{BinOp, Column, Comparable, Function, LogicOp, Param, QueryOp, Scalar};
-
-use crate::lexer::{Token, TokenData};
-use std::fmt;
-use tablam::types::format_list;
+use tablam::function::Function;
+use tablam::prelude::*;
+use tablam::query::Comparable;
 
 pub type Identifier = String;
 
@@ -111,7 +109,7 @@ pub enum Expression {
 
     #[from]
     #[display(fmt = "{}", _0)]
-    ParameterDefinition(Param),
+    ParameterDefinition(Field),
 
     #[from]
     #[display(fmt = "{}", _0)]
@@ -296,9 +294,9 @@ pub struct FunctionDef(Function);
 
 impl fmt::Display for FunctionDef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "fun {}", self.0.name)?;
-        format_list(&self.0.params, self.0.params.len(), "(", ")", f)?;
-        format_list(&self.0.result, self.0.result.len(), " = ", "", f)?;
+        write!(f, "fun {}", self.0.head.name)?;
+        format_list(&self.0.head.fields, self.0.head.fields.len(), "(", ")", f)?;
+        write!(f, " = {}", self.0.head.result)?;
         Ok(())
     }
 }

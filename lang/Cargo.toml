@@ -11,9 +11,13 @@ edition = "2018"
 
 [dependencies]
 tablam = { path = "../core" }
+console = "0.14.1"
+enum-map = "1.1.1"
 logos = "0.11.4"
 rustyline = "7.1.0"
 seahorse = "1.1.1"
+strum = "0.21"
+strum_macros = "0.21"
 
 [[bin]]
 name = "tablam"

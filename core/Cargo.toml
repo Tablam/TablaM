@@ -13,11 +13,9 @@ edition = "2018"
 [dependencies]
 bit-vec =  { version = "0.6.3", features = ["std"] }
 chrono = { version = "0.4.19", features = ["default"] }
-console = "0.14.1"
 decorum = { version = "0.3.1", features = ["std"] }
 derivative = "2.2.0"
 derive_more = "0.99.14"
-enum-map = "1.1.1"
 dyn-clone = "1.0.4"
 genawaiter = "0.99.1"
 itertools = "0.10.0"
@@ -26,5 +24,3 @@ lazy_static = "1.4.0"
 ndarray="0.15.2"
 rust_decimal = { version = "1.14.1", features = [] }
 slotmap = "1.0.3"
-strum = "0.21"
-strum_macros = "0.21"

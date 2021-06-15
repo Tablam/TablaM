@@ -504,18 +504,18 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.4.3"
+version = "1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9251239e129e16308e70d853559389de218ac275b515068abc96829d05b948a"
+checksum = "d07a8629359eb56f1e2fb1652bb04212c072a87ba68546a04065d525673ac461"
 dependencies = [
  "regex-syntax",
 ]
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.22"
+version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5eb417147ba9860a96cfe72a0b93bf88fee1744b5636ec99ab20c1aa9376581"
+checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "rust-argon2"
@@ -645,12 +645,10 @@ version = "0.4.0"
 dependencies = [
  "bit-vec",
  "chrono",
- "console",
  "decorum",
  "derivative",
  "derive_more",
  "dyn-clone",
- "enum-map",
  "genawaiter",
  "indexmap",
  "itertools",
@@ -658,25 +656,27 @@ dependencies = [
  "ndarray",
  "rust_decimal",
  "slotmap",
- "strum",
- "strum_macros",
 ]
 
 [[package]]
 name = "tablam-lang"
 version = "0.3.4"
 dependencies = [
+ "console",
+ "enum-map",
  "logos",
  "rustyline",
  "seahorse",
+ "strum",
+ "strum_macros",
  "tablam",
 ]
 
 [[package]]
 name = "terminal_size"
-version = "0.1.15"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bd2d183bd3fac5f5fe38ddbeb4dc9aec4a39a9d7d59e7491d900302da01cbe1"
+checksum = "633c1a546cee861a1a6d0dc69ebeca693bf4296661ba7852b9d21d159e0506df"
 dependencies = [
  "libc",
  "winapi",

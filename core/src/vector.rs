@@ -40,7 +40,7 @@ impl Vector {
 
     pub fn new_vector(data: Vec<Scalar>, kind: DataType) -> Self {
         Vector {
-            data: _make_vector(1, data.len(), data).unwrap(),
+            data: _make_vector(data.len(), 1, data).unwrap(),
             schema: schema_it(kind),
         }
     }
@@ -134,7 +134,11 @@ impl Rel for Vector {
     }
 
     fn rows(&self) -> Box<IterRows<'_>> {
-        Box::new(self.data.rows().into_iter().map(Row::Vector))
+        if self.size().cols() == 1 {
+            Box::new(self.data.iter().into_iter().map(Row::Scalar))
+        } else {
+            Box::new(self.data.rows().into_iter().map(Row::Vector))
+        }
     }
 
     fn from_query(of: QueryResult<'_>) -> Self

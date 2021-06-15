@@ -411,24 +411,22 @@ impl<'source> Parser<'source> {
                 break;
             };
         }
+        dbg!(&data, &fields);
 
-        if data.is_empty() {
-            return Ok(Expression::Value(Scalar::Vector(Rc::new(
-                Vector::new_empty(DataType::Any),
-            ))));
-        }
+        let vector = if data.is_empty() {
+            Vector::new_empty(DataType::Any)
+        } else {
+            if fields.len() == 1 {
+                let kind = data.first().expect("empty vector").kind();
+                Vector::new_vector(data, kind)
+            } else {
+                let schema = Schema::new(fields, None);
+                Vector::new_table(data, schema)
+            }
+        };
 
-        if fields.len() > 1 {
-            let schema = Schema::new(fields, None);
-            return Ok(Expression::Value(Scalar::Vector(Rc::new(
-                Vector::new_table(data, schema),
-            ))));
-        }
-
-        let kind = data.first().expect("empty vector").kind();
-        Ok(Expression::Value(Scalar::Vector(Rc::new(
-            Vector::new_vector(data, kind),
-        ))))
+        dbg!(&vector);
+        Ok(Expression::Value(Scalar::Vector(Rc::new(vector))))
     }
 
     fn parse_query(&mut self, identifier: Identifier) -> Return {

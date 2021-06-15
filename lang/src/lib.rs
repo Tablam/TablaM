@@ -6,9 +6,9 @@ extern crate console;
 
 pub mod ast;
 pub mod eval;
-mod lexer;
+pub mod lexer;
 pub mod modules;
-mod parser;
+pub mod parser;
 pub mod stdlib;
 
 mod for_impl {

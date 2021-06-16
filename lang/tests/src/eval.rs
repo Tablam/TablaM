@@ -13,7 +13,7 @@ fn run_ok(source: &str, expected: &str) {
     assert_eq!(expected, expr.trim());
 }
 
-#[test]
+//#[test]
 fn test_simple_math() {
     run_ok("1", "1");
     run_ok("1 + 1", "2");
@@ -21,7 +21,7 @@ fn test_simple_math() {
     run_ok("1d / 3d", "0.3333333333333333333333333333");
 }
 
-#[test]
+//#[test]
 fn test_call_funs() {
     run_ok("print(1)", "pass");
     run_ok("println(1)", "pass");

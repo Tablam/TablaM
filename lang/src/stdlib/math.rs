@@ -1,11 +1,15 @@
 // use std::ops::*;
 //
-// use crate::prelude::*;
-// use crate::stdlib::basic::fold;
+// use crate::for_impl::*;
+// use crate::prelude::FunctionDef;
+//
+// use tablam::for_impl::*;
+use tablam::function::Function;
+// use tablam::prelude::*;
 //
 // macro_rules! math_op {
 //     ($name:ident, $op:path) => {
-//         pub fn $name(params: &[Scalar]) -> Result<Scalar> {
+//         pub fn $name(params: &[Scalar]) -> ResultT<Scalar> {
 //             let x = &params[0];
 //             let y = &params[1];
 //
@@ -34,16 +38,26 @@
 // math_op!(math_mul, Mul::mul);
 // math_op!(math_div, Div::div);
 //
+// pub fn fold(init: Scalar, params: &[Scalar], f: RelFun) -> ResultT<Scalar> {
+//     let rel = &params[0];
+//     let schema = rel.schema();
+//     let mut acc = init.clone();
+//     for x in rel.rows_iter() {
+//         acc = f(&[acc, Vector::new_table(x, schema.clone()).into()])?;
+//     }
+//     Ok(acc.to_scalar().unwrap_or(init))
+// }
+//
 // pub fn math_fn(name: &str, kind: DataType, f: RelFun) -> Function {
 //     Function::new_bin_op(name, "left", "right", kind, Box::new(f))
 // }
 //
-// pub fn sum(params: &[Scalar]) -> Result<Scalar> {
+// pub fn sum(params: &[Scalar]) -> ResultT<Scalar> {
 //     let init = params[0].kind().default_value();
 //     fold(init, params, math_add)
 // }
 //
-// pub fn avg(params: &[Scalar]) -> Result<Scalar> {
+// pub fn avg(params: &[Scalar]) -> ResultT<Scalar> {
 //     let init = params[0].kind().default_value();
 //     let total = params[0].rows().unwrap_or(0);
 //     let total = if total == 0 { 1 } else { total };
@@ -54,17 +68,17 @@
 // fn math_fold(name: &str, param: DataType, ret: DataType, f: RelFun) -> Function {
 //     Function::new_single(name, Param::kind(param), ret, Box::new(f))
 // }
-//
-// pub fn functions() -> Vec<Function> {
-//     let mut fun = Vec::with_capacity(4 * 3);
-//
-//     for kind in &[DataType::I64, DataType::F64, DataType::Decimal] {
-//         fun.push(math_fn("add", kind.clone(), math_add));
-//         fun.push(math_fn("minus", kind.clone(), math_minus));
-//         fun.push(math_fn("mul", kind.clone(), math_mul));
-//         fun.push(math_fn("div", kind.clone(), math_div));
-//         fun.push(math_fold("sum", kind.clone(), kind.clone(), sum));
-//         fun.push(math_fold("avg", kind.clone(), kind.clone(), avg));
-//     }
-//     fun
-// }
+
+pub fn functions() -> Vec<Function> {
+    let mut fun = Vec::with_capacity(4 * 3);
+    //
+    // for kind in &[DataType::I64, DataType::F64, DataType::Decimal] {
+    //     fun.push(math_fn("add", kind.clone(), math_add));
+    //     fun.push(math_fn("minus", kind.clone(), math_minus));
+    //     fun.push(math_fn("mul", kind.clone(), math_mul));
+    //     fun.push(math_fn("div", kind.clone(), math_div));
+    //     fun.push(math_fold("sum", kind.clone(), kind.clone(), sum));
+    //     fun.push(math_fold("avg", kind.clone(), kind.clone(), avg));
+    // }
+    fun
+}

@@ -1,8 +1,7 @@
+extern crate console;
 extern crate enum_map;
 extern crate strum;
-#[macro_use]
 extern crate strum_macros;
-extern crate console;
 
 pub mod ast;
 pub mod eval;

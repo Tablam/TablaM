@@ -49,10 +49,6 @@ impl ShapeLen {
     pub fn is_scalar(&self) -> bool {
         self.cols() == 1 && self.rows() == Some(1)
     }
-
-    fn is_bounded(&self) -> bool {
-        self.rows().is_some()
-    }
 }
 
 impl From<ShapeLen> for RelShape {
@@ -306,22 +302,6 @@ pub enum LogicOp {
     LessEqual,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Display)]
-pub enum CmOp {
-    #[display(fmt = "=")]
-    Eq,
-    #[display(fmt = "<>")]
-    NotEq,
-    #[display(fmt = "<")]
-    Less,
-    #[display(fmt = "<=")]
-    LessEq,
-    #[display(fmt = ">")]
-    Greater,
-    #[display(fmt = ">=")]
-    GreaterEq,
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Display, From)]
 pub enum Comparable {
     #[display(fmt = "#{}", _0)]
@@ -330,25 +310,6 @@ pub enum Comparable {
     Column(usize),
     #[display(fmt = "{}", _0)]
     Scalar(Scalar),
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct CompareOp {
-    pub op: CmOp,
-    pub lhs: Comparable,
-    pub rhs: Comparable,
-}
-
-impl fmt::Display for CompareOp {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {} {}", self.lhs, self.op, self.rhs)
-    }
-}
-
-impl CompareOp {
-    pub fn new(op: CmOp, lhs: Comparable, rhs: Comparable) -> Self {
-        CompareOp { op, lhs, rhs }
-    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]

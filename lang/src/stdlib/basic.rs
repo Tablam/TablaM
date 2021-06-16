@@ -16,7 +16,7 @@ enum Functions {
 
 impl CallableStaticTraits for Functions {}
 
-fn functions() -> CallableStatic<Functions> {
+fn functions_mod() -> CallableStatic<Functions> {
     CallableStatic::new(
         "std.prelude",
         "__internal",
@@ -28,14 +28,14 @@ fn functions() -> CallableStatic<Functions> {
     )
 }
 
-fn print(of: function::FunCall<'_>) -> ResultT<Scalar> {
+fn print(_of: function::FunCall<'_>) -> ResultT<Scalar> {
     // for x in of {
     //     print!("{}", x);
     // }
     Ok(Scalar::Unit)
 }
 
-fn print_ln(of: function::FunCall<'_>) -> ResultT<Scalar> {
+fn print_ln(_of: function::FunCall<'_>) -> ResultT<Scalar> {
     // for x in of {
     //     println!("{}", x);
     // }
@@ -54,7 +54,7 @@ fn print_ln(of: function::FunCall<'_>) -> ResultT<Scalar> {
 //     }
 // }
 //
-// pub fn max(params: &[Scalar]) -> Result<Scalar> {
+// pub fn max(params: &[Scalar]) -> ResultT<Scalar> {
 //     let value = &params[0];
 //     if value.rows().unwrap_or(0) != 0 {
 //         fold(Scalar::Unit, params, fn_max)
@@ -63,27 +63,25 @@ fn print_ln(of: function::FunCall<'_>) -> ResultT<Scalar> {
 //     }
 // }
 //
-// fn basic_fn_variadic(name: &str, kind: DataType, f: RelFun) -> Function {
-//     Function::new_single(
-//         name,
-//         Param::kind(DataType::Variadic(Box::new(kind))),
-//         DataType::Any,
-//         Box::new(f),
+// fn basic_fn_variadic(name: &str, kind: DataType, f: Box<dyn RelFun>) -> Function {
+//     Function::new(FunctionDec::new_variadic(name, kind), f)
+// }
+//
+// fn cmp_values(name: &str, param: DataType, f: Box<dyn RelFun>) -> Function {
+//     Function::new(
+//         FunctionDec::new_single(name, Field::new_positional(param.clone()), param),
+//         f,
 //     )
 // }
-//
-// fn cmp_values(name: &str, param: DataType, f: RelFun) -> Function {
-//     Function::new_single(name, Param::kind(param.clone()), param, Box::new(f))
-// }
-//
-// pub fn functions() -> Vec<Function> {
-//     vec![
-//         basic_fn_variadic("print", DataType::Any, print),
-//         basic_fn_variadic("println", DataType::Any, print_ln),
-//         cmp_values("min", DataType::Any, min),
-//         cmp_values("max", DataType::Any, max),
-//     ]
-// }
+
+pub fn functions() -> Vec<Function> {
+    vec![
+        // basic_fn_variadic("print", DataType::Any, print),
+        // basic_fn_variadic("println", DataType::Any, print_ln),
+        // cmp_values("min", DataType::Any, min),
+        // cmp_values("max", DataType::Any, max),
+    ]
+}
 
 #[derive(Clone, Copy)]
 struct Caller {}

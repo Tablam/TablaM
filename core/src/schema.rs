@@ -191,6 +191,13 @@ impl Schema {
     pub fn kind(&self) -> Vec<DataType> {
         self.fields.iter().map(|x| x.kind.clone()).collect()
     }
+    pub fn kind_scalar(&self) -> Option<DataType> {
+        if self.len() == 1 {
+            Some(self.fields[0].kind.clone())
+        } else {
+            None
+        }
+    }
 }
 
 pub fn check_pk(schema: &Schema) -> usize {

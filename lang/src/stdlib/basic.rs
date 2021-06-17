@@ -1,9 +1,8 @@
 use tablam::function;
 use tablam::prelude::*;
 
-#[macro_use]
-use crate::enum_map::Enum;
 use crate::enum_map::enum_map;
+use crate::enum_map::Enum;
 use crate::strum_macros::EnumString;
 
 use crate::prelude::modules::{CallableStatic, CallableStaticTraits, StaticCall};

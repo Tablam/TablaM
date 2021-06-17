@@ -20,7 +20,7 @@ impl<'a> FunCall<'a> {
         }
     }
 
-    fn unpack_binary(&self) -> (&Scalar, &Scalar) {
+    pub fn unpack_binary(&self) -> (&Scalar, &Scalar) {
         if let FunCall::Binary(a, b) = self {
             (a, b)
         } else {

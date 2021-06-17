@@ -13,6 +13,7 @@ mod dsl;
 pub mod errors;
 mod file;
 pub mod function;
+pub mod interpreter;
 mod iterators;
 mod map;
 pub mod query;

@@ -73,6 +73,7 @@ impl From<ShapeLen> for RelShape {
         }
     }
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KindFlat(Vec<DataType>);
 

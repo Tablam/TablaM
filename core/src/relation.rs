@@ -8,6 +8,9 @@ pub trait Rel: fmt::Debug + DynClone {
     fn type_name(&self) -> &str;
 
     fn kind(&self) -> DataType;
+    fn kind_scalar(&self) -> Option<DataType> {
+        self.schema().kind_scalar()
+    }
 
     fn schema(&self) -> Schema;
 

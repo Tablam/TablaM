@@ -1,29 +1,28 @@
-use crate::interpreter::ast::Expression;
+use crate::interpreter::ast::Expr;
 use crate::interpreter::Identifier;
-use crate::prelude::{Error, Function};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub struct Environment {
-    vars: HashMap<Identifier, Expression>,
-    functions: HashMap<Identifier, Expression>,
-    parent: Option<Box<Environment>>,
+pub struct Env {
+    vars: HashMap<Identifier, Expr>,
+    functions: HashMap<Identifier, Expr>,
+    parent: Option<Box<Env>>,
 }
 
-impl Environment {
-    pub fn new(parent: Option<Box<Environment>>) -> Self {
-        Environment {
+impl Env {
+    pub fn new(parent: Option<Box<Env>>) -> Self {
+        Env {
             vars: HashMap::new(),
             functions: HashMap::new(),
             parent,
         }
     }
 
-    pub fn add_variable(&mut self, name: String, value: Expression) {
+    pub fn add_variable(&mut self, name: String, value: Expr) {
         self.vars.insert(name, value);
     }
 
-    pub fn add_function(&mut self, name: String, def: Expression) {
+    pub fn add_function(&mut self, name: String, def: Expr) {
         self.functions.insert(name, def);
     }
     //
@@ -54,6 +53,6 @@ impl Environment {
     // }
 
     pub fn create_child(self) -> Self {
-        Environment::new(Some(Box::new(self)))
+        Env::new(Some(Box::new(self)))
     }
 }

@@ -7,7 +7,7 @@ use crate::prelude::*;
 use derive_more::{Display, From};
 
 #[derive(Debug, Clone, From)]
-pub struct Block(pub(crate) Vec<Expression>);
+pub struct Block(pub(crate) Vec<Expr>);
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -17,7 +17,7 @@ impl fmt::Display for Block {
 }
 
 #[derive(Debug, Clone, Display, From)]
-pub enum Expression {
+pub enum Expr {
     //Values
     #[from]
     #[display(fmt = "{}", _0)]
@@ -27,9 +27,9 @@ pub enum Expression {
 
     //Variable definitions
     #[display(fmt = "var {:} := {}", _0, _1)]
-    Mutable(Identifier, Box<Expression>),
+    Mutable(Identifier, Box<Expr>),
     #[display(fmt = "let {:} := {}", _0, _1)]
-    Immutable(Identifier, Box<Expression>),
+    Immutable(Identifier, Box<Expr>),
 
     #[from]
     #[display(fmt = "{}", _0)]
@@ -50,13 +50,13 @@ pub enum Expression {
     Block(Block),
 
     #[display(fmt = "if {} do\n\t{}\nelse\n\t{}\nend", _0, _1, _2)]
-    If(Box<BoolOperation>, Box<Expression>, Box<Expression>),
+    If(Box<BoolOperation>, Box<Expr>, Box<Expr>),
 
     #[display(fmt = "while {} do\n\t{}\nend", _0, _1)]
-    While(Box<BoolOperation>, Box<Expression>),
+    While(Box<BoolOperation>, Box<Expr>),
 
     #[display(fmt = "for {} do\n\t{}\nend", _0, _1)]
-    ForIn(Box<RangeOperation>, Box<Expression>),
+    ForIn(Box<RangeOperation>, Box<Expr>),
 
     #[from]
     #[display(fmt = "{}", _0)]
@@ -79,17 +79,17 @@ pub enum Expression {
     Eof,
 }
 
-impl Expression {
+impl Expr {
     pub fn is(variant: &Self, expected: &Self) -> bool {
         discriminant(variant) == discriminant(expected)
     }
 
     pub fn is_eof(&self) -> bool {
-        matches!(self, Expression::Eof)
+        matches!(self, Expr::Eof)
     }
 
     pub fn is_indexed_column(&self) -> bool {
-        matches!(self, Expression::Column(Column::Pos(_)))
+        matches!(self, Expr::Column(Column::Pos(_)))
     }
     //
     // pub fn create_bool_condition_qry(operator: Token, left: Self, right: Self) -> Self {
@@ -118,12 +118,12 @@ impl Expression {
 #[derive(Debug, Clone, Display)]
 #[display(fmt = "{} {}", collection, query)]
 pub struct QueryOperation {
-    pub collection: Box<Expression>,
+    pub collection: Box<Expr>,
     pub query: QueryOp,
 }
 
 impl QueryOperation {
-    pub fn new(collection: Expression, query: QueryOp) -> Self {
+    pub fn new(collection: Expr, query: QueryOp) -> Self {
         QueryOperation {
             collection: Box::new(collection),
             query,
@@ -173,12 +173,12 @@ impl QueryOperation {
 #[display(fmt = "{} {} {}", left, operator, right)]
 pub struct BinaryOperation {
     pub operator: BinOp,
-    pub left: Box<Expression>,
-    pub right: Box<Expression>,
+    pub left: Box<Expr>,
+    pub right: Box<Expr>,
 }
 
 impl BinaryOperation {
-    pub fn new(operator: BinOp, left: Box<Expression>, right: Box<Expression>) -> Self {
+    pub fn new(operator: BinOp, left: Box<Expr>, right: Box<Expr>) -> Self {
         BinaryOperation {
             operator,
             left,
@@ -191,8 +191,8 @@ impl BinaryOperation {
 #[display(fmt = "{} {} {}", left, operator, right)]
 pub struct ComparisonOperation {
     pub operator: LogicOp,
-    pub left: Box<Expression>,
-    pub right: Box<Expression>,
+    pub left: Box<Expr>,
+    pub right: Box<Expr>,
 }
 
 #[derive(Debug, Clone, Display)]
@@ -212,11 +212,11 @@ pub enum RangeOperation {
 #[display(fmt = "{} := {}", name, value)]
 pub struct ParamCall {
     pub name: String,
-    pub value: Expression,
+    pub value: Expr,
 }
 
 impl ParamCall {
-    pub fn new(name: &str, value: Expression) -> Self {
+    pub fn new(name: &str, value: Expr) -> Self {
         ParamCall {
             name: name.to_string(),
             value,
@@ -248,7 +248,7 @@ impl fmt::Display for FunctionCall {
 }
 
 impl ComparisonOperation {
-    pub fn new(operator: LogicOp, left: Box<Expression>, right: Box<Expression>) -> Self {
+    pub fn new(operator: LogicOp, left: Box<Expr>, right: Box<Expr>) -> Self {
         ComparisonOperation {
             operator,
             left,

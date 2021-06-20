@@ -27,10 +27,10 @@ pub enum Error {
     RankNotMatch,
     #[display(fmt = "Type mismatch {} <> {}", _0, _1)]
     TypeMismatchBinOp(DataType, DataType),
-    #[display(fmt = "Type mismatch in the function {} params", _0)]
-    ParamTypeMismatch(String),
     #[display(fmt = "The function was called with {} params when need {}", _0, _1)]
     ParamCount(usize, usize),
+    #[display(fmt = "Variable '{}' not found in scope", _0)]
+    VariableNotFound(String),
     #[display(fmt = "The function {}.name is not found", _0)]
     FunctionNotFound(FunctionDec),
 }

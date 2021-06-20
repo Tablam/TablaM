@@ -1,5 +1,6 @@
 use crate::for_impl::*;
 use crate::prelude::*;
+use crate::slotmap::{DefaultKey, SlotMap};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct CmdName<'a> {
@@ -54,18 +55,25 @@ impl Clone for Box<dyn Cmd> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Mod {
+    pub name: String,
     pub commands: HashMap<String, CmdBox>,
+    pub imports: SlotMap<DefaultKey, Mod>,
 }
 
 impl Mod {
-    pub fn new(cmd: &[CmdBox]) -> Self {
+    pub fn new(name: &str, cmd: &[CmdBox]) -> Self {
         let commands = cmd
             .iter()
             .map(|x| (x.name().full_name(), x.clone()))
             .collect();
 
-        Mod { commands }
+        Mod {
+            name: name.into(),
+            commands,
+            imports: SlotMap::new(),
+        }
     }
 
     /// Return the command based on the FULL name (ie: std.math.add)
@@ -101,10 +109,16 @@ macro_rules! cmd_impl {
     };
 }
 
+impl fmt::Debug for dyn Cmd {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}({:?})", self.name(), self.types())
+    }
+}
+
 /// This define the dispatch table for commands. Is assumed the last one is the return.
-pub const BIN_I64: &'static [DataType] = &[DataType::I64, DataType::I64, DataType::I64];
-pub const BIN_F64: &'static [DataType] = &[DataType::F64, DataType::F64, DataType::F64];
-pub const BIN_D64: &'static [DataType] = &[DataType::Decimal, DataType::Decimal, DataType::Decimal];
+pub const BIN_I64: &[DataType] = &[DataType::I64, DataType::I64, DataType::I64];
+pub const BIN_F64: &[DataType] = &[DataType::F64, DataType::F64, DataType::F64];
+pub const BIN_D64: &[DataType] = &[DataType::Decimal, DataType::Decimal, DataType::Decimal];
 
 /// The dispatch for binary operations like +, *, -, /
-pub const BIN_MATH: &'static [&'static [DataType]] = &[BIN_I64, BIN_D64, BIN_F64];
+pub const BIN_MATH: &[&[DataType]] = &[BIN_I64, BIN_D64, BIN_F64];

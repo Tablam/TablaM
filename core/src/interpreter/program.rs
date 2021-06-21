@@ -9,10 +9,10 @@ use crate::interpreter::core::mod_ops;
 use crate::interpreter::modules::{CmdBox, Mod};
 
 use crate::interpreter::ast::{BinaryOperation, Block};
-use crate::interpreter::code::{BoolOp, Code, Lines};
+use crate::interpreter::code::{BoolOp, Code, CompiledExpr, Lines};
 use crate::interpreter::prelude::{BoolOperation, Expr};
 use crate::interpreter::visitor::Visitor;
-use std::ops::Deref;
+use slotmap::{DefaultKey, SlotMap};
 
 #[derive(Clone)]
 pub struct Env {
@@ -249,10 +249,16 @@ impl Program {
                     let code = if x { if_true } else { if_false };
                     self.execute_lines(vec![*code])
                 }
-                BoolOp::Cmp(x) => (x).execute(self.env().deref()),
+                BoolOp::Cmp(x) => {
+                    //(x).execute(self.env().deref())
+                    unimplemented!()
+                }
             },
             Code::Block(lines) => self.execute_lines(lines.0),
-            Code::Code(x) => (x).execute(self.env().deref()),
+            Code::Code(x) => {
+                //(x).execute(self.env().deref())
+                unimplemented!()
+            }
             Code::Pass => Ok(Scalar::Unit),
             Code::Bool(_) => self.execute(code),
             Code::BinOp(cmd, lhs, rhs) => {
@@ -272,11 +278,15 @@ impl Default for Program {
 
 pub struct Compiler<'a> {
     of: &'a Program,
+    code: SlotMap<DefaultKey, CompiledExpr<'a>>,
 }
 
 impl<'a> Compiler<'a> {
     pub fn new(of: &'a Program) -> Self {
-        Compiler { of }
+        Compiler {
+            of,
+            code: SlotMap::new(),
+        }
     }
 }
 
@@ -309,15 +319,35 @@ impl Visitor<ResultT<Code>> for Compiler<'_> {
     }
 
     fn visit_bin_op(&mut self, of: &BinaryOperation) -> ResultT<Code> {
-        todo!()
+        let named = match of.operator {
+            BinOp::Add => "std.ops.add",
+            BinOp::Minus => "std.ops.minus",
+            BinOp::Mul => "std.ops.mul",
+            BinOp::Div => "std.ops.div",
+        };
+        let cmd = self.of.env().find_function(&self.of, named)?.clone();
+        let lhs = self.visit_expr(&of.left)?;
+        let rhs = self.visit_expr(&of.left)?;
+
+        let code = CompiledExpr::new(move |ctx| {
+            cmd.call(&[lhs.as_scalar().unwrap(), rhs.as_scalar().unwrap()])
+        });
+        let key = self.code.insert(code);
+        Ok(Code::Code(key))
     }
 
     fn visit_bool_op(&mut self, test: &BoolOperation) -> ResultT<Code> {
         match test {
             BoolOperation::Bool(x) => Ok(Code::Bool(BoolOp::Bool(*x))),
-            BoolOperation::Var(named) => {
-                unimplemented!()
-            }
+            BoolOperation::Var(named) => match self.visit_get_var(named)? {
+                Code::Value(x) => Ok(Code::Value(x)),
+                Code::Bool(x) => match x {
+                    BoolOp::Bool(x) => Ok(Code::Bool(BoolOp::Bool(x))),
+                    BoolOp::Cmp(key) => Ok(Code::Code(key)),
+                },
+                Code::Code(key) => Ok(Code::Code(key)),
+                _ => unreachable!(),
+            },
             BoolOperation::Cmp(_) => {
                 unimplemented!()
             }

@@ -5,23 +5,21 @@ use crate::interpreter::modules::CmdBox;
 use crate::interpreter::program::Env;
 use derive_more::From;
 
-pub trait CompiledExpr {
-    /// Clones the command in a box reference.
-    fn clone_and_box(&self) -> Compiled;
-    /// Execute the code with the env
-    fn execute(&self, ctx: &Env) -> ResultT<Scalar>;
-}
+pub struct CompiledExpr<'a>(Box<dyn 'a + Fn(&Env) -> ResultT<Scalar>>);
 
-/// Defines a box reference for a compiled expression.
-pub type Compiled = Box<dyn CompiledExpr>;
+impl<'a> CompiledExpr<'a> {
+    /// Creates a compiled expression IR from a generic closure.
+    pub(crate) fn new(closure: impl 'a + Fn(&Env) -> ResultT<Scalar>) -> Self {
+        CompiledExpr(Box::new(closure))
+    }
 
-impl Clone for Box<dyn CompiledExpr> {
-    fn clone(&self) -> Box<dyn CompiledExpr> {
-        self.clone_and_box()
+    /// Executes a filter against a provided context with values.
+    pub fn execute<'e: 'a>(&self, ctx: &'e Env) -> ResultT<Scalar> {
+        self.0(ctx)
     }
 }
 
-impl fmt::Debug for dyn CompiledExpr {
+impl fmt::Debug for CompiledExpr<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Code()")
     }
@@ -38,7 +36,7 @@ pub enum Code {
     If(BoolOp, Box<Code>, Box<Code>),
     BinOp(CmdBox, Vec<Code>, Vec<Code>),
     Block(Lines),
-    Code(Compiled),
+    Code(slotmap::DefaultKey),
 }
 
 impl Code {
@@ -69,7 +67,7 @@ impl Code {
 #[derive(Debug, Clone)]
 pub enum BoolOp {
     Bool(bool),
-    Cmp(Compiled),
+    Cmp(slotmap::DefaultKey),
 }
 
 impl BoolOp {

@@ -16,7 +16,7 @@ impl Program {
         let mut env = Environment::new(None);
 
         for f in stdlib::std_functions() {
-            env.add_function(f.head.name.clone(), Expression::Function(f.into()));
+            env.add_function(f.name.clone(), f);
         }
 
         Program {
@@ -104,17 +104,17 @@ impl Program {
             Expression::Variable(name) => self.env().find_variable(name.as_str())?.clone(),
             Expression::BinaryOp(op) => {
                 let name = match op.operator {
-                    BinOp::Add => "add",
-                    BinOp::Minus => "minus",
-                    BinOp::Mul => "mul",
-                    BinOp::Div => "div",
+                    BinOp::Add => "std.math.add",
+                    BinOp::Minus => "std.math.minus",
+                    BinOp::Mul => "std.math.mul",
+                    BinOp::Div => "std.math.div",
                 };
                 let f = self.env().find_function(name)?;
 
                 let lhs = self.eval_value(&op.left)?;
                 let rhs = self.eval_value(&op.right)?;
-
-                Expression::Value(f.call(FunCall::Binary(&lhs, &rhs))?)
+                let result = f.call(&[lhs, rhs])?;
+                Expression::Value(result)
             }
             Expression::FunctionCall(call) => {
                 let f = self.env().find_function(&call.name)?;
@@ -124,7 +124,7 @@ impl Program {
                     let expr = self.eval_value(&p.value)?;
                     params.push(expr);
                 }
-                let result = f.call(FunCall::Many(params.as_slice()))?;
+                let result = f.call(params.as_slice())?;
                 match result {
                     Scalar::Unit => Expression::Pass,
                     expr => Expression::Value(expr),

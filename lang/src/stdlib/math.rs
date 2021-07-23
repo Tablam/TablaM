@@ -16,10 +16,10 @@ macro_rules! math_op {
                 (Scalar::I64(a), Scalar::I64(b)) => Ok(bin_op::<i64, _>($op, *a, *b)),
                 (Scalar::F64(a), Scalar::F64(b)) => Ok(bin_op::<R64, _>($op, *a, *b)),
                 (Scalar::Decimal(a), Scalar::Decimal(b)) => Ok(bin_op::<Decimal, _>($op, *a, *b)),
-                // (Scalar::Vector(data), Scalar::Decimal(_)) => {
-                //     let data = data.fold_fn(y, $name)?;
-                //     Ok(data.into())
-                // }
+                (Scalar::Vector(data), y) => {
+                    let data = data.fold_fn(y, $name)?;
+                    Ok(Scalar::Vector(Rc::new(data)))
+                }
                 //(a, b) => fold_fn2(a, b, $name),
                 _ => todo!(),
             }
@@ -46,12 +46,31 @@ impl Cmd for AddT {
 struct MinusT;
 
 impl Cmd for MinusT {
-    cmd_impl!("std.math", "add", BIN_MATH);
+    cmd_impl!("std.math", "minus", BIN_MATH);
     fn call(&self, params: &[Scalar]) -> ResultT<Scalar> {
         math_minus(params)
     }
 }
 
+#[derive(Clone)]
+struct MulT;
+
+impl Cmd for MulT {
+    cmd_impl!("std.math", "mul", BIN_MATH);
+    fn call(&self, params: &[Scalar]) -> ResultT<Scalar> {
+        math_mul(params)
+    }
+}
+
+#[derive(Clone)]
+struct DivT;
+
+impl Cmd for DivT {
+    cmd_impl!("std.math", "div", BIN_MATH);
+    fn call(&self, params: &[Scalar]) -> ResultT<Scalar> {
+        math_div(params)
+    }
+}
 // pub fn fold(init: Scalar, params: &[Scalar], f: RelFun) -> ResultT<Scalar> {
 //     let rel = &params[0];
 //     let schema = rel.schema();
@@ -84,5 +103,13 @@ impl Cmd for MinusT {
 // }
 
 pub fn functions() -> Mod {
-    Mod::new(&[Box::new(AddT), Box::new(MinusT)])
+    Mod::new(
+        "math",
+        &[
+            Box::new(AddT),
+            Box::new(MinusT),
+            Box::new(MulT),
+            Box::new(DivT),
+        ],
+    )
 }

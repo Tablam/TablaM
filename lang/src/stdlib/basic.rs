@@ -6,6 +6,7 @@ use crate::enum_map::Enum;
 use crate::strum_macros::EnumString;
 
 use crate::prelude::modules::{CallableStatic, CallableStaticTraits, StaticCall};
+use tablam::interpreter::prelude::Mod;
 
 #[derive(Debug, Clone, Copy, Enum, EnumString)]
 enum Functions {
@@ -73,7 +74,7 @@ fn print_ln(_of: function::FunCall<'_>) -> ResultT<Scalar> {
 //     )
 // }
 
-pub fn functions() -> Vec<Function> {
+pub fn functions() -> Vec<Mod> {
     vec![
         // basic_fn_variadic("print", DataType::Any, print),
         // basic_fn_variadic("println", DataType::Any, print_ln),

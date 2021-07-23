@@ -115,6 +115,12 @@ impl fmt::Debug for dyn Cmd {
     }
 }
 
+impl fmt::Display for Mod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", &self.name)
+    }
+}
+
 /// This define the dispatch table for commands. Is assumed the last one is the return.
 pub const BIN_I64: &[DataType] = &[DataType::I64, DataType::I64, DataType::I64];
 pub const BIN_F64: &[DataType] = &[DataType::F64, DataType::F64, DataType::F64];

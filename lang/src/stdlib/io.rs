@@ -12,6 +12,7 @@
 // use crate::prelude::FunctionDef;
 // use tablam::for_impl::*;
 use tablam::function::Function;
+use tablam::interpreter::modules::Mod;
 // use tablam::prelude::*;
 //
 // pub struct Console {
@@ -81,7 +82,7 @@ use tablam::function::Function;
 //     Function::new(head, f)
 // }
 
-pub fn functions() -> Vec<Function> {
+pub fn functions() -> Vec<Mod> {
     vec![
         // fn_open("open", &[Field::new_positional(DataType::Utf8)], open),
         // fn_open(

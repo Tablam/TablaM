@@ -69,6 +69,22 @@ impl Vector {
     pub fn row(&self, row: usize) -> ArrayView<'_, Scalar, IxDyn> {
         self.data.index_axis(Axis(0), row)
     }
+
+    pub fn fold_fn<F>(&self, initial: &Scalar, apply: F) -> ResultT<Self>
+    where
+        F: Fn(&[Scalar]) -> ResultT<Scalar>,
+    {
+        if self.size().cols() == 1 {
+            let mut data: Vec<Scalar> = Vec::with_capacity(self.size().rows().unwrap_or_default());
+            for x in self.data.iter() {
+                data.push(apply(&[initial.clone(), x.clone()])?);
+            }
+
+            Ok(Self::new_table(data, self.schema.clone()))
+        } else {
+            Err(Error::RankNotMatch)
+        }
+    }
 }
 
 impl Rel for Vector {

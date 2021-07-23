@@ -3,6 +3,8 @@ use crate::prelude::*;
 
 use tablam::derive_more::{Display, From};
 use tablam::function::Function;
+use tablam::interpreter::modules::CmdBox;
+use tablam::interpreter::prelude::Mod;
 use tablam::prelude::*;
 use tablam::query::Comparable;
 
@@ -83,6 +85,9 @@ pub enum Expression {
     #[from]
     #[display(fmt = "{}", _0)]
     Function(FunctionDef),
+    #[from]
+    #[display(fmt = "{}", _0)]
+    Mod(Mod),
     #[from]
     #[display(fmt = "{}", _0)]
     FunctionCall(FunctionCall),
@@ -349,7 +354,7 @@ impl ComparisonOperation {
 #[derive(Debug, Clone)]
 pub struct Environment {
     vars: HashMap<Identifier, Expression>,
-    functions: HashMap<Identifier, Expression>,
+    functions: HashMap<Identifier, Mod>,
     parent: Option<Box<Environment>>,
 }
 
@@ -366,7 +371,7 @@ impl Environment {
         self.vars.insert(name, value);
     }
 
-    pub fn add_function(&mut self, name: String, def: Expression) {
+    pub fn add_function(&mut self, name: String, def: Mod) {
         self.functions.insert(name, def);
     }
 
@@ -380,19 +385,17 @@ impl Environment {
         }
     }
 
-    pub fn find_function(&self, name: &str) -> Result<Function, ErrorLang> {
-        match self.functions.get(name) {
-            Some(function) => {
-                if let Expression::Function(f) = function {
-                    Ok(f.0.clone())
-                } else {
-                    Err(ErrorLang::FunctionNotFound(name.to_string()))
-                }
+    pub fn find_function(&self, name: &str) -> Result<CmdBox, ErrorLang> {
+        //dbg!(&self.functions);
+        for (_, cmd) in &self.functions {
+            if let Some(f) = cmd.get(name) {
+                return Ok(f.clone());
             }
-            None => match &self.parent {
-                Some(env) => env.find_function(name),
-                None => Err(ErrorLang::FunctionNotFound(name.to_string())),
-            },
+        }
+
+        match &self.parent {
+            Some(env) => env.find_function(name),
+            None => Err(ErrorLang::FunctionNotFound(name.to_string())),
         }
     }
 

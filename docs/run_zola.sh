@@ -1,2 +1,1 @@
-cd docs
 zola serve

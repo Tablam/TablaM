@@ -1,0 +1,15 @@
+[package]
+name = "tablam-eval"
+version = "0.1.0"
+authors = ["Mario Montoya <mamcx@elmalabarista.com>"]
+repository = "https://github.com/Tablam/TablaM"
+homepage = "https://github.com/Tablam/TablaM"
+description = "Interpreter/compiler for TablaM"
+license = "MPL-2.0"
+keywords = ["database", "interpreter", "language", "relational"]
+categories = ["interpreter", "language", "relational", "tablam"]
+edition = "2021"
+
+[dependencies]
+corelib = { path = "../core" , package="tablam-core" }
+parser = { path = "../parser" , package="tablam-parser" }

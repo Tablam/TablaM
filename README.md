@@ -2,6 +2,8 @@
 
 **IN EXPERIMENTAL STAGE. NOT USE FOR REAL WORK**
 
+**NOTE: This is a full-rewrite, old code is at the [experimental](https://github.com/Tablam/TablaM/tree/experimental) branch**
+
 ### Code ###
 
 [https://github.com/Tablam/TablaM/](https://github.com/Tablam/TablaM/)

@@ -25,43 +25,47 @@
     <link rel="stylesheet" href="/css/main.css">
 </head>
 
-<body class="flex flex-wrap {% block body %}{% endblock body %}">    
-  <header class="w-full">
-        <nav class="bg-white shadow text-xl">
-            <div class="mx-auto px-6 py-3 md:flex">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <a href="/" class="flex items-center">
-                        <span class="pl-2">TablaM</span>
-                        </a>
-                    </div>                
-                </div>
+<body class="flex flex-wrap {% block body %}{% endblock body %}">
 
-                <div class="w-full flex items-center justify-between block">
-                    <div class="flex flex-col -mx-4 px-2 py-3 md:flex-row md:mx-0 md:py-0">
-                        <a href="/" class="py-1 px-2 
-                        underline
-                        text-gray-800 rounded 
-                        hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Home</a>
-                        <a href="/install" class="py-1 px-2 
-                        underline
-                        text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Install</a>
-                        <a href="/tutorial" class="py-1 px-2 
-                        underline
-                        text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Tutorial</a>
-                        <a href="/syntax" class="py-1 px-2 
-                        underline
-                        text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Syntax</a>
-                        <a href="/functions" class="py-1 px-2 
-                        underline
-                        text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Library</a>                  
-                    </div>                    
-                </div>
-            </div>
-        </nav>    
+  <header class="w-full">
+    <nav class="bg-white shadow text-xl">
+        <div class="mx-auto px-6 py-3 flex flex-col md:flex-row">
+          <a href="/" class="flex items-center">
+              <img src="/img/icon.svg" class="mr-3 h-6 sm:h-9" alt="TablaM Logo" />
+              <span class="self-center text-2xl font-semibold whitespace-nowrap">TablaM</span>
+          </a>
+
+          <div class="flex flex-auto items-center justify-between">
+            <ul>
+                <a href="/" class="py-1 px-2 
+                underline
+                text-gray-800 rounded 
+                hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Home</a>
+                <a href="/install" class="py-1 px-2 
+                underline
+                text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Install</a>
+                <a href="/tutorial" class="py-1 px-2 
+                underline
+                text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Tutorial</a>
+                <a href="/syntax" class="py-1 px-2 
+                underline
+                text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Syntax</a>
+                <a href="/functions" class="py-1 px-2 
+                underline
+                text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium md:mx-2">Library</a>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-between">
+              <a href="https://www.buymeacoffee.com/mamcx" target="_blank">
+                <img src="https://cdn.buymeacoffee.com/buttons/default-white.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a> 
+          </div>
+        </div>
+    </nav>    
   </header>
+
+  {% if page.toc %}
   <aside class="w-full lg:w-1/5 p-6 bg-gray-800 text-gray-100 shadow">
-    {% if page.toc %}
     <h2 class="text-2xl font-bold pb-4">Index</h2>
     <nav class="font-semibold text-xl underline">
         {% for h1 in page.toc %}
@@ -79,13 +83,12 @@
         </li>
         {% endfor %}
     </nav>
-    {% endif %}
-    <footer>
-        <h1 class="p-4 mx-auto">Support the project!:</h1>
-        <a href="https://www.buymeacoffee.com/mamcx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-white.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>        
-    </footer>
   </aside>
+
   <content class="w-full lg:w-4/5 p-6">
+  {% else %}
+  <content class="w-full p-6">
+  {% endif %}
   {% block content %}
   {% endblock content %}      
   </content>

@@ -1,2 +1,2 @@
 [workspace]
-members = ["core", "lang"]
+members = ["src/core", "src/parser", "src/eval", "src/tablam"]

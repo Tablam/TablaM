@@ -1,0 +1,77 @@
+-- Example of the syntax for TablaM
+
+-- This is a line comment
+
+--- This is a 
+multiline 
+	commentaries
+---
+
+--! 
+This is a documentation
+
+And is valid *markdown*
+--!
+
+
+-- 1. Literals & Scalars
+-- Each section also gives the type like Numbers: Type
+
+-- Integer: Int (64 bits)
+1
+
+1_000 -- can use _ for separate values on all numbers
+
+-- Decimal: Dec (Base-10 64 bits, note is the default floating point type!)
+1.0
+1.0d    -- with explicit suffix
+
+-- Float: Float (*Binary* Base-2 Float 64 bits)
+1.0f
+1.0f: Float
+
+-- Percent: Percent
+
+10%
+
+--- Booleans : Bool
+true
+false
+
+--- Strings: Str (Utf-8 encoded)
+
+"hello" -- Strings are enclosed with quotes
+'hello' -- both '' or "".
+
+"hello it's you" --so you can embed easily the opposite quote
+
+"""
+A long text
+""" --- and triple quotes allow to enter longer text
+
+"🍎" -- unicode can be used!
+
+--- Dates, all ISO 8601 encoded
+
+-- Date: DateNaive (no time zone)
+"2000-01-01"dn
+
+-- DateTime: DateTimeNaive (no time zone)
+dtn"2000-01-01 00:00:00"
+dtn"2000-01-01" // Is a short-cut for above
+
+-- Date: Date (with TimeZone)
+d"2000-01-01+00:00"
+d"2000-01-01" -- Is a shortcut for above, imply LocalTime
+
+-- DateTime: DateTime (with TimeZone)
+dt"2000-01-01 00:00:00+00:00"
+dt"2000-01-01 00:00:00" -- Is a shortcut for above, imply LocalTime
+
+t"08:00:00" -- Just time, 24 hours
+
+-- 2. Operators
+
+--- Logical
+
+--- Math

@@ -1,0 +1,2 @@
+cd docs
+zola serve

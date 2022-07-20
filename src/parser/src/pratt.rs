@@ -74,7 +74,7 @@ fn expr_bp(lexer: &mut Lexer, min_bp: u8) -> S {
 
     let mut lhs = match t.kind {
         Syntax::Cr | Syntax::Whitespace | Syntax::Comment => S::Trivia(t),
-        Syntax::Bool | Syntax::Int64 => S::Atom(t),
+        Syntax::Bool | Syntax::Int64 | Syntax::Decimal => S::Atom(t),
         Syntax::Plus => {
             if let Some(((), r_bp)) = prefix_binding_power(t.kind) {
                 let rhs = expr_bp(lexer, r_bp);
@@ -104,5 +104,8 @@ mod tests {
     fn parser() {
         let s = expr("1");
         assert_eq!(s.to_string(), "1: Int64");
+
+        let s = expr("1.45");
+        assert_eq!(s.to_string(), "1.45: Decimal");
     }
 }

@@ -4,7 +4,7 @@
 
 **NOTE: This is a full-rewrite, old code is at the [experimental](https://github.com/Tablam/TablaM/tree/experimental) branch**
 
-### Code ###
+### Official Code Repository ###
 
 [https://github.com/Tablam/TablaM/](https://github.com/Tablam/TablaM/)
 
@@ -19,13 +19,33 @@
 * Work on OSX, Linux, Windows, iOS, Android
 * Easy to embed in other languages
 
-### Contribution guidelines ###
+## 🤝 Contributing
 
-* If have experience in language design or in-memory database coding, please help!
+Contributions, issues, and feature requests are welcome!
+
+I accept people without experience in language design, just good enough with Rust.
 
 ### Sponsor the project
 
+Give a ⭐️ if you like this project!.
+
 To help make this project a reality consider donate or sponsor with a subscription in [https://www.buymeacoffee.com/mamcx](https://www.buymeacoffee.com/mamcx).
+
+## 📝 Architecture
+
+Want to learn how is the code organized?
+
+Take a look at (./ARCHITECTURE.md).
+
+## 📝 Research
+
+Want to learn the fundamentals/ideas that are the base of this language?
+
+Take a look at (./RESEARCH.md).
+
+## 📝 License
+
+This project is licenced as [APACHE](./LICENSE-APACHE).
 
 ### Who do I talk to? ###
 

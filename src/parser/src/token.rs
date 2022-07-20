@@ -39,8 +39,9 @@ pub enum SyntaxKind {
     Err,
 }
 
-//TODO: https://github.com/YoloDev/yolodev-jsonnet/blob/master/crates/lex/src/lib.rs
-// For ideas for the lexer
+// *IMPORTANT*: Coordinate with the syntax definitions on /tools
+//TODO: For ideas for the lexer: https://github.com/YoloDev/yolodev-jsonnet/blob/master/crates/lex/src/lib.rs
+//
 //TODO: Support count lines collapsing many CR?
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display, Logos)]
 #[logos(extras = ExtrasLexer)]

@@ -54,6 +54,7 @@ impl<'a> Iterator for Lexer<'a> {
     }
 }
 
+/// The main way to get the full list of tokens
 pub fn lexer<'a, T: Into<&'a str>>(file_id: FileId, code: T) -> Vec<Token> {
     let lexer = Lexer::new(file_id, code.into());
     let tokens: Vec<_> = lexer.collect();

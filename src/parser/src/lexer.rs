@@ -3,6 +3,7 @@ use std::ops::Range as StdRange;
 
 use crate::files::FileId;
 use crate::token::{Syntax, Token, TokenId};
+use corelib::prelude::*;
 use logos::Logos;
 use text_size::{TextRange, TextSize};
 

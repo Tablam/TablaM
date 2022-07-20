@@ -92,6 +92,11 @@ mod tests {
     }
 
     #[test]
+    fn lex_decimals() {
+        check("123456.123456", Syntax::Decimal)
+    }
+
+    #[test]
     fn lex_kw() {
         check("let", Syntax::LetKw);
         check("var", Syntax::VarKw);

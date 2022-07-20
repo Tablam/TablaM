@@ -1,5 +1,6 @@
 use crate::files::FileId;
 use corelib::derive_more::Display;
+use corelib::prelude::*;
 
 use logos::{Lexer, Logos};
 use text_size::TextRange;
@@ -58,9 +59,11 @@ pub enum Syntax {
     //literals
     #[regex("true|false")]
     Bool,
+    #[regex(r"\d+\.\d+")]
+    Decimal,
     #[regex("[0-9]+")]
     Int64,
-
+ 
     //keywords
     #[display(fmt = "fun")]
     #[token("fun")]
@@ -189,7 +192,7 @@ impl Syntax {
     pub fn is(self) -> SyntaxKind {
         match self {
             Syntax::Cr | Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
-            Syntax::Bool | Syntax::Int64 | Syntax::Ident | Syntax::Assign | Syntax::LetKw => {
+            Syntax::Bool | Syntax::Int64 | Syntax::Decimal | Syntax::Ident | Syntax::Assign | Syntax::LetKw => {
                 SyntaxKind::Expr
             }
             Syntax::FnKw | Syntax::VarKw => SyntaxKind::Kw,

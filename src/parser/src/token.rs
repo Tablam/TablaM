@@ -38,6 +38,7 @@ pub enum SyntaxKind {
     Kw,
     Expr,
     Err,
+    Eof,
 }
 
 // *IMPORTANT*: Coordinate with the syntax definitions on /tools
@@ -63,7 +64,7 @@ pub enum Syntax {
     Decimal,
     #[regex("[0-9]+")]
     Int64,
- 
+
     //keywords
     #[display(fmt = "fun")]
     #[token("fun")]
@@ -101,16 +102,15 @@ pub enum Syntax {
     Question,
 
     //Math
-    Neg, // Minus get turned Neg only in parser
-
     #[display(fmt = "+")]
     #[token("+")]
     Plus,
-    Positive, // Plus get turned Positive only in parser
+    Add, // Plus get turned Add only in parser
 
     #[display(fmt = "-")]
     #[token("-")]
     Minus,
+    Neg, // Minus get turned Neg only in parser
 
     #[display(fmt = "*")]
     #[token("*")]
@@ -184,6 +184,7 @@ pub enum Syntax {
     #[token("]")]
     RSquare,
 
+    Eof,
     #[error]
     Error,
 }
@@ -192,9 +193,12 @@ impl Syntax {
     pub fn is(self) -> SyntaxKind {
         match self {
             Syntax::Cr | Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
-            Syntax::Bool | Syntax::Int64 | Syntax::Decimal | Syntax::Ident | Syntax::Assign | Syntax::LetKw => {
-                SyntaxKind::Expr
-            }
+            Syntax::Bool
+            | Syntax::Int64
+            | Syntax::Decimal
+            | Syntax::Ident
+            | Syntax::Assign
+            | Syntax::LetKw => SyntaxKind::Expr,
             Syntax::FnKw | Syntax::VarKw => SyntaxKind::Kw,
             Syntax::Point
             | Syntax::Question
@@ -213,45 +217,39 @@ impl Syntax {
             | Syntax::AndKw
             | Syntax::OrKw
             | Syntax::NotKw => SyntaxKind::Infix,
-            Syntax::Neg | Syntax::Positive => SyntaxKind::Prefix,
+            Syntax::Neg | Syntax::Add => SyntaxKind::Prefix,
             Syntax::LParen | Syntax::LBrace | Syntax::LSquare => SyntaxKind::Open,
             Syntax::RParen | Syntax::RBrace | Syntax::RSquare => SyntaxKind::Close,
             Syntax::Error => SyntaxKind::Err,
+            Syntax::Eof => SyntaxKind::Eof,
         }
     }
     pub fn is_head_tree(self) -> bool {
         self.is() != SyntaxKind::Expr
     }
-    pub fn is_bin_op(self) -> bool {
-        matches!(self, Self::Plus | Self::Minus | Self::Star | Self::Slash)
-    }
 
-    pub fn to_bin_op(self) -> BinaryOp {
-        match self {
+    pub fn to_bin_op(self) -> Option<BinaryOp> {
+        let res = match self {
             Syntax::Plus => BinaryOp::Add,
             Syntax::Minus => BinaryOp::Sub,
             Syntax::Star => BinaryOp::Mul,
             Syntax::Slash => BinaryOp::Div,
-            _ => unreachable!(),
-        }
+            _ => return None,
+        };
+        Some(res)
     }
-    pub fn is_unary_op(self) -> bool {
-        matches!(self, Self::Neg | Self::Positive)
-    }
-    pub fn to_unary_op(self) -> UnaryOp {
-        match self {
+    pub fn to_unary_op(self) -> Option<UnaryOp> {
+        let res = match self {
             Syntax::Neg => UnaryOp::Neg,
-            _ => unreachable!(),
-        }
+            _ => return None,
+        };
+        Some(res)
     }
 
     pub fn is_op(self) -> bool {
-        self.is_unary_op() || self.is_bin_op() || matches!(self, Self::Point)
+        self.to_unary_op().is_some() || self.to_bin_op().is_some() || matches!(self, Self::Point)
     }
 
-    pub fn is_separator(self) -> bool {
-        matches!(self, Self::Comma | Self::Semicolon)
-    }
     pub fn to_separator(self) -> SepOp {
         match self {
             Syntax::Comma => SepOp::Comma,
@@ -314,6 +312,17 @@ impl Token {
 }
 
 //#[cfg(test)]
+pub(crate) fn token_eof() -> Token {
+    Token {
+        file_id: FileId::from_index(0),
+        id: TokenId(0),
+        kind: Syntax::Eof,
+        range: Default::default(),
+        line: 0,
+        col: 0,
+    }
+}
+
 pub(crate) fn token_test() -> Token {
     Token {
         file_id: FileId::from_index(0),

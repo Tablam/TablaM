@@ -7,38 +7,37 @@
 //! This step not validate the parsing is correct,
 //! only prepare the code to be linearized to the next pass
 //!
+use crate::cst::CstNode;
 use std::fmt;
+use std::iter::Peekable;
 use text_size::TextRange;
+use tree_flat::prelude::{NodeId, NodeMut, Tree};
 
-use crate::lexer::Lexer;
-use crate::token::{token_test, Syntax, Token};
+use crate::lexer::{Lexer, Scanner};
+use crate::token::{token_test, Syntax, SyntaxKind, Token};
 
 #[derive(Debug, Clone)]
-enum S {
+pub(crate) enum S {
     Err(Token),
     Trivia(Token),
     Atom(Token),
-    Cons(Syntax, Vec<S>),
+    Cons(Token, Vec<S>),
 }
 
-struct Printer<'a> {
-    ast: S,
-    code: &'a str,
+pub(crate) struct Pratt<'a> {
+    pub(crate) ast: S,
+    pub(crate) code: &'a str,
 }
 
-fn get_src<'a>(of: &'a str, t: &'a Token) -> &'a str {
-    &of[t.range]
-}
-
-impl fmt::Display for Printer<'_> {
+impl fmt::Display for Pratt<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.ast {
             S::Trivia(t) => write!(f, "{}: {}", &self.code[t.range], t.kind),
             S::Atom(t) => write!(f, "{}: {}", &self.code[t.range], t.kind),
             S::Cons(head, rest) => {
-                write!(f, "({}", head)?;
+                write!(f, "({}", head.kind)?;
                 for s in rest {
-                    let p = Printer {
+                    let p = Pratt {
                         ast: s.clone(),
                         code: self.code,
                     };
@@ -52,48 +51,112 @@ impl fmt::Display for Printer<'_> {
 }
 
 fn prefix_binding_power(op: Syntax) -> Option<((), u8)> {
-    match op {
-        Syntax::Plus => Some(((), 9)),
-        _ => None,
-    }
+    let res = match op {
+        Syntax::Plus => ((), 9),
+        _ => return None,
+    };
+    Some(res)
 }
 
 fn postfix_binding_power(op: Syntax) -> Option<(u8, ())> {
-    match op {
-        Syntax::LSquare => Some((11, ())),
-        _ => None,
-    }
+    let res = match op {
+        Syntax::LSquare => (11, ()),
+        _ => return None,
+    };
+    Some(res)
 }
 
-fn expr_bp(lexer: &mut Lexer, min_bp: u8) -> S {
-    let t = if let Some(t) = lexer.next() {
-        t
-    } else {
-        return S::Atom(token_test());
+fn infix_binding_power(op: Syntax) -> Option<(u8, u8)> {
+    let res = match op {
+        Syntax::Equals => (2, 1),
+        Syntax::Question => (4, 3),
+        Syntax::Plus | Syntax::Minus => (5, 6),
+        Syntax::Star | Syntax::Slash => (7, 8),
+        Syntax::Point => (14, 13),
+        _ => return None,
     };
+    Some(res)
+}
+
+fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
+    let t = lexer.next();
 
     let mut lhs = match t.kind {
-        Syntax::Cr | Syntax::Whitespace | Syntax::Comment => S::Trivia(t),
         Syntax::Bool | Syntax::Int64 | Syntax::Decimal => S::Atom(t),
+        Syntax::LParen => {
+            let lhs = expr_bp(lexer, 0);
+            assert_eq!(lexer.next().kind, Syntax::RParen);
+            lhs
+        }
         Syntax::Plus => {
             if let Some(((), r_bp)) = prefix_binding_power(t.kind) {
                 let rhs = expr_bp(lexer, r_bp);
-                print!("{} ", t.kind);
-                S::Cons(t.kind, vec![rhs])
+                S::Cons(t, vec![rhs])
             } else {
                 S::Err(t)
             }
         }
-        _ => S::Err(t),
+        s => {
+            if s.is() == SyntaxKind::Trivia {
+                S::Trivia(t)
+            } else {
+                S::Err(t)
+            }
+        }
     };
+
+    loop {
+        let mut next = lexer.peek();
+
+        //Skip trivia
+        while next.kind.is() == SyntaxKind::Trivia {
+            next = lexer.next();
+        }
+
+        if next.kind == Syntax::Eof {
+            break;
+        };
+
+        let op = next.kind;
+
+        if let Some((l_bp, ())) = postfix_binding_power(op) {
+            if l_bp < min_bp {
+                break;
+            }
+            lexer.next();
+
+            lhs = if op.is() == SyntaxKind::Open {
+                let rhs = expr_bp(lexer, 0);
+                //assert_eq!(lexer.next(), Token::Op(']'));
+                S::Cons(next, vec![lhs, rhs])
+            } else {
+                S::Cons(next, vec![lhs])
+            };
+            continue;
+        }
+
+        if let Some((l_bp, r_bp)) = infix_binding_power(op) {
+            if l_bp < min_bp {
+                break;
+            }
+            lexer.next();
+
+            let rhs = expr_bp(lexer, r_bp);
+            lhs = S::Cons(next, vec![lhs, rhs]);
+
+            continue;
+        }
+        break;
+    }
 
     lhs
 }
 
-fn expr(code: &str) -> Printer<'_> {
-    let mut lexer = Lexer::new(0.into(), code);
-    let ast = expr_bp(&mut lexer, 0);
-    Printer { ast, code }
+pub(crate) fn expr(code: &str) -> Pratt<'_> {
+    let lexer = Lexer::new(0.into(), code);
+    let mut scanner = Scanner::from(lexer);
+    let ast = expr_bp(&mut scanner, 0);
+    Pratt { ast, code }
 }
 
 #[cfg(test)]
@@ -107,5 +170,14 @@ mod tests {
 
         let s = expr("1.45");
         assert_eq!(s.to_string(), "1.45: Decimal");
+
+        let s = expr("(((0)))");
+        assert_eq!(s.to_string(), "0: Int64");
+    }
+
+    #[test]
+    fn ops() {
+        let s = expr("1 + 2 * 3");
+        assert_eq!(s.to_string(), "(+ 1: Int64 (* 2: Int64 3: Int64))");
     }
 }

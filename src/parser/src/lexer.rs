@@ -1,8 +1,9 @@
 use std::convert::TryFrom;
+use std::iter::Peekable;
 use std::ops::Range as StdRange;
 
 use crate::files::FileId;
-use crate::token::{Syntax, Token, TokenId};
+use crate::token::{token_eof, Syntax, Token, TokenId};
 use corelib::prelude::*;
 use logos::Logos;
 use text_size::{TextRange, TextSize};
@@ -55,12 +56,26 @@ impl<'a> Iterator for Lexer<'a> {
     }
 }
 
-/// The main way to get the full list of tokens
-pub fn lexer<'a, T: Into<&'a str>>(file_id: FileId, code: T) -> Vec<Token> {
-    let lexer = Lexer::new(file_id, code.into());
-    let tokens: Vec<_> = lexer.collect();
+pub struct Scanner {
+    file_id: FileId,
+    tokens: Vec<Token>,
+}
 
-    tokens
+impl Scanner {
+    pub fn from(lexer: Lexer<'_>) -> Self {
+        let file_id = lexer.file_id;
+        let mut tokens: Vec<_> = lexer.collect();
+        tokens.reverse();
+
+        Self { file_id, tokens }
+    }
+
+    pub(crate) fn next(&mut self) -> Token {
+        self.tokens.pop().unwrap_or(token_eof())
+    }
+    pub(crate) fn peek(&mut self) -> Token {
+        self.tokens.last().copied().unwrap_or(token_eof())
+    }
 }
 
 #[cfg(test)]

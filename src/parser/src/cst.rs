@@ -22,7 +22,7 @@ pub(crate) enum CstNode {
 }
 
 pub(crate) struct Cst<'a> {
-    ast: Tree<CstNode>,
+    pub(crate) ast: Tree<CstNode>,
     code: &'a str,
 }
 
@@ -97,7 +97,7 @@ fn to_cst(tree: &mut NodeMut<CstNode>, ast: S) {
 }
 
 pub(crate) fn parse(pratt: Pratt<'_>) -> Cst<'_> {
-    let mut ast = Tree::with_capacity(CstNode::Root, 6);
+    let mut ast = Tree::new(CstNode::Root);
 
     let mut root = ast.root_mut();
 
@@ -109,15 +109,19 @@ pub(crate) fn parse(pratt: Pratt<'_>) -> Cst<'_> {
     }
 }
 
+pub(crate) fn src_to_cst(code: &str) -> Cst<'_> {
+    let s = expr(code);
+    println!("{}", s);
+    parse(s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use expect_test::expect;
 
     fn check(code: &str, expected_tree: expect_test::Expect) {
-        let s = expr(code);
-        println!("{}", s);
-        let tree = parse(s);
+        let tree = src_to_cst(code);
         expected_tree.assert_eq(&tree.to_string());
     }
 

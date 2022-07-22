@@ -76,6 +76,9 @@ impl Scanner {
     pub(crate) fn peek(&mut self) -> Token {
         self.tokens.last().copied().unwrap_or(token_eof())
     }
+    pub(crate) fn len(&self) -> usize {
+        self.tokens.len()
+    }
 }
 
 #[cfg(test)]

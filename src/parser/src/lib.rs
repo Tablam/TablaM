@@ -1,3 +1,5 @@
+mod ast;
+mod checklist;
 mod cst;
 mod files;
 mod lexer;

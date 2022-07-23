@@ -1,4 +1,5 @@
-mod cst;
+mod checklist;
+pub mod cst;
 mod files;
 mod lexer;
 mod parser;

@@ -12,7 +12,7 @@ use crate::pratt::{expr, Pratt};
 use crate::token::{Syntax, Token};
 
 #[derive(Debug, Clone)]
-pub(crate) enum CstNode {
+pub enum CstNode {
     Root,
     Trivia(Token),
     Atom(Token),
@@ -21,7 +21,7 @@ pub(crate) enum CstNode {
     Eof,
 }
 
-pub(crate) struct Cst<'a> {
+pub struct Cst<'a> {
     ast: Tree<CstNode>,
     code: &'a str,
 }

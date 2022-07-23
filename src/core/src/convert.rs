@@ -1,5 +1,6 @@
 /// Macros and Utilities for making conversions from/to TablaM types
 use crate::prelude::*;
+use crate::scalar::BoolBit;
 
 macro_rules! convert {
     ($kind:ident, $bound:path) => {
@@ -137,6 +138,12 @@ kind_native!(String, Utf8, 1);
 impl From<&[bool]> for Array {
     fn from(x: &[bool]) -> Self {
         Array::Bool(x.iter().copied().collect())
+    }
+}
+
+impl From<bool> for Scalar {
+    fn from(x: bool) -> Self {
+        Scalar::Bool(BoolBit::new([x as usize]))
     }
 }
 

@@ -137,11 +137,11 @@ impl SchemaInfo {
         self.len() == 0
     }
 
-    fn get(&self, pos: usize) -> Option<&FieldSlice<'_>> {
+    fn get(&self, _pos: usize) -> Option<&FieldSlice<'_>> {
         unimplemented!()
     }
 
-    fn named(&self, name: &str) -> Option<&FieldSlice<'_>> {
+    fn named(&self, _name: &str) -> Option<&FieldSlice<'_>> {
         unimplemented!()
     }
     fn pk(&self) -> Option<usize> {

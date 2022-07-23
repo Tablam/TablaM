@@ -115,6 +115,10 @@ pub enum Scalar {
 }
 
 impl Scalar {
+    pub fn kind(&self) -> DataType {
+        self.slice().kind()
+    }
+
     pub fn slice(&self) -> ScalarSlice<'_> {
         match self {
             Self::Unit(x) => ScalarSlice::Unit(x),

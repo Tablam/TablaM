@@ -3,7 +3,7 @@ use std::iter::Peekable;
 use std::ops::Range as StdRange;
 
 use crate::files::FileId;
-use crate::token::{token_eof, Syntax, Token, TokenId};
+use crate::token::{token_eof, Syntax, SyntaxKind, Token, TokenId};
 use corelib::prelude::*;
 use logos::Logos;
 use text_size::{TextRange, TextSize};
@@ -28,7 +28,15 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let kind = self.lexer.next()?;
+        // Skip trivia
+        let kind = loop {
+            let kind = self.lexer.next()?;
+            if kind.is() == SyntaxKind::Trivia {
+                continue;
+            } else {
+                break kind;
+            }
+        };
         let span = self.lexer.span();
 
         let extra = self.lexer.extras;
@@ -76,6 +84,9 @@ impl Scanner {
     pub(crate) fn peek(&mut self) -> Token {
         self.tokens.last().copied().unwrap_or(token_eof())
     }
+    pub(crate) fn len(&self) -> usize {
+        self.tokens.len()
+    }
 }
 
 #[cfg(test)]
@@ -88,12 +99,6 @@ mod tests {
         let token = lexer.next().unwrap();
         dbg!(&token);
         assert_eq!(token.kind, kind);
-    }
-
-    #[test]
-    fn lex_spaces_and_newlines() {
-        check("  \t ", Syntax::Whitespace);
-        check("\n", Syntax::Cr);
     }
 
     #[test]
@@ -142,10 +147,5 @@ mod tests {
         check(")", Syntax::RParen);
         check("{", Syntax::LBrace);
         check("}", Syntax::RBrace);
-    }
-
-    #[test]
-    fn lex_comment() {
-        check("# foo", Syntax::Comment);
     }
 }

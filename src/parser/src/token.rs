@@ -193,14 +193,12 @@ impl Syntax {
     pub fn is(self) -> SyntaxKind {
         match self {
             Syntax::Cr | Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
-            Syntax::Bool
-            | Syntax::Int64
-            | Syntax::Decimal
-            | Syntax::Ident
-            | Syntax::Assign
-            | Syntax::LetKw => SyntaxKind::Expr,
+            Syntax::Bool | Syntax::Int64 | Syntax::Decimal | Syntax::Ident | Syntax::LetKw => {
+                SyntaxKind::Expr
+            }
             Syntax::FnKw | Syntax::VarKw => SyntaxKind::Kw,
             Syntax::Point
+            | Syntax::Assign
             | Syntax::Question
             | Syntax::Plus
             | Syntax::Minus

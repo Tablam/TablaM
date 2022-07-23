@@ -1,20 +1,15 @@
 //! The CST store a full-fidelity view of the code (even if wrong)
-use std::cmp::Ordering;
 use std::fmt;
-use std::fmt::Formatter;
 
-use corelib::chrono::format::Parsed;
 use tree_flat::prelude::{NodeMut, Tree};
 
-use crate::pratt;
 use crate::pratt::S;
 use crate::pratt::{expr, Pratt};
-use crate::token::{Syntax, Token};
+use crate::token::Token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum CstNode {
     Root,
-    Trivia(Token),
     Atom(Token),
     Op(Token),
     Err(Token),
@@ -23,7 +18,7 @@ pub(crate) enum CstNode {
 
 pub(crate) struct Cst<'a> {
     pub(crate) ast: Tree<CstNode>,
-    code: &'a str,
+    pub(crate) code: &'a str,
 }
 
 fn fmt_t(f: &mut fmt::Formatter<'_>, level: usize, code: &str, t: &Token) -> fmt::Result {
@@ -59,17 +54,15 @@ fn fmt_op(f: &mut fmt::Formatter<'_>, level: usize, code: &str, t: &Token) -> fm
 
 impl fmt::Display for Cst<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let last = self.ast.len() - 1;
         for node in self.ast.iter() {
             let level = node.level();
 
             match node.data {
                 CstNode::Root => write!(f, "Root")?,
-                CstNode::Trivia(t) => fmt_t(f, level, self.code, t)?,
                 CstNode::Atom(t) => fmt_t(f, level, self.code, t)?,
                 CstNode::Op(t) => fmt_op(f, level, self.code, t)?,
                 CstNode::Err(t) => fmt_t(f, level, self.code, t)?,
-                CstNode::Eof => write!(f, "EOF")?,
+                CstNode::Eof => write!(f, "{}EOF", " ".repeat(level + 1))?,
             };
 
             writeln!(f)?;
@@ -84,7 +77,6 @@ fn push(tree: &mut NodeMut<CstNode>, t: CstNode) {
 
 fn to_cst(tree: &mut NodeMut<CstNode>, ast: S) {
     match ast {
-        S::Trivia(t) => push(tree, CstNode::Trivia(t)),
         S::Atom(t) => push(tree, CstNode::Atom(t)),
         S::Cons(op, rest) => {
             let op = &mut tree.push(CstNode::Op(op));
@@ -93,6 +85,7 @@ fn to_cst(tree: &mut NodeMut<CstNode>, ast: S) {
             }
         }
         S::Err(t) => push(tree, CstNode::Err(t)),
+        S::Eof(_) => push(tree, CstNode::Eof),
     };
 }
 

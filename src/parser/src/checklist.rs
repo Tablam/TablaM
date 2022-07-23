@@ -63,7 +63,7 @@ impl Task {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CheckList {
     pub task: Task,
     pub pos: usize,

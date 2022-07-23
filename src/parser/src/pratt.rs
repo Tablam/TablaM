@@ -19,9 +19,9 @@ use crate::token::{token_test, Syntax, SyntaxKind, Token};
 #[derive(Debug, Clone)]
 pub(crate) enum S {
     Err(Token),
-    Trivia(Token),
     Atom(Token),
     Cons(Token, Vec<S>),
+    Eof(Token),
 }
 
 pub(crate) struct Pratt<'a> {
@@ -32,7 +32,6 @@ pub(crate) struct Pratt<'a> {
 impl fmt::Display for Pratt<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.ast {
-            S::Trivia(t) => write!(f, "{}: {}", &self.code[t.range], t.kind),
             S::Atom(t) => write!(f, "{}: {}", &self.code[t.range], t.kind),
             S::Cons(head, rest) => {
                 write!(f, "({}", head.kind)?;
@@ -46,6 +45,9 @@ impl fmt::Display for Pratt<'_> {
                 write!(f, ")")
             }
             S::Err(t) => write!(f, "ERR({})", &self.code[t.range]),
+            S::Eof(t) => {
+                write!(f, "{}", t.kind)
+            }
         }
     }
 }
@@ -96,22 +98,14 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
                 S::Err(t)
             }
         }
-        s => {
-            if s.is() == SyntaxKind::Trivia {
-                S::Trivia(t)
-            } else {
-                S::Err(t)
-            }
-        }
+        s => match s.is() {
+            SyntaxKind::Eof => S::Eof(t),
+            _ => S::Err(t),
+        },
     };
 
     loop {
         let mut next = lexer.peek();
-
-        //Skip trivia
-        while next.kind.is() == SyntaxKind::Trivia {
-            next = lexer.next();
-        }
 
         if next.kind == Syntax::Eof {
             break;
@@ -162,6 +156,12 @@ pub(crate) fn expr(code: &str) -> Pratt<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parse_nothing() {
+        let s = expr("");
+        assert_eq!(s.to_string(), "Eof");
+    }
 
     #[test]
     fn parser() {

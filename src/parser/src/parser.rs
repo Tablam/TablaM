@@ -207,6 +207,7 @@ impl fmt::Display for ParsedPrinter<'_> {
                 Ast::Root => write!(f, "Root")?,
                 Ast::Scalar { val, span } => fmt_t(f, level, kind, val, span)?,
                 Ast::Pass(_x) => write!(f, "{}PASS", " ".repeat(level + 1))?,
+                Ast::Eof => write!(f, "Eof")?,
             };
 
             writeln!(f)?;

@@ -53,6 +53,7 @@ pub enum Ast {
     Root,
     Scalar { val: Scalar, span: Span },
     Pass(Span),
+    Eof,
 }
 
 impl Ast {
@@ -61,6 +62,7 @@ impl Ast {
             Ast::Root => Ty::Ignore,
             Ast::Scalar { val, span } => Ty::Kind(val.kind()),
             Ast::Pass(_) => Ty::Ignore,
+            Ast::Eof => Ty::Ignore,
         }
     }
 

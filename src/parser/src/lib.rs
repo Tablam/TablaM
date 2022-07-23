@@ -1,4 +1,4 @@
-mod ast;
+pub mod ast;
 mod checklist;
 mod cst;
 mod errors;

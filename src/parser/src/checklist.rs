@@ -11,9 +11,13 @@ pub enum Status {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Keyword {
+pub enum Kw {
     Let,
     Var,
+    If,
+    Do,
+    Else,
+    End,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -23,7 +27,7 @@ pub enum Step {
     Expr,
     ExprIncomplete,
     Ident,
-    Kw(Keyword),
+    Kw(Kw),
     Assign,
     UnaryOp(UnaryOp),
     BinOP(BinaryOp),
@@ -41,6 +45,8 @@ pub enum Task {
     Start,
     Scalar(DataType),
     Expr,
+    IfExpr,
+    CmpExpr,
     UnaryOp(UnaryOp),
     BinOp(BinaryOp),
     DefVar,
@@ -52,14 +58,21 @@ impl Task {
             Task::Start => vec![],
             Task::Scalar(_) => vec![Step::Expr],
             Task::Expr => vec![Step::Expr],
-            Task::DefVar => vec![
-                Step::Kw(Keyword::Var),
-                Step::Ident,
-                Step::Assign,
-                Step::Expr,
-            ],
+            Task::DefVar => vec![Step::Kw(Kw::Var), Step::Ident, Step::Assign, Step::Expr],
             Task::UnaryOp(op) => vec![Step::UnaryOp(*op), Step::Expr, Step::Expr],
             Task::BinOp(op) => vec![Step::BinOP(*op), Step::Expr, Step::Expr],
+            Task::IfExpr => vec![
+                Step::Kw(Kw::If),
+                Step::Expr,
+                Step::Kw(Kw::Do),
+                Step::Expr,
+                Step::Kw(Kw::Else),
+                Step::Expr,
+                Step::Kw(Kw::End),
+            ],
+            Task::CmpExpr => {
+                vec![Step::CmpOp(CmpOp::Equals), Step::Expr, Step::Expr]
+            }
         }
     }
 }
@@ -149,10 +162,7 @@ mod tests {
         let span = (&token_test()).into();
         let mut checklist = CheckList::new(Task::DefVar, span);
         assert!(!checklist.is_done());
-        assert_eq!(
-            checklist.check(Step::Kw(Keyword::Var), span),
-            Status::Continue
-        );
+        assert_eq!(checklist.check(Step::Kw(Kw::Var), span), Status::Continue);
         assert_eq!(checklist.check(Step::Ident, span), Status::Continue);
         assert_eq!(checklist.check(Step::Assign, span), Status::Continue);
         assert_eq!(checklist.check(Step::Expr, span), Status::Finished);
@@ -165,14 +175,11 @@ mod tests {
         let span = (&token_test()).into();
 
         let mut checklist = CheckList::new(Task::DefVar, span);
-        assert_eq!(
-            checklist.check(Step::Kw(Keyword::Var), span),
-            Status::Continue
-        );
+        assert_eq!(checklist.check(Step::Kw(Kw::Var), span), Status::Continue);
 
         assert_eq!(checklist.check(Step::Expr, span), Status::Error(Step::Expr));
 
-        assert_eq!(checklist.done(), &[Step::Kw(Keyword::Var)]);
+        assert_eq!(checklist.done(), &[Step::Kw(Kw::Var)]);
         assert_eq!(
             checklist.pending(),
             &[Step::Ident, Step::Assign, Step::Expr]

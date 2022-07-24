@@ -1,6 +1,6 @@
 use crate::checklist::{CheckList, Step};
 use crate::token::Token;
-use corelib::errors::{ErrorKind, ErrorLang, Span};
+use corelib::errors::{ErrorKind,  Span};
 
 #[derive(Debug, Clone)]
 pub enum Error {

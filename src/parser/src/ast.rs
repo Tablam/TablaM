@@ -53,7 +53,7 @@ impl Ast {
     pub(crate) fn ty(&self) -> Ty {
         match self {
             Ast::Root => Ty::Ignore,
-            Ast::Scalar { val, span } => Ty::Kind(val.kind()),
+            Ast::Scalar { val, span:_ } => Ty::Kind(val.kind()),
             Ast::Pass(_) => Ty::Ignore,
             Ast::Eof => Ty::Ignore,
             Ast::If(_) => Ty::Ignore,

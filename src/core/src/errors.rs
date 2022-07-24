@@ -1,7 +1,7 @@
 use crate::types::{DataType, FileId};
 use std::cmp::Ordering;
 use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash};
 use text_size::TextRange;
 
 /// Define the internal errors
@@ -31,26 +31,21 @@ pub enum ErrorKind {
     Custom(String),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RangeCode(pub TextRange);
 
 impl PartialOrd for RangeCode {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        todo!()
+       Some(self.0.len().cmp(&other.0.len()))
     }
 }
 
 impl Ord for RangeCode {
     fn cmp(&self, other: &Self) -> Ordering {
-        todo!()
+        self.0.len().cmp(&other.0.len())
     }
 }
 
-impl Hash for RangeCode {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        todo!()
-    }
-}
 
 impl From<TextRange> for RangeCode {
     fn from(x: TextRange) -> Self {

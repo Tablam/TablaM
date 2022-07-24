@@ -77,6 +77,22 @@ pub enum Syntax {
     #[token("var")]
     VarKw,
 
+    #[display(fmt = "if")]
+    #[token("if")]
+    IfKw,
+
+    #[display(fmt = "else")]
+    #[token("else")]
+    ElseKw,
+
+    #[display(fmt = "do")]
+    #[token("do")]
+    DoKw,
+
+    #[display(fmt = "end")]
+    #[token("end")]
+    EndKw,
+
     //idents
     #[regex("[A-Za-z][A-Za-z0-9]*")]
     Ident,
@@ -195,7 +211,7 @@ impl Syntax {
             Syntax::Bool | Syntax::Int64 | Syntax::Decimal | Syntax::Ident | Syntax::LetKw => {
                 SyntaxKind::Expr
             }
-            Syntax::FnKw | Syntax::VarKw => SyntaxKind::Kw,
+            Syntax::FnKw | Syntax::VarKw | Syntax::IfKw | Syntax::ElseKw | Syntax::DoKw | Syntax::EndKw => SyntaxKind::Kw,
             Syntax::Point
             | Syntax::Assign
             | Syntax::Question

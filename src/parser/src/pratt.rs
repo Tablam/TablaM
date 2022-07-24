@@ -7,11 +7,7 @@
 //! This step not validate the parsing is correct,
 //! only prepare the code to be linearized to the next pass
 //!
-use crate::cst::CstNode;
-use corelib::text_size::TextRange;
-use corelib::tree_flat::prelude::{NodeId, NodeMut, Tree};
 use std::fmt;
-use std::iter::Peekable;
 
 use crate::lexer::{Lexer, Scanner};
 use crate::token::{token_test, Syntax, SyntaxKind, Token};
@@ -80,10 +76,8 @@ fn infix_binding_power(op: Syntax) -> Option<(u8, u8)> {
     Some(res)
 }
 
-fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
-    let t = lexer.next();
-
-    let mut lhs = match t.kind {
+fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
+    match t.kind {
         Syntax::Bool | Syntax::Int64 | Syntax::Decimal => S::Atom(t),
         Syntax::LParen => {
             let lhs = expr_bp(lexer, 0);
@@ -98,14 +92,26 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
                 S::Err(t)
             }
         }
+        Syntax::IfKw | Syntax::DoKw | Syntax::ElseKw | Syntax::EndKw => {
+            // let rhs = expr_bp(lexer, 0);
+            // S::Cons(t, vec![rhs])
+            S::Atom(t)
+        }
         s => match s.is() {
             SyntaxKind::Eof => S::Eof(t),
             _ => S::Err(t),
         },
-    };
+    }
+}
+
+fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
+    let t = lexer.next();
+
+    let mut lhs = expr_lhs(lexer, t);
 
     loop {
-        let mut next = lexer.peek();
+        let next = lexer.peek();
+        let mut is_lhs = true;
 
         if next.kind == Syntax::Eof {
             break;
@@ -114,6 +120,7 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
         let op = next.kind;
 
         if let Some((l_bp, ())) = postfix_binding_power(op) {
+            is_lhs = false;
             if l_bp < min_bp {
                 break;
             }
@@ -130,6 +137,7 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
         }
 
         if let Some((l_bp, r_bp)) = infix_binding_power(op) {
+            is_lhs = false;
             if l_bp < min_bp {
                 break;
             }
@@ -138,6 +146,14 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
             let rhs = expr_bp(lexer, r_bp);
             lhs = S::Cons(next, vec![lhs, rhs]);
 
+            continue;
+        }
+
+        if is_lhs {
+            lexer.next();
+            lhs = expr_lhs(lexer, next);
+            let rhs = expr_bp(lexer, 0);
+            lhs = S::Cons(t, vec![lhs, rhs]);
             continue;
         }
         break;
@@ -173,6 +189,15 @@ mod tests {
 
         let s = expr("(((0)))");
         assert_eq!(s.to_string(), "0: Int64");
+    }
+
+    #[test]
+    fn ifs() {
+        let s = expr("if true do false else true end");
+        assert_eq!(
+            s.to_string(),
+            "(if true: Bool (do false: Bool (else true: Bool end: end)))"
+        );
     }
 
     #[test]

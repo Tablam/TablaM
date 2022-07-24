@@ -1,12 +1,10 @@
 use std::convert::TryFrom;
-use std::iter::Peekable;
 use std::ops::Range as StdRange;
 
-use crate::files::FileId;
 use crate::token::{token_eof, Syntax, SyntaxKind, Token, TokenId};
 use corelib::prelude::*;
+use corelib::text_size::{TextRange, TextSize};
 use logos::Logos;
-use text_size::{TextRange, TextSize};
 
 pub struct Lexer<'a> {
     file_id: FileId,

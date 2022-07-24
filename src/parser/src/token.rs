@@ -1,9 +1,8 @@
-use crate::files::FileId;
 use corelib::derive_more::Display;
 use corelib::prelude::*;
 
+use corelib::text_size::TextRange;
 use logos::{Lexer, Logos};
-use text_size::TextRange;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ExtrasLexer {

@@ -5,6 +5,7 @@ use std::hash::Hash;
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
 pub type Date = chrono::Date<chrono::FixedOffset>;
 pub type Time = chrono::NaiveTime;
+pub type FileId = tree_flat::node::NodeId;
 
 /// This trait help to mark values that are compatible with the semantics of the relational model
 pub trait Value: Clone + PartialEq + PartialOrd + Eq + Ord + Hash {}

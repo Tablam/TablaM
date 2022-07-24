@@ -3,6 +3,8 @@ pub extern crate decorum;
 pub extern crate derive_more;
 pub extern crate rust_decimal;
 pub extern crate slotmap;
+pub extern crate text_size;
+pub extern crate tree_flat;
 
 pub mod algebraic;
 pub mod convert;
@@ -26,7 +28,7 @@ pub mod extra_types {
 
 pub mod prelude {
     pub use crate::dsl;
-    pub use crate::errors::{Error, ErrorLang, ResultT};
+    pub use crate::errors::{Error, ErrorLang, ResultT, Span};
     pub use crate::extra_types::*;
     pub use crate::relation::Rel;
     pub use crate::scalar::{DateKind, DateT, Scalar, ScalarSlice};

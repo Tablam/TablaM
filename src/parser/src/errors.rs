@@ -1,17 +1,44 @@
-use crate::ast::Span;
+use crate::checklist::{CheckList, Step};
 use crate::token::Token;
+use corelib::errors::{ErrorKind, ErrorLang, Span};
 
-#[derive(Debug)]
-pub struct Error {
-    pub span: Span,
-    pub msg: String,
+#[derive(Debug, Clone)]
+pub enum Error {
+    Simple,
+    Incomplete(Vec<Step>),
 }
 
-impl Error {
-    pub fn new(token: &Token, msg: &str) -> Self {
+/// Define the main Error type for the parser
+#[derive(Debug, Clone)]
+pub struct ErrorParser {
+    kind: ErrorKind,
+    msg: Option<String>,
+    span: Span,
+    error: Error,
+}
+
+impl ErrorParser {
+    pub fn new(kind: ErrorKind, msg: Option<&str>, span: Span, error: Error) -> Self {
         Self {
-            span: token.into(),
-            msg: msg.into(),
+            kind,
+            msg: msg.map(|x| x.to_string()),
+            span,
+            error,
         }
     }
+}
+
+pub fn parse(t: &Token, msg: &str) -> ErrorParser {
+    let span: Span = t.into();
+    ErrorParser::new(ErrorKind::Parse, Some(msg), span, Error::Simple)
+}
+
+pub fn incomplete(t: &CheckList) -> ErrorParser {
+    let span: Span = t.span();
+    ErrorParser::new(
+        ErrorKind::Parse,
+        None,
+        span,
+        Error::Incomplete(t.pending().into()),
+    )
 }

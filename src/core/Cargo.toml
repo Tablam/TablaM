@@ -19,3 +19,5 @@ downcast-rs = "1.2.0"
 indexmap = { version = "1.9.1", features = [] }
 rust_decimal = { version = "1.25.0", features = [] }
 slotmap = "1.0.6"
+text-size = "1.1.0"
+tree-flat = { git = "https://github.com/mamcx/tree-flat" }

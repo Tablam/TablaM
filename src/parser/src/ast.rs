@@ -1,25 +1,16 @@
-use crate::files::FileId;
 use crate::token::Token;
+use corelib::errors::Span;
 use corelib::prelude::DataType;
 use corelib::scalar::Scalar;
 use std::fmt;
-use text_size::TextRange;
 
 pub type Return = std::result::Result<Ast, ()>;
-
-#[derive(Debug, Clone)]
-pub struct Span {
-    pub file_id: FileId,
-    pub range: TextRange,
-    pub line: u32,
-    pub col: u32,
-}
 
 impl From<&Token> for Span {
     fn from(x: &Token) -> Self {
         Span {
             file_id: x.file_id,
-            range: x.range,
+            range: x.range.into(),
             line: x.line,
             col: x.col,
         }
@@ -47,11 +38,13 @@ impl fmt::Display for Ty {
         Ok(())
     }
 }
+
 /// Encode the parse-tolerant AST
 #[derive(Debug, Clone)]
 pub enum Ast {
     Root,
     Scalar { val: Scalar, span: Span },
+    If(Span),
     Pass(Span),
     Eof,
 }
@@ -63,6 +56,7 @@ impl Ast {
             Ast::Scalar { val, span } => Ty::Kind(val.kind()),
             Ast::Pass(_) => Ty::Ignore,
             Ast::Eof => Ty::Ignore,
+            Ast::If(_) => Ty::Ignore,
         }
     }
 

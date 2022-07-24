@@ -1,10 +1,9 @@
+use corelib::prelude::FileId;
 use std::path::PathBuf;
 
-use tree_flat::prelude::{Node, NodeMut, Tree};
+use corelib::tree_flat::prelude::{Node, NodeMut, Tree};
 
 use crate::token::Token;
-
-pub type FileId = tree_flat::node::NodeId;
 
 /// The main container for a source "File"
 #[derive(Debug)]

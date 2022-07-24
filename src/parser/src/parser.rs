@@ -1,14 +1,14 @@
-use crate::ast::{Ast, Span, Ty};
+use crate::ast::{Ast, Ty};
 use crate::checklist::{CheckList, Step, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
-use crate::errors::Error;
+use crate::errors;
 use crate::files::Files;
-use crate::token::{Syntax, SyntaxKind, Token};
-use corelib::prelude::Scalar;
+use crate::token::{Syntax, Token};
+
+use crate::errors::ErrorParser;
+use corelib::errors::Span;
+use corelib::tree_flat::prelude::{Node, Tree};
 use std::fmt;
-use std::str::ParseBoolError;
-use tree_flat::node::NodeId;
-use tree_flat::prelude::{Node, Tree};
 
 /// The points in the code where we can recover after a failed parse
 const RECOVERY_SET: [Syntax; 2] = [Syntax::LetKw, Syntax::VarKw];
@@ -21,7 +21,7 @@ pub struct ParsedPrinter<'a> {
 #[derive(Debug)]
 pub struct Parsed {
     ast: Tree<Ast>,
-    errors: Vec<Error>,
+    errors: Vec<ErrorParser>,
 }
 
 struct Checker<'a> {
@@ -29,14 +29,15 @@ struct Checker<'a> {
     cst: Cst<'a>,
     ast: Tree<Ast>,
     cursor: usize,
-    errors: Vec<Error>,
+    errors: Vec<ErrorParser>,
 }
 
 impl<'a> Checker<'a> {
     pub fn new(cst: Cst<'a>) -> Self {
         // Start at 1 to skip Root!
+        let root = cst.ast.root();
         Self {
-            check: CheckList::new(Task::Start),
+            check: CheckList::new(Task::Start, root.data.span()),
             ast: Tree::with_capacity(Ast::Root, cst.code.len()),
             cst,
             cursor: 1,
@@ -49,10 +50,12 @@ impl<'a> Checker<'a> {
         !(self.cursor < self.ast.len())
     }
 
-    fn new_task(&mut self, task: Task) {
-        self.check = CheckList::new(task);
+    fn new_task(&mut self, task: Task, t: &Token) {
+        self.check = CheckList::new(task, t.into())
     }
-
+    fn new_task_span(&mut self, task: Task, s: Span) {
+        self.check = CheckList::new(task, s)
+    }
     fn cst(&self) -> Option<Node<'_, CstNode>> {
         self.cst.ast.node(self.cursor.into())
     }
@@ -70,22 +73,29 @@ impl<'a> Checker<'a> {
         self.cursor += 1;
     }
 
-    fn parse_scalar(&self, t: &Token) -> Result<Ast, Error> {
+    fn parse_scalar(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
         let txt = &self.cst.code[t.range];
+
         match t.kind {
-            Syntax::Bool => match txt.parse::<bool>() {
-                Ok(x) => Ok(Ast::scalar(x.into(), t)),
-                Err(x) => Err(Error::new(t, &x.to_string())),
-            },
-            Syntax::Int64 => match txt.parse::<i64>() {
-                Ok(x) => Ok(Ast::scalar(x.into(), t)),
-                Err(x) => Err(Error::new(t, &x.to_string())),
-            },
+            Syntax::Bool => {
+                self.check.check(Step::Bool, t.into());
+                match txt.parse::<bool>() {
+                    Ok(x) => Ok(Ast::scalar(x.into(), t)),
+                    Err(x) => Err(errors::parse(t, &x.to_string())),
+                }
+            }
+            Syntax::Int64 => {
+                self.check.check(Step::I64, t.into());
+                match txt.parse::<i64>() {
+                    Ok(x) => Ok(Ast::scalar(x.into(), t)),
+                    Err(x) => Err(errors::parse(t, &x.to_string())),
+                }
+            }
             _ => unimplemented!(),
         }
     }
 
-    fn push_or_err(&mut self, of: Result<Ast, Error>) {
+    fn push_or_err(&mut self, of: Result<Ast, ErrorParser>) {
         match of {
             Ok(ast) => {
                 self.push(ast, self.cursor);
@@ -101,6 +111,8 @@ impl<'a> Checker<'a> {
         //It has a pending task unfinished?
         if !self.check.is_done() {
             dbg!(&self.check);
+            let err = errors::incomplete(&self.check);
+            self.errors.push(err);
             self.recover();
         }
     }
@@ -120,17 +132,18 @@ impl<'a> Checker<'a> {
         match &self.check.task {
             Task::Start => {
                 if let CstNode::Atom(t) = next {
-                    self.new_task(Task::Expr);
+                    self.new_task(Task::Expr, &t);
                     self.verify();
                 }
                 if let CstNode::Op(t) = next {
-                    self.new_task(Task::Expr);
+                    self.new_task(Task::Expr, &t);
                     self.verify();
                 }
             }
             Task::Expr => {
                 if let CstNode::Atom(t) = &next {
-                    self.push_or_err(self.parse_scalar(t))
+                    let of = self.parse_scalar(t);
+                    self.push_or_err(of)
                 }
             }
             x => unimplemented!("{:?}", x),
@@ -166,7 +179,10 @@ impl Parser {
             } else {
                 //It has a pending task unfinished?
                 check.check_pending();
-                check.new_task(Task::Start);
+                if !check.at_end() {
+                    let next = check.next();
+                    check.new_task_span(Task::Start, next.span());
+                }
             }
         }
 
@@ -180,6 +196,15 @@ impl Parser {
     }
 }
 
+fn fmt_plain<T: fmt::Debug>(
+    f: &mut fmt::Formatter<'_>,
+    level: usize,
+    val: &T,
+    span: &Span,
+) -> fmt::Result {
+    write!(f, "{}{}: {:?}", " ".repeat(level + 1), span.range, val)
+}
+
 fn fmt_t<T: fmt::Debug>(
     f: &mut fmt::Formatter<'_>,
     level: usize,
@@ -189,7 +214,7 @@ fn fmt_t<T: fmt::Debug>(
 ) -> fmt::Result {
     write!(
         f,
-        "{}{} @@ {:?}: {:?}",
+        "{}{} @@ {}: {:?}",
         " ".repeat(level + 1),
         kind,
         span.range,
@@ -206,7 +231,8 @@ impl fmt::Display for ParsedPrinter<'_> {
             match node.data {
                 Ast::Root => write!(f, "Root")?,
                 Ast::Scalar { val, span } => fmt_t(f, level, kind, val, span)?,
-                Ast::Pass(_x) => write!(f, "{}PASS", " ".repeat(level + 1))?,
+                Ast::Pass(span) => fmt_plain(f, level, &"Pass", span)?,
+                Ast::If(span) => fmt_plain(f, level, &"if", span)?,
                 Ast::Eof => write!(f, "Eof")?,
             };
 
@@ -216,7 +242,7 @@ impl fmt::Display for ParsedPrinter<'_> {
         if !self.parsed.errors.is_empty() {
             writeln!(f, "Errors")?;
             for err in &self.parsed.errors {
-                write!(f, "{:?} @@ {}", err.span.range, err.msg)?;
+                writeln!(f, " {:?}", err)?;
             }
         }
         Ok(())

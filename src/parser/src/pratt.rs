@@ -8,10 +8,10 @@
 //! only prepare the code to be linearized to the next pass
 //!
 use crate::cst::CstNode;
+use corelib::text_size::TextRange;
+use corelib::tree_flat::prelude::{NodeId, NodeMut, Tree};
 use std::fmt;
 use std::iter::Peekable;
-use text_size::TextRange;
-use tree_flat::prelude::{NodeId, NodeMut, Tree};
 
 use crate::lexer::{Lexer, Scanner};
 use crate::token::{token_test, Syntax, SyntaxKind, Token};

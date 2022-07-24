@@ -974,6 +974,8 @@ dependencies = [
  "indexmap",
  "rust_decimal",
  "slotmap",
+ "text-size",
+ "tree-flat",
 ]
 
 [[package]]
@@ -992,8 +994,6 @@ dependencies = [
  "expect-test",
  "logos",
  "tablam-core",
- "text-size",
- "tree-flat",
 ]
 
 [[package]]
@@ -1053,7 +1053,7 @@ dependencies = [
 [[package]]
 name = "tree-flat"
 version = "0.1.1"
-source = "git+https://github.com/mamcx/tree-flat#309f3681f4802f24f3aa1177f662d1375fcd3b1c"
+source = "git+https://github.com/mamcx/tree-flat#3c92bbb90a995179398b44ffc8720567915ca06f"
 
 [[package]]
 name = "unicode-ident"

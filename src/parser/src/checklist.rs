@@ -1,4 +1,5 @@
 use crate::token::{BinaryOp, CmpOp, UnaryOp};
+use corelib::prelude::Span;
 use corelib::types::DataType;
 use std::cmp::min;
 
@@ -68,16 +69,18 @@ pub struct CheckList {
     pub task: Task,
     pub pos: usize,
     pub steps: Vec<Step>,
-    found: Option<Step>,
+    pub span: Vec<Span>,
+    pub found: Option<Step>,
 }
 
 impl CheckList {
-    pub fn new(task: Task) -> Self {
+    pub fn new(task: Task, span: Span) -> Self {
         Self {
             steps: task.steps(),
             task,
             pos: 0,
             found: None,
+            span: vec![span],
         }
     }
 
@@ -95,17 +98,28 @@ impl CheckList {
         &self.steps[min(self.pos, total)..total]
     }
 
-    pub fn check(&mut self, step: Step) -> Status {
+    pub fn span(&self) -> Span {
+        let mut first = self.span.first().unwrap().clone();
+        for s in self.span.iter().skip(1) {
+            first.range.0 = first.range.0 + s.range.0.len();
+        }
+
+        first
+    }
+
+    pub fn check(&mut self, step: Step, span: Span) -> Status {
         if self.is_done() {
-            return Status::Finished;
+            return Status::Error(step);
         }
 
         self.found = Some(step);
         let actual = self.steps[self.pos];
         let actual = if actual.is_replaceable() {
             self.steps[self.pos] = step;
+            self.span[self.pos] = span;
             step
         } else {
+            self.span.push(span);
             actual
         };
 
@@ -127,26 +141,36 @@ impl CheckList {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::token::token_test;
 
     #[test]
     fn check_var() {
         // Check: var x := y
-        let mut checklist = CheckList::new(Task::DefVar);
+        let span = (&token_test()).into();
+        let mut checklist = CheckList::new(Task::DefVar, span);
         assert!(!checklist.is_done());
-        assert_eq!(checklist.check(Step::Kw(Keyword::Var)), Status::Continue);
-        assert_eq!(checklist.check(Step::Ident), Status::Continue);
-        assert_eq!(checklist.check(Step::Assign), Status::Continue);
-        assert_eq!(checklist.check(Step::Expr), Status::Finished);
+        assert_eq!(
+            checklist.check(Step::Kw(Keyword::Var), span),
+            Status::Continue
+        );
+        assert_eq!(checklist.check(Step::Ident, span), Status::Continue);
+        assert_eq!(checklist.check(Step::Assign, span), Status::Continue);
+        assert_eq!(checklist.check(Step::Expr, span), Status::Finished);
         assert!(checklist.is_done());
     }
 
     #[test]
     fn check_var_error() {
         // Check: var x y
-        let mut checklist = CheckList::new(Task::DefVar);
-        assert_eq!(checklist.check(Step::Kw(Keyword::Var)), Status::Continue);
+        let span = (&token_test()).into();
 
-        assert_eq!(checklist.check(Step::Expr), Status::Error(Step::Expr));
+        let mut checklist = CheckList::new(Task::DefVar, span);
+        assert_eq!(
+            checklist.check(Step::Kw(Keyword::Var), span),
+            Status::Continue
+        );
+
+        assert_eq!(checklist.check(Step::Expr, span), Status::Error(Step::Expr));
 
         assert_eq!(checklist.done(), &[Step::Kw(Keyword::Var)]);
         assert_eq!(

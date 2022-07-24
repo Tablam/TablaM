@@ -1,11 +1,12 @@
 //! The CST store a full-fidelity view of the code (even if wrong)
+use corelib::errors::Span;
 use std::fmt;
 
-use tree_flat::prelude::{NodeMut, Tree};
+use corelib::tree_flat::prelude::{NodeMut, Tree};
 
 use crate::pratt::S;
 use crate::pratt::{expr, Pratt};
-use crate::token::Token;
+use crate::token::{token_eof, token_test, Token};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum CstNode {
@@ -14,6 +15,18 @@ pub(crate) enum CstNode {
     Op(Token),
     Err(Token),
     Eof,
+}
+
+impl CstNode {
+    pub(crate) fn span(&self) -> Span {
+        match self {
+            CstNode::Root => (&token_test()).into(),
+            CstNode::Atom(x) => x.into(),
+            CstNode::Op(x) => x.into(),
+            CstNode::Err(x) => x.into(),
+            CstNode::Eof => (&token_eof()).into(),
+        }
+    }
 }
 
 pub(crate) struct Cst<'a> {

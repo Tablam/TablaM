@@ -89,12 +89,20 @@ mod tests {
 
     #[test]
     fn lex_numbers() {
-        check("123456", Syntax::Int64);
+        check("123456", Syntax::Integer);
+        check("123_456", Syntax::Integer);
+
     }
 
     #[test]
     fn lex_decimals() {
-        check("123456.123456", Syntax::Decimal)
+        check("123456.123456", Syntax::Decimal);
+        check("1234.1234d", Syntax::Decimal);
+    }
+
+    #[test]
+    fn lex_floats() {
+        check("123456.123456f", Syntax::Float);
     }
 
     #[test]

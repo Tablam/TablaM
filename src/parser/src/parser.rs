@@ -1,5 +1,5 @@
 use crate::ast::{Ast, Ty};
-use crate::checklist::{CheckList, Step, Task};
+use crate::checklist::{CheckList, Kw, Step, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
 use crate::errors;
 use crate::files::Files;
@@ -95,6 +95,22 @@ impl<'a> Checker<'a> {
         }
     }
 
+    fn parse_cmp(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
+        unimplemented!()
+    }
+
+    fn parse_if(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
+        // Eat "if"
+        self.advance();
+        self.check.check(Step::Kw(Kw::If), t.into());
+        let next = self.parse_cmp(t)?;
+        self.check.check(Step::Kw(Kw::Do), t.into());
+        self.check.check(Step::Kw(Kw::Else), t.into());
+        self.check.check(Step::Kw(Kw::End), t.into());
+
+        unimplemented!()
+    }
+
     fn push_or_err(&mut self, of: Result<Ast, ErrorParser>) {
         match of {
             Ok(ast) => {
@@ -142,6 +158,12 @@ impl<'a> Checker<'a> {
             }
             Task::Expr => {
                 if let CstNode::Atom(t) = &next {
+                    let of = self.parse_scalar(t);
+                    self.push_or_err(of)
+                }
+            }
+            Task::IfExpr => {
+                if let CstNode::If(t) = &next {
                     let of = self.parse_scalar(t);
                     self.push_or_err(of)
                 }

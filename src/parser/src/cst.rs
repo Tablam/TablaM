@@ -174,4 +174,21 @@ Root
 "##]],
         );
     }
+
+    #[test]
+    fn ifs() {
+        let s = check(
+            "if true do false else true end",
+            expect![[r##"
+Root
+  if @ 0..2 "if"
+   Bool @ 3..7 "true"
+   do @ 8..10 "do"
+    Bool @ 11..16 "false"
+    else @ 17..21 "else"
+     Bool @ 22..26 "true"
+     end @ 27..30 "end"
+"##]],
+        );
+    }
 }

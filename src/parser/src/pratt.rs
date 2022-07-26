@@ -78,7 +78,7 @@ fn infix_binding_power(op: Syntax) -> Option<(u8, u8)> {
 
 fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
     match t.kind {
-        Syntax::Bool | Syntax::Int64 | Syntax::Decimal => S::Atom(t),
+        Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal => S::Atom(t),
         Syntax::LParen => {
             let lhs = expr_bp(lexer, 0);
             assert_eq!(lexer.next().kind, Syntax::RParen);
@@ -113,7 +113,7 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
         let next = lexer.peek();
         let mut is_lhs = true;
 
-        if next.kind == Syntax::Eof {
+        if next.kind == Syntax::Eof || next.kind.is() == SyntaxKind::Close {
             break;
         };
 
@@ -182,13 +182,13 @@ mod tests {
     #[test]
     fn parser() {
         let s = expr("1");
-        assert_eq!(s.to_string(), "1: Int64");
+        assert_eq!(s.to_string(), "1: Integer");
 
         let s = expr("1.45");
         assert_eq!(s.to_string(), "1.45: Decimal");
 
         let s = expr("(((0)))");
-        assert_eq!(s.to_string(), "0: Int64");
+        assert_eq!(s.to_string(), "0: Integer");
     }
 
     #[test]
@@ -203,6 +203,6 @@ mod tests {
     #[test]
     fn ops() {
         let s = expr("1 + 2 * 3");
-        assert_eq!(s.to_string(), "(+ 1: Int64 (* 2: Int64 3: Int64))");
+        assert_eq!(s.to_string(), "(+ 1: Integer (* 2: Integer 3: Integer))");
     }
 }

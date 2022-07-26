@@ -46,6 +46,7 @@ pub enum SyntaxKind {
 //TODO: Support count lines collapsing many CR?
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display, Logos)]
 #[logos(extras = ExtrasLexer)]
+#[logos(subpattern decimal = r"\d+_\d+|\d+")]
 #[repr(u16)]
 pub enum Syntax {
     //trivia
@@ -59,10 +60,13 @@ pub enum Syntax {
     //literals
     #[regex("true|false")]
     Bool,
-    #[regex(r"\d+\.\d+")]
+    #[regex(r"(?&decimal)")]
+    Integer,
+    #[regex(r"(?&decimal)\.(?&decimal)f")]
+    Float,
+    #[regex(r"(?&decimal)\.(?&decimal)d")]
+    #[regex(r"(?&decimal)\.(?&decimal)")]
     Decimal,
-    #[regex("[0-9]+")]
-    Int64,
 
     //keywords
     #[display(fmt = "fun")]
@@ -208,10 +212,16 @@ impl Syntax {
     pub fn is(self) -> SyntaxKind {
         match self {
             Syntax::Cr | Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
-            Syntax::Bool | Syntax::Int64 | Syntax::Decimal | Syntax::Ident | Syntax::LetKw => {
+            Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal | Syntax::Ident => {
                 SyntaxKind::Expr
             }
-            Syntax::FnKw | Syntax::VarKw | Syntax::IfKw | Syntax::ElseKw | Syntax::DoKw | Syntax::EndKw => SyntaxKind::Kw,
+            Syntax::FnKw
+            | Syntax::LetKw
+            | Syntax::VarKw
+            | Syntax::IfKw
+            | Syntax::ElseKw
+            | Syntax::DoKw
+            | Syntax::EndKw => SyntaxKind::Kw,
             Syntax::Point
             | Syntax::Assign
             | Syntax::Question

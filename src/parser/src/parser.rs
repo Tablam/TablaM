@@ -84,7 +84,7 @@ impl<'a> Checker<'a> {
                     Err(x) => Err(errors::parse(t, &x.to_string())),
                 }
             }
-            Syntax::Int64 => {
+            Syntax::Integer => {
                 self.check.check(Step::I64, t.into());
                 match txt.parse::<i64>() {
                     Ok(x) => Ok(Ast::scalar(x.into(), t)),

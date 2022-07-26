@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn parser() {
         let s = expr("1");
-        assert_eq!(s.to_string(), "1: Int64");
+        assert_eq!(s.to_string(), "1: Integer");
 
         let s = expr("1.45");
         assert_eq!(s.to_string(), "1.45: Decimal");
@@ -167,10 +167,10 @@ mod tests {
             expect![[r##"
 Root
   BinOp Add @ 2..3 "+"
-   Int64 @ 0..1 "1"
+   Integer @ 0..1 "1"
    BinOp Mul @ 6..7 "*"
-    Int64 @ 4..5 "2"
-    Int64 @ 8..9 "3"
+    Integer @ 4..5 "2"
+    Integer @ 8..9 "3"
 "##]],
         );
     }

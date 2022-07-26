@@ -20,8 +20,8 @@ pub struct ParsedPrinter<'a> {
 
 #[derive(Debug)]
 pub struct Parsed {
-    ast: Tree<Ast>,
-    errors: Vec<ErrorParser>,
+    pub ast: Tree<Ast>,
+    pub errors: Vec<ErrorParser>,
 }
 
 struct Checker<'a> {

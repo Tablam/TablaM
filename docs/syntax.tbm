@@ -50,20 +50,9 @@ A long text
 
 --- Dates, all ISO 8601 encoded
 
--- Date: DateNaive (no time zone)
-dn"2000-01-01"
-
--- DateTime: DateTimeNaive (no time zone)
-dtn"2000-01-01 00:00:00"
-dtn"2000-01-01" -- Is a short-cut for above
-
--- Date: Date (with TimeZone)
-d"2000-01-01+00:00"
-d"2000-01-01" -- Is a shortcut for above, imply LocalTime
-
 -- DateTime: DateTime (with TimeZone)
-dt"2000-01-01 00:00:00+00:00"
-dt"2000-01-01 00:00:00" -- Is a shortcut for above, imply LocalTime
+dt"2020-02-02T08:00:00+05:00"
+dt"2020-02-02T08:00:00" -- Is a shortcut for above, imply LocalTime
 
 t"08:00:00" -- Just time, 24 hours
 
@@ -90,6 +79,8 @@ not true -- = false
 33 / 2 -- 16.5 with Dec division
 div(33, 2) -- 16 with Int division
 
+20 * 10% -- similar to 20 * 0.10 or 20 * 10/100
+
 -- You can use unicode math chars for multiplication/division, 
 -- are equivalent!
 10 × 2 -- 20
@@ -97,3 +88,8 @@ div(33, 2) -- 16 with Int division
 
 -- Enforce precedence with parentheses
 (1 + 3) * 2  -- 8
+
+-- Declarations
+
+let x := 1 -- immutable
+var x := 1 -- mutable

@@ -1,45 +1,49 @@
 //! The CST store a full-fidelity view of the code (even if wrong)
 use corelib::errors::Span;
 use std::fmt;
+use std::rc::Rc;
 
+use crate::lexer::Scanner;
 use corelib::tree_flat::prelude::{NodeMut, Tree};
 
 use crate::pratt::S;
 use crate::pratt::{expr, Pratt};
-use crate::token::{token_eof, token_test, Syntax, Token};
+use crate::token::{token_eof, token_test, Syntax, Token, TokenId};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum CstNode {
     Root,
-    Atom(Token),
-    Op(Token),
-    Err(Token),
-    If(Token),
-    Else(Token),
-    Do(Token),
-    End(Token),
+    Atom(TokenId),
+    Op(TokenId),
+    If(TokenId),
+    Else(TokenId),
+    Do(TokenId),
+    End(TokenId),
+    Err(TokenId),
     Eof,
 }
 
 impl CstNode {
     pub(crate) fn span(&self) -> Span {
-        match self {
-            CstNode::Root => (&token_test()).into(),
-            CstNode::Atom(x) => x.into(),
-            CstNode::Op(x) => x.into(),
-            CstNode::Err(x) => x.into(),
-            CstNode::If(x) => x.into(),
-            CstNode::Else(x) => x.into(),
-            CstNode::Do(x) => x.into(),
-            CstNode::End(x) => x.into(),
-            CstNode::Eof => (&token_eof()).into(),
-        }
+        // match self {
+        //     CstNode::Root => (&token_test()).into(),
+        //     CstNode::Atom(x) => x.into(),
+        //     CstNode::Op(x) => x.into(),
+        //     CstNode::Err(x) => x.into(),
+        //     CstNode::If(x) => x.into(),
+        //     CstNode::Else(x) => x.into(),
+        //     CstNode::Do(x) => x.into(),
+        //     CstNode::End(x) => x.into(),
+        //     CstNode::Eof => (&token_eof()).into(),
+        // }
+        unimplemented!()
     }
 }
 
 pub(crate) struct Cst<'a> {
     pub(crate) ast: Tree<CstNode>,
     pub(crate) code: &'a str,
+    pub(crate) tokens: Rc<Scanner>,
 }
 
 fn fmt_t(f: &mut fmt::Formatter<'_>, level: usize, code: &str, t: &Token) -> fmt::Result {
@@ -80,14 +84,35 @@ impl fmt::Display for Cst<'_> {
 
             match node.data {
                 CstNode::Root => write!(f, "Root")?,
-                CstNode::Atom(t) => fmt_t(f, level, self.code, t)?,
-                CstNode::Op(t) => fmt_op(f, level, self.code, t)?,
-                CstNode::Err(t) => fmt_t(f, level, self.code, t)?,
+                CstNode::Atom(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_t(f, level, self.code, t)?
+                }
+                CstNode::Op(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_op(f, level, self.code, t)?
+                }
+                CstNode::Err(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_t(f, level, self.code, t)?
+                }
                 CstNode::Eof => write!(f, "{}EOF", " ".repeat(level + 1))?,
-                CstNode::If(t) => fmt_t(f, level, self.code, t)?,
-                CstNode::Else(t) => fmt_t(f, level, self.code, t)?,
-                CstNode::Do(t) => fmt_t(f, level, self.code, t)?,
-                CstNode::End(t) => fmt_t(f, level, self.code, t)?,
+                CstNode::If(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_t(f, level, self.code, t)?
+                }
+                CstNode::Else(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_t(f, level, self.code, t)?
+                }
+                CstNode::Do(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_t(f, level, self.code, t)?
+                }
+                CstNode::End(t) => {
+                    let t = self.tokens.get(*t);
+                    fmt_t(f, level, self.code, t)?
+                }
             };
 
             writeln!(f)?;
@@ -100,21 +125,22 @@ fn push(tree: &mut NodeMut<CstNode>, t: CstNode) {
     tree.push(t);
 }
 
-fn to_cst(tree: &mut NodeMut<CstNode>, ast: S) {
+fn to_cst(tree: &mut NodeMut<CstNode>, tokens: &Scanner, ast: S) {
     match ast {
         S::Atom(t) => push(tree, CstNode::Atom(t)),
         S::Cons(op, rest) => {
+            let op = tokens.get(op);
             let node = match op.kind {
-                Syntax::IfKw => CstNode::If(op),
-                Syntax::ElseKw => CstNode::Else(op),
-                Syntax::DoKw => CstNode::Do(op),
-                Syntax::EndKw => CstNode::End(op),
-                _ => CstNode::Op(op),
+                Syntax::IfKw => CstNode::If(op.id),
+                Syntax::ElseKw => CstNode::Else(op.id),
+                Syntax::DoKw => CstNode::Do(op.id),
+                Syntax::EndKw => CstNode::End(op.id),
+                _ => CstNode::Op(op.id),
             };
 
             let op = &mut tree.push(node);
             for s in rest {
-                to_cst(op, s);
+                to_cst(op, tokens, s);
             }
         }
         S::Err(t) => push(tree, CstNode::Err(t)),
@@ -126,12 +152,14 @@ pub(crate) fn parse(pratt: Pratt<'_>) -> Cst<'_> {
     let mut ast = Tree::new(CstNode::Root);
 
     let mut root = ast.root_mut();
+    let tokens = pratt.tokens.clone();
 
-    to_cst(&mut root, pratt.ast);
+    to_cst(&mut root, &tokens, pratt.ast);
 
     Cst {
         ast,
         code: pratt.code,
+        tokens,
     }
 }
 

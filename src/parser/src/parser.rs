@@ -3,7 +3,7 @@ use crate::checklist::{CheckList, Kw, Step, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
 use crate::errors;
 use crate::files::Files;
-use crate::token::{Syntax, Token};
+use crate::token::{Syntax, Token, TokenId};
 
 use crate::errors::ErrorParser;
 use corelib::errors::Span;
@@ -50,7 +50,8 @@ impl<'a> Checker<'a> {
         !(self.cursor < self.ast.len())
     }
 
-    fn new_task(&mut self, task: Task, t: &Token) {
+    fn new_task(&mut self, task: Task, t: TokenId) {
+        let t = self.cst.tokens.get(t);
         self.check = CheckList::new(task, t.into())
     }
     fn new_task_span(&mut self, task: Task, s: Span) {
@@ -73,19 +74,20 @@ impl<'a> Checker<'a> {
         self.cursor += 1;
     }
 
-    fn parse_scalar(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
+    fn parse_scalar(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
+        let t = self.cst.tokens.get(*t);
         let txt = &self.cst.code[t.range];
 
         match t.kind {
             Syntax::Bool => {
-                self.check.check(Step::Bool, t.into());
+                self.check.check(Step::Bool, t.into())?;
                 match txt.parse::<bool>() {
                     Ok(x) => Ok(Ast::scalar(x.into(), t)),
                     Err(x) => Err(errors::parse(t, &x.to_string())),
                 }
             }
             Syntax::Integer => {
-                self.check.check(Step::I64, t.into());
+                self.check.check(Step::I64, t.into())?;
                 match txt.parse::<i64>() {
                     Ok(x) => Ok(Ast::scalar(x.into(), t)),
                     Err(x) => Err(errors::parse(t, &x.to_string())),
@@ -102,11 +104,11 @@ impl<'a> Checker<'a> {
     fn parse_if(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
         // Eat "if"
         self.advance();
-        self.check.check(Step::Kw(Kw::If), t.into());
+        self.check.check(Step::Kw(Kw::If), t.into())?;
         let next = self.parse_cmp(t)?;
-        self.check.check(Step::Kw(Kw::Do), t.into());
-        self.check.check(Step::Kw(Kw::Else), t.into());
-        self.check.check(Step::Kw(Kw::End), t.into());
+        self.check.check(Step::Kw(Kw::Do), t.into())?;
+        self.check.check(Step::Kw(Kw::Else), t.into())?;
+        self.check.check(Step::Kw(Kw::End), t.into())?;
 
         unimplemented!()
     }
@@ -148,11 +150,11 @@ impl<'a> Checker<'a> {
         match &self.check.task {
             Task::Start => {
                 if let CstNode::Atom(t) = next {
-                    self.new_task(Task::Expr, &t);
+                    self.new_task(Task::Expr, t);
                     self.verify();
                 }
                 if let CstNode::Op(t) = next {
-                    self.new_task(Task::Expr, &t);
+                    self.new_task(Task::Expr, t);
                     self.verify();
                 }
             }

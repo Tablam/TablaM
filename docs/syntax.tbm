@@ -17,7 +17,7 @@
 
 -- Integer: Int (64 bits)
 1
-
+ 
 1_000 -- can use _ for separate values on all numbers
 
 -- The default floating point number!
@@ -51,6 +51,7 @@ A long text
 --- Dates, all ISO 8601 encoded
 
 -- DateTime: DateTime (with TimeZone)
+d"2020-02-02"
 dt"2020-02-02T08:00:00+05:00"
 dt"2020-02-02T08:00:00" -- Is a shortcut for above, imply LocalTime
 

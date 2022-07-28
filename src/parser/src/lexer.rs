@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::ops::Range as StdRange;
 
-use crate::token::{token_eof, Syntax, SyntaxKind, Token, TokenId};
+use crate::token::{Syntax, SyntaxKind, Token, TokenId};
 use corelib::prelude::*;
 use corelib::text_size::{TextRange, TextSize};
 use logos::Logos;
@@ -62,28 +62,62 @@ impl<'a> Iterator for Lexer<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Scanner {
     file_id: FileId,
     tokens: Vec<Token>,
+    eof: Token,
+    cursor: usize,
 }
 
 impl Scanner {
     pub fn from(lexer: Lexer<'_>) -> Self {
         let file_id = lexer.file_id;
         let mut tokens: Vec<_> = lexer.collect();
-        tokens.reverse();
+        //tokens.reverse();
 
-        Self { file_id, tokens }
+        let eof = Token {
+            file_id,
+            id: TokenId(tokens.len() + 1),
+            kind: Syntax::Eof,
+            range: Default::default(),
+            line: 0,
+            col: 0,
+        };
+
+        Self {
+            file_id,
+            tokens,
+            eof,
+            cursor: 0,
+        }
+    }
+
+    fn _get(&self, pos: usize) -> &Token {
+        self.tokens.get(pos).unwrap_or(&self.eof)
     }
 
     pub(crate) fn next(&mut self) -> Token {
-        self.tokens.pop().unwrap_or(token_eof())
+        self.cursor += 1;
+        let t = self._get(self.cursor - 1);
+        *t
     }
+
     pub(crate) fn peek(&mut self) -> Token {
-        self.tokens.last().copied().unwrap_or(token_eof())
+        let t = self._get(self.cursor);
+        *t
     }
+
     pub(crate) fn len(&self) -> usize {
         self.tokens.len()
+    }
+
+    pub(crate) fn get(&self, id: TokenId) -> &Token {
+        if let Some(t) = self.tokens.get(id.0) {
+            t
+        } else {
+            &self.eof
+        }
     }
 }
 
@@ -109,7 +143,6 @@ mod tests {
     fn lex_numbers() {
         check("123456", Syntax::Integer);
         check("123_456", Syntax::Integer);
-
     }
 
     #[test]

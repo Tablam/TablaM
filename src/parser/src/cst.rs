@@ -13,11 +13,11 @@ pub(crate) enum CstNode {
     Root,
     Atom(Token),
     Op(Token),
-    Err(Token),
     If(Token),
     Else(Token),
     Do(Token),
     End(Token),
+    Err(Token),
     Eof,
 }
 

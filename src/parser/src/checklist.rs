@@ -7,7 +7,6 @@ use std::cmp::min;
 pub enum Status {
     Finished,
     Continue,
-    Error(Step),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -120,9 +119,9 @@ impl CheckList {
         first
     }
 
-    pub fn check(&mut self, step: Step, span: Span) -> Status {
+    pub fn check(&mut self, step: Step, span: Span) -> Result<Status, (Span, Step)> {
         if self.is_done() {
-            return Status::Error(step);
+            return Err((span, step));
         }
 
         self.found = Some(step);
@@ -141,12 +140,12 @@ impl CheckList {
 
             if self.is_done() {
                 self.found = None;
-                Status::Finished
+                Ok(Status::Finished)
             } else {
-                Status::Continue
+                Ok(Status::Continue)
             }
         } else {
-            Status::Error(step)
+            Err((span, step))
         }
     }
 }
@@ -162,10 +161,13 @@ mod tests {
         let span = (&token_test()).into();
         let mut checklist = CheckList::new(Task::DefVar, span);
         assert!(!checklist.is_done());
-        assert_eq!(checklist.check(Step::Kw(Kw::Var), span), Status::Continue);
-        assert_eq!(checklist.check(Step::Ident, span), Status::Continue);
-        assert_eq!(checklist.check(Step::Assign, span), Status::Continue);
-        assert_eq!(checklist.check(Step::Expr, span), Status::Finished);
+        assert_eq!(
+            checklist.check(Step::Kw(Kw::Var), span),
+            Ok(Status::Continue)
+        );
+        assert_eq!(checklist.check(Step::Ident, span), Ok(Status::Continue));
+        assert_eq!(checklist.check(Step::Assign, span), Ok(Status::Continue));
+        assert_eq!(checklist.check(Step::Expr, span), Ok(Status::Finished));
         assert!(checklist.is_done());
     }
 
@@ -175,9 +177,12 @@ mod tests {
         let span = (&token_test()).into();
 
         let mut checklist = CheckList::new(Task::DefVar, span);
-        assert_eq!(checklist.check(Step::Kw(Kw::Var), span), Status::Continue);
+        assert_eq!(
+            checklist.check(Step::Kw(Kw::Var), span),
+            Ok(Status::Continue)
+        );
 
-        assert_eq!(checklist.check(Step::Expr, span), Status::Error(Step::Expr));
+        assert_eq!(checklist.check(Step::Expr, span), Err((span, Step::Expr)));
 
         assert_eq!(checklist.done(), &[Step::Kw(Kw::Var)]);
         assert_eq!(

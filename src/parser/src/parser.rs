@@ -78,14 +78,14 @@ impl<'a> Checker<'a> {
 
         match t.kind {
             Syntax::Bool => {
-                self.check.check(Step::Bool, t.into());
+                self.check.check(Step::Bool, t.into())?;
                 match txt.parse::<bool>() {
                     Ok(x) => Ok(Ast::scalar(x.into(), t)),
                     Err(x) => Err(errors::parse(t, &x.to_string())),
                 }
             }
             Syntax::Integer => {
-                self.check.check(Step::I64, t.into());
+                self.check.check(Step::I64, t.into())?;
                 match txt.parse::<i64>() {
                     Ok(x) => Ok(Ast::scalar(x.into(), t)),
                     Err(x) => Err(errors::parse(t, &x.to_string())),
@@ -102,11 +102,11 @@ impl<'a> Checker<'a> {
     fn parse_if(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
         // Eat "if"
         self.advance();
-        self.check.check(Step::Kw(Kw::If), t.into());
+        self.check.check(Step::Kw(Kw::If), t.into())?;
         let next = self.parse_cmp(t)?;
-        self.check.check(Step::Kw(Kw::Do), t.into());
-        self.check.check(Step::Kw(Kw::Else), t.into());
-        self.check.check(Step::Kw(Kw::End), t.into());
+        self.check.check(Step::Kw(Kw::Do), t.into())?;
+        self.check.check(Step::Kw(Kw::Else), t.into())?;
+        self.check.check(Step::Kw(Kw::End), t.into())?;
 
         unimplemented!()
     }

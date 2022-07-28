@@ -1,6 +1,6 @@
 use crate::checklist::{CheckList, Step};
 use crate::token::Token;
-use corelib::errors::{ErrorKind,  Span};
+use corelib::errors::{ErrorKind, Span};
 
 #[derive(Debug, Clone)]
 pub enum Error {
@@ -25,6 +25,12 @@ impl ErrorParser {
             span,
             error,
         }
+    }
+}
+
+impl From<(Span, Step)> for ErrorParser {
+    fn from(e: (Span, Step)) -> Self {
+        ErrorParser::new(ErrorKind::Parse, None, e.0, Error::Incomplete(vec![e.1]))
     }
 }
 

@@ -8,40 +8,52 @@
 //! only prepare the code to be linearized to the next pass
 //!
 use std::fmt;
+use std::rc::Rc;
 
 use crate::lexer::{Lexer, Scanner};
-use crate::token::{token_test, Syntax, SyntaxKind, Token};
+use crate::token::{Syntax, SyntaxKind, Token, TokenId};
 
 #[derive(Debug, Clone)]
 pub(crate) enum S {
-    Err(Token),
-    Atom(Token),
-    Cons(Token, Vec<S>),
-    Eof(Token),
+    Err(TokenId),
+    Atom(TokenId),
+    Cons(TokenId, Vec<S>),
+    Eof(TokenId),
 }
 
 pub(crate) struct Pratt<'a> {
     pub(crate) ast: S,
     pub(crate) code: &'a str,
+    pub(crate) tokens: Rc<Scanner>,
 }
 
 impl fmt::Display for Pratt<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.ast {
-            S::Atom(t) => write!(f, "{}: {}", &self.code[t.range], t.kind),
+            S::Atom(t) => {
+                dbg!(t);
+                let t = self.tokens.get(*t);
+                write!(f, "{}: {}", &self.code[t.range], t.kind)
+            }
             S::Cons(head, rest) => {
+                let head = self.tokens.get(*head);
                 write!(f, "({}", head.kind)?;
                 for s in rest {
                     let p = Pratt {
                         ast: s.clone(),
                         code: self.code,
+                        tokens: self.tokens.clone(),
                     };
                     write!(f, " {}", p)?
                 }
                 write!(f, ")")
             }
-            S::Err(t) => write!(f, "ERR({})", &self.code[t.range]),
+            S::Err(t) => {
+                let t = self.tokens.get(*t);
+                write!(f, "ERR({})", &self.code[t.range])
+            }
             S::Eof(t) => {
+                let t = self.tokens.get(*t);
                 write!(f, "{}", t.kind)
             }
         }
@@ -78,7 +90,7 @@ fn infix_binding_power(op: Syntax) -> Option<(u8, u8)> {
 
 fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
     match t.kind {
-        Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal => S::Atom(t),
+        Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal => S::Atom(t.id),
         Syntax::LParen => {
             let lhs = expr_bp(lexer, 0);
             assert_eq!(lexer.next().kind, Syntax::RParen);
@@ -87,19 +99,19 @@ fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
         Syntax::Plus => {
             if let Some(((), r_bp)) = prefix_binding_power(t.kind) {
                 let rhs = expr_bp(lexer, r_bp);
-                S::Cons(t, vec![rhs])
+                S::Cons(t.id, vec![rhs])
             } else {
-                S::Err(t)
+                S::Err(t.id)
             }
         }
         Syntax::IfKw | Syntax::DoKw | Syntax::ElseKw | Syntax::EndKw => {
             // let rhs = expr_bp(lexer, 0);
             // S::Cons(t, vec![rhs])
-            S::Atom(t)
+            S::Atom(t.id)
         }
         s => match s.is() {
-            SyntaxKind::Eof => S::Eof(t),
-            _ => S::Err(t),
+            SyntaxKind::Eof => S::Eof(t.id),
+            _ => S::Err(t.id),
         },
     }
 }
@@ -129,9 +141,9 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
             lhs = if op.is() == SyntaxKind::Open {
                 let rhs = expr_bp(lexer, 0);
                 //assert_eq!(lexer.next(), Token::Op(']'));
-                S::Cons(next, vec![lhs, rhs])
+                S::Cons(next.id, vec![lhs, rhs])
             } else {
-                S::Cons(next, vec![lhs])
+                S::Cons(next.id, vec![lhs])
             };
             continue;
         }
@@ -144,7 +156,7 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
             lexer.next();
 
             let rhs = expr_bp(lexer, r_bp);
-            lhs = S::Cons(next, vec![lhs, rhs]);
+            lhs = S::Cons(next.id, vec![lhs, rhs]);
 
             continue;
         }
@@ -153,7 +165,7 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
             lexer.next();
             lhs = expr_lhs(lexer, next);
             let rhs = expr_bp(lexer, 0);
-            lhs = S::Cons(t, vec![lhs, rhs]);
+            lhs = S::Cons(t.id, vec![lhs, rhs]);
             continue;
         }
         break;
@@ -166,7 +178,11 @@ pub(crate) fn expr(code: &str) -> Pratt<'_> {
     let lexer = Lexer::new(0.into(), code);
     let mut scanner = Scanner::from(lexer);
     let ast = expr_bp(&mut scanner, 0);
-    Pratt { ast, code }
+    Pratt {
+        ast,
+        code,
+        tokens: Rc::new(scanner),
+    }
 }
 
 #[cfg(test)]

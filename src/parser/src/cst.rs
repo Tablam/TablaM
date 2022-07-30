@@ -8,11 +8,11 @@ use corelib::tree_flat::prelude::{NodeMut, Tree};
 
 use crate::pratt::S;
 use crate::pratt::{expr, Pratt};
-use crate::token::{token_eof, token_test, Syntax, Token, TokenId};
+use crate::token::{Syntax, Token, TokenId};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum CstNode {
-    Root,
+    Root(TokenId),
     Atom(TokenId),
     Op(TokenId),
     If(TokenId),
@@ -20,23 +20,27 @@ pub(crate) enum CstNode {
     Do(TokenId),
     End(TokenId),
     Err(TokenId),
-    Eof,
+    Eof(TokenId),
 }
 
 impl CstNode {
-    pub(crate) fn span(&self) -> Span {
-        // match self {
-        //     CstNode::Root => (&token_test()).into(),
-        //     CstNode::Atom(x) => x.into(),
-        //     CstNode::Op(x) => x.into(),
-        //     CstNode::Err(x) => x.into(),
-        //     CstNode::If(x) => x.into(),
-        //     CstNode::Else(x) => x.into(),
-        //     CstNode::Do(x) => x.into(),
-        //     CstNode::End(x) => x.into(),
-        //     CstNode::Eof => (&token_eof()).into(),
-        // }
-        unimplemented!()
+    pub(crate) fn token_id(&self) -> TokenId {
+        let x = match self {
+            CstNode::Root(x) => x,
+            CstNode::Atom(x) => x,
+            CstNode::Op(x) => x,
+            CstNode::Err(x) => x,
+            CstNode::If(x) => x,
+            CstNode::Else(x) => x,
+            CstNode::Do(x) => x,
+            CstNode::End(x) => x,
+            CstNode::Eof(x) => x,
+        };
+        *x
+    }
+
+    pub(crate) fn span(&self, tokens: &Scanner) -> Span {
+        tokens.get(self.token_id()).into()
     }
 }
 
@@ -83,7 +87,7 @@ impl fmt::Display for Cst<'_> {
             let level = node.level();
 
             match node.data {
-                CstNode::Root => write!(f, "Root")?,
+                CstNode::Root(_) => write!(f, "Root")?,
                 CstNode::Atom(t) => {
                     let t = self.tokens.get(*t);
                     fmt_t(f, level, self.code, t)?
@@ -96,7 +100,7 @@ impl fmt::Display for Cst<'_> {
                     let t = self.tokens.get(*t);
                     fmt_t(f, level, self.code, t)?
                 }
-                CstNode::Eof => write!(f, "{}EOF", " ".repeat(level + 1))?,
+                CstNode::Eof(_) => write!(f, "{}EOF", " ".repeat(level + 1))?,
                 CstNode::If(t) => {
                     let t = self.tokens.get(*t);
                     fmt_t(f, level, self.code, t)?
@@ -144,12 +148,12 @@ fn to_cst(tree: &mut NodeMut<CstNode>, tokens: &Scanner, ast: S) {
             }
         }
         S::Err(t) => push(tree, CstNode::Err(t)),
-        S::Eof(_) => push(tree, CstNode::Eof),
+        S::Eof(t) => push(tree, CstNode::Eof(t)),
     };
 }
 
 pub(crate) fn parse(pratt: Pratt<'_>) -> Cst<'_> {
-    let mut ast = Tree::new(CstNode::Root);
+    let mut ast = Tree::new(CstNode::Root(pratt.tokens.root.id));
 
     let mut root = ast.root_mut();
     let tokens = pratt.tokens.clone();

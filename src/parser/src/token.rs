@@ -37,6 +37,7 @@ pub enum SyntaxKind {
     Kw,
     Expr,
     Err,
+    Root,
     Eof,
 }
 
@@ -203,6 +204,8 @@ pub enum Syntax {
     #[token("]")]
     RSquare,
 
+    //Markers, not represent code!
+    Root,
     Eof,
     #[error]
     Error,
@@ -245,6 +248,7 @@ impl Syntax {
             Syntax::RParen | Syntax::RBrace | Syntax::RSquare => SyntaxKind::Close,
             Syntax::Error => SyntaxKind::Err,
             Syntax::Eof => SyntaxKind::Eof,
+            Syntax::Root => SyntaxKind::Root,
         }
     }
     pub fn is_head_tree(self) -> bool {

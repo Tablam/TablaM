@@ -3,7 +3,7 @@ use crate::checklist::{CheckList, Kw, Step, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
 use crate::errors;
 use crate::files::Files;
-use crate::token::{Syntax, Token, TokenId};
+use crate::token::{token_eof, Syntax, TokenId};
 
 use crate::errors::ErrorParser;
 use corelib::errors::Span;
@@ -37,7 +37,7 @@ impl<'a> Checker<'a> {
         // Start at 1 to skip Root!
         let root = cst.ast.root();
         Self {
-            check: CheckList::new(Task::Start, root.data.span()),
+            check: CheckList::new(Task::Start, root.data.span(&cst.tokens)),
             ast: Tree::with_capacity(Ast::Root, cst.code.len()),
             cst,
             cursor: 1,
@@ -67,48 +67,58 @@ impl<'a> Checker<'a> {
     }
 
     fn next(&mut self) -> CstNode {
-        self.cst().map(|x| x.data.clone()).unwrap_or(CstNode::Eof)
+        self.cst()
+            .map(|x| x.data.clone())
+            .unwrap_or(CstNode::Eof(token_eof().id))
     }
 
     fn advance(&mut self) {
         self.cursor += 1;
     }
 
+    fn advance_and_next(&mut self) -> CstNode {
+        self.advance();
+        self.next()
+    }
+
     fn parse_scalar(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
         let t = self.cst.tokens.get(*t);
         let txt = &self.cst.code[t.range];
 
-        match t.kind {
-            Syntax::Bool => {
-                self.check.check(Step::Bool, t.into())?;
-                match txt.parse::<bool>() {
-                    Ok(x) => Ok(Ast::scalar(x.into(), t)),
-                    Err(x) => Err(errors::parse(t, &x.to_string())),
-                }
-            }
-            Syntax::Integer => {
-                self.check.check(Step::I64, t.into())?;
-                match txt.parse::<i64>() {
-                    Ok(x) => Ok(Ast::scalar(x.into(), t)),
-                    Err(x) => Err(errors::parse(t, &x.to_string())),
-                }
-            }
+        let (ast, step) = match t.kind {
+            Syntax::Bool => match txt.parse::<bool>() {
+                Ok(x) => (Ast::scalar(x.into(), t), Step::Bool),
+                Err(x) => return Err(errors::parse(t, &x.to_string())),
+            },
+            Syntax::Integer => match txt.parse::<i64>() {
+                Ok(x) => (Ast::scalar(x.into(), t), Step::I64),
+                Err(x) => return Err(errors::parse(t, &x.to_string())),
+            },
             _ => unimplemented!(),
-        }
+        };
+
+        self.check.check(step, t.into())?;
+        Ok(ast)
     }
 
-    fn parse_cmp(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
+    fn parse_cmp(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
         unimplemented!()
     }
 
-    fn parse_if(&mut self, t: &Token) -> Result<Ast, ErrorParser> {
+    fn parse_if(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
+        let t = self.cst.tokens.get(*t);
         // Eat "if"
-        self.advance();
-        self.check.check(Step::Kw(Kw::If), t.into())?;
-        let next = self.parse_cmp(t)?;
-        self.check.check(Step::Kw(Kw::Do), t.into())?;
-        self.check.check(Step::Kw(Kw::Else), t.into())?;
-        self.check.check(Step::Kw(Kw::End), t.into())?;
+        assert_eq!(t.kind, Syntax::IfKw);
+        self.check
+            .check(Step::Kw(Kw::If), next.span(&self.cst.tokens))?;
+
+        let next = self.advance_and_next();
+        //
+        // let next = self.parse_cmp(&t.id)?;
+        // self.check.check(Step::Kw(Kw::Do), t.into())?;
+        //
+        // self.check.check(Step::Kw(Kw::Else), t.into())?;
+        // self.check.check(Step::Kw(Kw::End), t.into())?;
 
         unimplemented!()
     }
@@ -140,7 +150,7 @@ impl<'a> Checker<'a> {
     fn verify(&mut self) {
         let next = self.next();
         dbg!("Checking", &next);
-        if next == CstNode::Eof {
+        if let CstNode::Eof(_) = next {
             return;
         }
         if let CstNode::Err(err) = next {
@@ -166,7 +176,7 @@ impl<'a> Checker<'a> {
             }
             Task::IfExpr => {
                 if let CstNode::If(t) = &next {
-                    let of = self.parse_scalar(t);
+                    let of = self.parse_if(t);
                     self.push_or_err(of)
                 }
             }
@@ -205,7 +215,7 @@ impl Parser {
                 check.check_pending();
                 if !check.at_end() {
                     let next = check.next();
-                    check.new_task_span(Task::Start, next.span());
+                    check.new_task_span(Task::Start, next.span(&check.cst.tokens));
                 }
             }
         }

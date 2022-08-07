@@ -31,7 +31,6 @@ impl fmt::Display for Pratt<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.ast {
             S::Atom(t) => {
-                dbg!(t);
                 let t = self.tokens.get(*t);
                 write!(f, "{}: {}", &self.code[t.range], t.kind)
             }

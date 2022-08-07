@@ -1,50 +1,55 @@
-use crate::checklist::{CheckList, Step};
+use crate::checklist::{CheckError, CheckList, Step};
+use crate::cst::CstNode;
 use crate::token::Token;
-use corelib::errors::{ErrorKind, Span};
-
-#[derive(Debug, Clone)]
-pub enum Error {
-    Simple,
-    Incomplete(Vec<Step>),
-}
+use corelib::errors::Span;
 
 /// Define the main Error type for the parser
 #[derive(Debug, Clone)]
-pub struct ErrorParser {
-    kind: ErrorKind,
-    msg: Option<String>,
-    span: Span,
-    error: Error,
+pub enum ErrorParser {
+    BoolExpr { span: Span, found: String },
+    NoExpr { span: Span, found: String },
+    ScalarParse { span: Span, msg: String },
+    Incomplete { err: CheckError, missing: Vec<Step> },
 }
 
-impl ErrorParser {
-    pub fn new(kind: ErrorKind, msg: Option<&str>, span: Span, error: Error) -> Self {
-        Self {
-            kind,
-            msg: msg.map(|x| x.to_string()),
-            span,
-            error,
-        }
+impl From<CheckError> for ErrorParser {
+    fn from(err: CheckError) -> Self {
+        let missing = err.expect.into_iter().collect();
+        ErrorParser::Incomplete { err, missing }
     }
 }
 
-impl From<(Span, Step)> for ErrorParser {
-    fn from(e: (Span, Step)) -> Self {
-        ErrorParser::new(ErrorKind::Parse, None, e.0, Error::Incomplete(vec![e.1]))
-    }
-}
-
-pub fn parse(t: &Token, msg: &str) -> ErrorParser {
+pub(crate) fn parse(t: &Token, msg: &str) -> ErrorParser {
     let span: Span = t.into();
-    ErrorParser::new(ErrorKind::Parse, Some(msg), span, Error::Simple)
+    ErrorParser::ScalarParse {
+        span,
+        msg: msg.into(),
+    }
 }
 
-pub fn incomplete(t: &CheckList) -> ErrorParser {
-    let span: Span = t.span();
-    ErrorParser::new(
-        ErrorKind::Parse,
-        None,
+pub(crate) fn not_a_expr(t: &Token, code: &str) -> ErrorParser {
+    let span: Span = t.into();
+    ErrorParser::NoExpr {
         span,
-        Error::Incomplete(t.pending().into()),
-    )
+        found: code.into(),
+    }
+}
+
+pub(crate) fn bool_expr(t: &Token, code: &str) -> ErrorParser {
+    let span: Span = t.into();
+    ErrorParser::BoolExpr {
+        span,
+        found: code.into(),
+    }
+}
+
+pub(crate) fn incomplete(t: &CheckList, found: CstNode) -> ErrorParser {
+    let span: Span = t.span();
+    let missing = t.expect.into_iter().collect();
+    let err = CheckError {
+        span,
+        found,
+        expect: None,
+    };
+    ErrorParser::Incomplete { err, missing }
 }

@@ -1,12 +1,13 @@
 use crate::ast::{Ast, Ty};
-use crate::checklist::{CheckList, Kw, Step, Task};
+use crate::checklist::{CheckList, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
-use crate::errors;
 use crate::files::Files;
-use crate::token::{token_eof, Syntax, TokenId};
+use crate::token::{token_eof, Syntax, Token, TokenId};
+use crate::{errors, expr};
 
 use crate::errors::ErrorParser;
 use corelib::errors::Span;
+use corelib::tree_flat::node::NodeId;
 use corelib::tree_flat::prelude::{Node, Tree};
 use std::fmt;
 
@@ -24,12 +25,12 @@ pub struct Parsed {
     pub errors: Vec<ErrorParser>,
 }
 
-struct Checker<'a> {
-    check: CheckList,
-    cst: Cst<'a>,
-    ast: Tree<Ast>,
-    cursor: usize,
-    errors: Vec<ErrorParser>,
+pub(crate) struct Checker<'a> {
+    pub(crate) check: CheckList,
+    pub(crate) cst: Cst<'a>,
+    pub(crate) ast: Tree<Ast>,
+    pub(crate) cursor: usize,
+    pub(crate) errors: Vec<ErrorParser>,
 }
 
 impl<'a> Checker<'a> {
@@ -45,142 +46,82 @@ impl<'a> Checker<'a> {
         }
     }
 
-    fn at_end(&self) -> bool {
+    pub(crate) fn at_end(&self) -> bool {
         //NOTE: The last token is always EOF!
         !(self.cursor < self.ast.len())
     }
 
-    fn new_task(&mut self, task: Task, t: TokenId) {
-        let t = self.cst.tokens.get(t);
+    pub(crate) fn new_task(&mut self, task: Task, t: TokenId) {
+        let t = self.token(t);
         self.check = CheckList::new(task, t.into())
     }
-    fn new_task_span(&mut self, task: Task, s: Span) {
+    pub(crate) fn new_task_span(&mut self, task: Task, s: Span) {
         self.check = CheckList::new(task, s)
     }
     fn cst(&self) -> Option<Node<'_, CstNode>> {
         self.cst.ast.node(self.cursor.into())
     }
-
-    fn push(&mut self, ast: Ast, pos: usize) {
-        let mut node = self.ast.node_mut((pos - 1).into()).expect("Invalid AST id");
-        node.push(ast);
+    fn cst_peek(&self) -> Option<Node<'_, CstNode>> {
+        self.cst.ast.node((self.cursor + 1).into())
     }
 
-    fn next(&mut self) -> CstNode {
+    pub(crate) fn push(&mut self, ast: Ast, parent: NodeId) -> NodeId {
+        let mut node = self.ast.node_mut(parent).expect("Invalid AST id");
+        node.append(ast)
+    }
+
+    pub(crate) fn code(&self, t: &Token) -> &str {
+        &self.cst.code[t.range]
+    }
+
+    pub(crate) fn token(&self, id: TokenId) -> &Token {
+        self.cst.tokens.get(id)
+    }
+
+    pub(crate) fn next(&mut self) -> CstNode {
         self.cst()
             .map(|x| x.data.clone())
             .unwrap_or(CstNode::Eof(token_eof().id))
     }
 
-    fn advance(&mut self) {
+    pub(crate) fn peek(&mut self) -> CstNode {
+        self.cst_peek()
+            .map(|x| x.data.clone())
+            .unwrap_or(CstNode::Eof(token_eof().id))
+    }
+
+    pub(crate) fn advance(&mut self) {
         self.cursor += 1;
     }
 
-    fn advance_and_next(&mut self) -> CstNode {
+    pub(crate) fn advance_and_next(&mut self) -> CstNode {
         self.advance();
         self.next()
     }
 
-    fn parse_scalar(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
-        let t = self.cst.tokens.get(*t);
-        let txt = &self.cst.code[t.range];
-
-        let (ast, step) = match t.kind {
-            Syntax::Bool => match txt.parse::<bool>() {
-                Ok(x) => (Ast::scalar(x.into(), t), Step::Bool),
-                Err(x) => return Err(errors::parse(t, &x.to_string())),
-            },
-            Syntax::Integer => match txt.parse::<i64>() {
-                Ok(x) => (Ast::scalar(x.into(), t), Step::I64),
-                Err(x) => return Err(errors::parse(t, &x.to_string())),
-            },
-            _ => unimplemented!(),
-        };
-
-        self.check.check(step, t.into())?;
-        Ok(ast)
-    }
-
-    fn parse_cmp(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
-        unimplemented!()
-    }
-
-    fn parse_if(&mut self, t: &TokenId) -> Result<Ast, ErrorParser> {
-        let t = self.cst.tokens.get(*t);
-        // Eat "if"
-        assert_eq!(t.kind, Syntax::IfKw);
-        self.check
-            .check(Step::Kw(Kw::If), next.span(&self.cst.tokens))?;
-
-        let next = self.advance_and_next();
-        //
-        // let next = self.parse_cmp(&t.id)?;
-        // self.check.check(Step::Kw(Kw::Do), t.into())?;
-        //
-        // self.check.check(Step::Kw(Kw::Else), t.into())?;
-        // self.check.check(Step::Kw(Kw::End), t.into())?;
-
-        unimplemented!()
-    }
-
-    fn push_or_err(&mut self, of: Result<Ast, ErrorParser>) {
+    pub(crate) fn push_or_err(
+        &mut self,
+        of: Result<Ast, ErrorParser>,
+        parent: NodeId,
+    ) -> Result<NodeId, NodeId> {
         match of {
-            Ok(ast) => {
-                self.push(ast, self.cursor);
-            }
+            Ok(ast) => return Ok(self.push(ast, parent)),
             Err(err) => self.errors.push(err),
         }
-        self.advance()
+        self.advance();
+        Err(parent)
     }
 
-    fn recover(&mut self) {}
+    pub(crate) fn recover(&mut self) {}
 
-    fn check_pending(&mut self) {
+    pub(crate) fn check_pending(&mut self) {
         //It has a pending task unfinished?
         if !self.check.is_done() {
             dbg!(&self.check);
-            let err = errors::incomplete(&self.check);
+            let current = self.next();
+            let err = errors::incomplete(&self.check, current);
             self.errors.push(err);
             self.recover();
-        }
-    }
-
-    /// The main interface that run the parser with a [CheckList]
-    /// and report the errors
-    fn verify(&mut self) {
-        let next = self.next();
-        dbg!("Checking", &next);
-        if let CstNode::Eof(_) = next {
-            return;
-        }
-        if let CstNode::Err(err) = next {
-            self.recover();
-        }
-
-        match &self.check.task {
-            Task::Start => {
-                if let CstNode::Atom(t) = next {
-                    self.new_task(Task::Expr, t);
-                    self.verify();
-                }
-                if let CstNode::Op(t) = next {
-                    self.new_task(Task::Expr, t);
-                    self.verify();
-                }
-            }
-            Task::Expr => {
-                if let CstNode::Atom(t) = &next {
-                    let of = self.parse_scalar(t);
-                    self.push_or_err(of)
-                }
-            }
-            Task::IfExpr => {
-                if let CstNode::If(t) = &next {
-                    let of = self.parse_if(t);
-                    self.push_or_err(of)
-                }
-            }
-            x => unimplemented!("{:?}", x),
         }
     }
 }
@@ -204,24 +145,7 @@ impl Parser {
         let cst = src_to_cst(root.data.source());
 
         let mut check = Checker::new(cst);
-
-        loop {
-            check.verify();
-
-            if check.at_end() {
-                break;
-            } else {
-                //It has a pending task unfinished?
-                check.check_pending();
-                if !check.at_end() {
-                    let next = check.next();
-                    check.new_task_span(Task::Start, next.span(&check.cst.tokens));
-                }
-            }
-        }
-
-        //It has a pending task unfinished?
-        check.check_pending();
+        expr::root(&mut check);
 
         Parsed {
             ast: check.ast,
@@ -265,9 +189,12 @@ impl fmt::Display for ParsedPrinter<'_> {
             match node.data {
                 Ast::Root => write!(f, "Root")?,
                 Ast::Scalar { val, span } => fmt_t(f, level, kind, val, span)?,
+                Ast::Bool { val, span } => fmt_t(f, level, kind, val, span)?,
                 Ast::Pass(span) => fmt_plain(f, level, &"Pass", span)?,
-                Ast::If(span) => fmt_plain(f, level, &"if", span)?,
+                Ast::If { span, .. } => fmt_plain(f, level, &"if", span)?,
                 Ast::Eof => write!(f, "Eof")?,
+                Ast::Cmp { op, span } => fmt_plain(f, level, &format!("{:?}", op), span)?,
+                Ast::BoolExpr(_) => write!(f, "BOOL EXP")?,
             };
 
             writeln!(f)?;
@@ -315,6 +242,17 @@ Root
     fn parse_int() {
         check(
             " 123",
+            expect![[r##"
+Root
+  T: I64 @@ 1..4: I64([123])
+"##]],
+        );
+    }
+
+    #[test]
+    fn parse_if() {
+        check(
+            "if true do false else true end",
             expect![[r##"
 Root
   T: I64 @@ 1..4: I64([123])

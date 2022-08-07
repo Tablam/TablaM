@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::token::{CmpOp, Token};
 use corelib::errors::Span;
 use corelib::prelude::DataType;
 use corelib::scalar::Scalar;
@@ -39,12 +39,31 @@ impl fmt::Display for Ty {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum ExprBool {
+    Scalar { val: Scalar, span: Span },
+}
+
+impl ExprBool {
+    pub(crate) fn bool(val: bool, t: &Token) -> Self {
+        Self::Scalar {
+            val: val.into(),
+            span: t.into(),
+        }
+    }
+}
+
 /// Encode the parse-tolerant AST
 #[derive(Debug, Clone)]
 pub enum Ast {
+    //Markers
     Root,
+    // AST productions
     Scalar { val: Scalar, span: Span },
-    If(Span),
+    If { span: Span },
+    BoolExpr(ExprBool),
+    Bool { val: Scalar, span: Span },
+    Cmp { op: CmpOp, span: Span },
     Pass(Span),
     Eof,
 }
@@ -56,7 +75,10 @@ impl Ast {
             Ast::Scalar { val, span: _ } => Ty::Kind(val.kind()),
             Ast::Pass(_) => Ty::Unknown,
             Ast::Eof => Ty::Ignore,
-            Ast::If(_) => Ty::Unknown,
+            Ast::If { .. } => Ty::Unknown,
+            Ast::Bool { .. } => Ty::Kind(DataType::Bool),
+            Ast::Cmp { .. } => Ty::Unknown,
+            Ast::BoolExpr(_) => Ty::Unknown,
         }
     }
 

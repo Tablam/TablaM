@@ -1,3 +1,4 @@
+use crate::cst::CstNode;
 use crate::token::{BinaryOp, CmpOp, UnaryOp};
 use corelib::prelude::Span;
 use corelib::types::DataType;
@@ -35,7 +36,7 @@ pub enum Step {
 
 impl Step {
     fn is_replaceable(&self) -> bool {
-        matches!(self, Step::Expr) && self != &Step::ExprIncomplete
+        matches!(self, Step::Expr)
     }
 }
 
@@ -54,7 +55,7 @@ pub enum Task {
 impl Task {
     fn steps(&self) -> Vec<Step> {
         match self {
-            Task::Start => vec![],
+            Task::Start => vec![Step::ExprIncomplete],
             Task::Scalar(_) => vec![Step::Expr],
             Task::Expr => vec![Step::Expr],
             Task::DefVar => vec![Step::Kw(Kw::Var), Step::Ident, Step::Assign, Step::Expr],
@@ -77,12 +78,19 @@ impl Task {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct CheckError {
+    pub(crate) span: Span,
+    pub(crate) found: CstNode,
+    pub(crate) expect: Option<Step>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct CheckList {
     pub task: Task,
     pub pos: usize,
     pub steps: Vec<Step>,
     pub span: Vec<Span>,
-    pub found: Option<Step>,
+    pub expect: Option<Step>,
 }
 
 impl CheckList {
@@ -91,7 +99,7 @@ impl CheckList {
             steps: task.steps(),
             task,
             pos: 0,
-            found: None,
+            expect: None,
             span: vec![span],
         }
     }
@@ -119,16 +127,33 @@ impl CheckList {
         first
     }
 
-    pub fn check(&mut self, step: Step, span: Span) -> Result<Status, (Span, Step)> {
+    pub(crate) fn advance(&mut self) {
+        self.pos += 1;
+    }
+
+    pub(crate) fn check(
+        &mut self,
+        node: &CstNode,
+        step: Step,
+        span: Span,
+    ) -> Result<Status, CheckError> {
         if self.is_done() {
-            return Err((span, step));
+            return Err(CheckError {
+                span,
+                found: *node,
+                expect: Some(step),
+            });
         }
 
-        self.found = Some(step);
+        self.expect = Some(step);
         let actual = self.steps[self.pos];
         let actual = if actual.is_replaceable() {
             self.steps[self.pos] = step;
-            self.span[self.pos] = span;
+            if self.span.len() < self.pos {
+                self.span[self.pos] = span;
+            } else {
+                self.span.push(span);
+            }
             step
         } else {
             self.span.push(span);
@@ -136,16 +161,20 @@ impl CheckList {
         };
 
         if actual == step {
-            self.pos += 1;
+            self.advance();
 
             if self.is_done() {
-                self.found = None;
+                self.expect = None;
                 Ok(Status::Finished)
             } else {
                 Ok(Status::Continue)
             }
         } else {
-            Err((span, step))
+            Err(CheckError {
+                span,
+                found: *node,
+                expect: Some(step),
+            })
         }
     }
 }
@@ -153,21 +182,31 @@ impl CheckList {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::token_test;
+    use crate::token::{token_test, TokenId};
 
     #[test]
     fn check_var() {
         // Check: var x := y
         let span = (&token_test()).into();
+        let node = CstNode::Root(TokenId(0));
         let mut checklist = CheckList::new(Task::DefVar, span);
         assert!(!checklist.is_done());
         assert_eq!(
-            checklist.check(Step::Kw(Kw::Var), span),
+            checklist.check(&node, Step::Kw(Kw::Var), span),
             Ok(Status::Continue)
         );
-        assert_eq!(checklist.check(Step::Ident, span), Ok(Status::Continue));
-        assert_eq!(checklist.check(Step::Assign, span), Ok(Status::Continue));
-        assert_eq!(checklist.check(Step::Expr, span), Ok(Status::Finished));
+        assert_eq!(
+            checklist.check(&node, Step::Ident, span),
+            Ok(Status::Continue)
+        );
+        assert_eq!(
+            checklist.check(&node, Step::Assign, span),
+            Ok(Status::Continue)
+        );
+        assert_eq!(
+            checklist.check(&node, Step::Expr, span),
+            Ok(Status::Finished)
+        );
         assert!(checklist.is_done());
     }
 
@@ -175,14 +214,22 @@ mod tests {
     fn check_var_error() {
         // Check: var x y
         let span = (&token_test()).into();
+        let node = CstNode::Root(TokenId(0));
 
         let mut checklist = CheckList::new(Task::DefVar, span);
         assert_eq!(
-            checklist.check(Step::Kw(Kw::Var), span),
+            checklist.check(&node, Step::Kw(Kw::Var), span),
             Ok(Status::Continue)
         );
 
-        assert_eq!(checklist.check(Step::Expr, span), Err((span, Step::Expr)));
+        assert_eq!(
+            checklist.check(&node, Step::Expr, span),
+            Err(CheckError {
+                span,
+                found: node,
+                expect: Some(Step::Expr)
+            })
+        );
 
         assert_eq!(checklist.done(), &[Step::Kw(Kw::Var)]);
         assert_eq!(

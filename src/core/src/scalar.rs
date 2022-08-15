@@ -3,7 +3,7 @@
 //! A [Scalar] in TablaM can be considered a relation of exactly one row, one column, one value; so
 //! it means that we can operate on it with all the relational/array operators.
 
-use std::fmt::Debug;
+use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
 
@@ -24,6 +24,19 @@ pub struct DateT {
 }
 
 pub type BoolBit = bv::BitArr!(for 1, in usize, bv::Lsb0);
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Bool(pub BoolBit);
+
+impl fmt::Debug for Bool {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.0 == BoolBit::new([true as usize]) {
+            write!(f, "true")
+        } else {
+            write!(f, "false")
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ScalarSlice<'a> {
@@ -101,7 +114,7 @@ impl<'a> ScalarSlice<'a> {
 pub enum Scalar {
     /// The **BOTTOM** value
     Unit([(); 1]),
-    Bool(BoolBit),
+    Bool(Bool),
     //Numeric
     I64([i64; 1]),
     Decimal([Decimal; 1]),
@@ -122,7 +135,7 @@ impl Scalar {
     pub fn slice(&self) -> ScalarSlice<'_> {
         match self {
             Self::Unit(x) => ScalarSlice::Unit(x),
-            Self::Bool(x) => ScalarSlice::Bool(x),
+            Self::Bool(x) => ScalarSlice::Bool(x.0.as_bitslice()),
             Self::I64(x) => ScalarSlice::I64(x),
             Self::Decimal(x) => ScalarSlice::Decimal(x),
             Self::F64(x) => ScalarSlice::F64(x),

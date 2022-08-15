@@ -1,7 +1,6 @@
 use crate::env::Env;
 use corelib::prelude::{Scalar, Span};
 use parser::ast::Ast;
-use tablam_parser::parser::Parsed;
 
 pub type CodeEx = Box<dyn FnMut(&Env) -> Code>;
 
@@ -16,7 +15,7 @@ pub enum Code {
 
 pub fn compile(ast: &Parsed) -> Result<Code, ()> {
     // Only compile valid code!
-    if !ast.errors.is_empty() {
+    if !ast.p.errors.is_empty() {
         return Err(());
     }
     // Moving forward this MUST be correct code!

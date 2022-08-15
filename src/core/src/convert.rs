@@ -1,6 +1,6 @@
 /// Macros and Utilities for making conversions from/to TablaM types
 use crate::prelude::*;
-use crate::scalar::BoolBit;
+use crate::scalar::{Bool, BoolBit};
 
 macro_rules! convert {
     ($kind:ident, $bound:path) => {
@@ -143,7 +143,7 @@ impl From<&[bool]> for Array {
 
 impl From<bool> for Scalar {
     fn from(x: bool) -> Self {
-        Scalar::Bool(BoolBit::new([x as usize]))
+        Scalar::Bool(Bool(BoolBit::new([x as usize])))
     }
 }
 

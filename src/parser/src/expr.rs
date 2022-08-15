@@ -34,7 +34,6 @@ pub(crate) fn root(p: &mut Checker) {
 /// and report the errors
 fn check(p: &mut Checker, parent: NodeId) -> Result<NodeId, NodeId> {
     let next = p.next();
-    dbg!("Checking", &next);
     if let CstNode::Eof(_) = next {
         p.check.advance();
         return Ok(parent);
@@ -140,7 +139,7 @@ pub(crate) fn parse_bool_expr(p: &mut Checker, node: &CstNode) -> Result<ExprBoo
 
 pub(crate) fn expr(p: &mut Checker, parent: NodeId, next: CstNode) -> Result<Ast, ErrorParser> {
     match next {
-        CstNode::Atom(t) => parse_scalar(p, parent, &next),
+        CstNode::Atom(_) => parse_scalar(p, parent, &next),
         _ => {
             let t = p.token(next.token_id());
             let code = p.code(t);
@@ -157,30 +156,40 @@ pub(crate) fn parse_if(
     let t = *p.token(node.token_id());
     // Eat "if"
     assert_eq!(t.kind, Syntax::IfKw);
-    p.check.check(node, Step::Kw(Kw::If), (&t).into())?;
-    let parent = p.push(Ast::If { span: (&t).into() }, parent);
+    let if_span = (&t).into();
+    p.check.check(node, Step::Kw(Kw::If), if_span)?;
 
     let next = p.advance_and_next();
-    let bool_expr = parse_bool_expr(p, &next)?;
-    p.check.check(&next, Step::Expr, (&t).into())?;
-    let parent = p.push(Ast::BoolExpr(bool_expr), parent);
+    let check = parse_bool_expr(p, &next)?;
+    p.check.check(&next, Step::Expr, check.span())?;
 
     let next = p.advance_and_next();
-    p.check.check(&next, Step::Kw(Kw::Do), (&t).into())?;
+    let do_span = next.span(&p.cst.tokens);
+    p.check.check(&next, Step::Kw(Kw::Do), do_span)?;
 
     let next = p.advance_and_next();
-    let ast = expr(p, parent, next)?;
-    //p.check.check(&next, Step::Expr, (&t).into())?;
+    let if_true = expr(p, parent, next)?;
 
     let next = p.advance_and_next();
-    p.check.check(&next, Step::Kw(Kw::Else), (&t).into())?;
+    let else_span = next.span(&p.cst.tokens);
+    p.check.check(&next, Step::Kw(Kw::Else), else_span)?;
 
     let next = p.advance_and_next();
-    let ast = expr(p, parent, next)?;
-    //p.check.check(&next, Step::Expr, (&t).into())?;
+    let if_false = expr(p, parent, next)?;
 
     let next = p.advance_and_next();
-    p.check.check(&next, Step::Kw(Kw::End), (&t).into())?;
+    let end_span = next.span(&p.cst.tokens);
+    p.check.check(&next, Step::Kw(Kw::End), end_span)?;
 
-    Ok(Ast::Eof)
+    //; let span = span + check.span() + if_true.span() + if_false.span();
+
+    Ok(Ast::IfBlock {
+        if_span,
+        do_span,
+        else_span,
+        end_span,
+        check: Box::new(check),
+        if_true: Box::new(if_true),
+        if_false: Box::new(if_false),
+    })
 }

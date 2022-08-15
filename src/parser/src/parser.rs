@@ -1,4 +1,4 @@
-use crate::ast::{Ast, Ty};
+use crate::ast::{Ast, ExprBool, Ty};
 use crate::checklist::{CheckList, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
 use crate::files::Files;
@@ -37,9 +37,10 @@ impl<'a> Checker<'a> {
     pub fn new(cst: Cst<'a>) -> Self {
         // Start at 1 to skip Root!
         let root = cst.ast.root();
+        let span = root.data.span(&cst.tokens);
         Self {
-            check: CheckList::new(Task::Start, root.data.span(&cst.tokens)),
-            ast: Tree::with_capacity(Ast::Root, cst.code.len()),
+            check: CheckList::new(Task::Start, span),
+            ast: Tree::with_capacity(Ast::Root(span), cst.code.len()),
             cst,
             cursor: 1,
             errors: vec![],
@@ -163,7 +164,7 @@ fn fmt_plain<T: fmt::Debug>(
     write!(f, "{}{}: {:?}", " ".repeat(level + 1), span.range, val)
 }
 
-fn fmt_t<T: fmt::Debug>(
+pub(crate) fn fmt_t<T: fmt::Debug>(
     f: &mut fmt::Formatter<'_>,
     level: usize,
     kind: Ty,
@@ -180,23 +181,58 @@ fn fmt_t<T: fmt::Debug>(
     )
 }
 
+fn fmt_bool_expr(
+    node: &ExprBool,
+    kind: Ty,
+    level: usize,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
+    match node {
+        ExprBool::Scalar { val, span } => fmt_t(f, level, kind, val, span),
+    }
+}
+
+fn fmt_node(node: &Ast, level: usize, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let kind = node.ty();
+
+    match node {
+        Ast::Root(_) => write!(f, "Root")?,
+        Ast::Scalar { val, span } => fmt_t(f, level, kind, val, span)?,
+        Ast::Bool { val, span } => fmt_t(f, level, kind, val, span)?,
+        Ast::Pass(span) => fmt_plain(f, level, &"Pass", span)?,
+        Ast::Eof(_) => write!(f, "Eof")?,
+        Ast::Cmp { op, span } => fmt_plain(f, level, &format!("{:?}", op), span)?,
+        Ast::IfBlock {
+            if_span,
+            do_span,
+            else_span,
+            end_span,
+            check,
+            if_true,
+            if_false,
+        } => {
+            fmt_plain(f, level, &"if", if_span)?;
+            writeln!(f)?;
+            fmt_bool_expr(&check, kind, level + 1, f)?;
+            writeln!(f)?;
+            fmt_plain(f, level, &"do", do_span)?;
+            writeln!(f)?;
+            fmt_node(&if_true, level + 1, f)?;
+            writeln!(f)?;
+            fmt_plain(f, level, &"else", else_span)?;
+            writeln!(f)?;
+            fmt_node(&if_false, level + 1, f)?;
+            writeln!(f)?;
+            fmt_plain(f, level, &"end --if", end_span)?;
+        }
+    };
+    Ok(())
+}
+
 impl fmt::Display for ParsedPrinter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for node in self.parsed.ast.iter() {
-            let level = node.level();
-            let kind = node.data.ty();
-
-            match node.data {
-                Ast::Root => write!(f, "Root")?,
-                Ast::Scalar { val, span } => fmt_t(f, level, kind, val, span)?,
-                Ast::Bool { val, span } => fmt_t(f, level, kind, val, span)?,
-                Ast::Pass(span) => fmt_plain(f, level, &"Pass", span)?,
-                Ast::If { span, .. } => fmt_plain(f, level, &"if", span)?,
-                Ast::Eof => write!(f, "Eof")?,
-                Ast::Cmp { op, span } => fmt_plain(f, level, &format!("{:?}", op), span)?,
-                Ast::BoolExpr(_) => write!(f, "BOOL EXP")?,
-            };
-
+            fmt_node(node.data, node.level(), f)?;
             writeln!(f)?;
         }
 
@@ -252,10 +288,16 @@ Root
     #[test]
     fn parse_if() {
         check(
-            "if true do false else true end",
+            "if true do 1 else 2 end",
             expect![[r##"
 Root
-  T: I64 @@ 1..4: I64([123])
+  0..2: "if"
+    @@ 3..7: Bool(true)
+  8..10: "do"
+   T: I64 @@ 11..12: I64([1])
+  13..17: "else"
+   T: I64 @@ 18..19: I64([2])
+  20..23: "end --if"
 "##]],
         );
     }

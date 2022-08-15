@@ -45,6 +45,12 @@ pub enum ExprBool {
 }
 
 impl ExprBool {
+    pub(crate) fn span(&self) -> Span {
+        match self {
+            ExprBool::Scalar { span, .. } => *span,
+        }
+    }
+
     pub(crate) fn bool(val: bool, t: &Token) -> Self {
         Self::Scalar {
             val: val.into(),
@@ -57,28 +63,43 @@ impl ExprBool {
 #[derive(Debug, Clone)]
 pub enum Ast {
     //Markers
-    Root,
+    Root(Span),
     // AST productions
-    Scalar { val: Scalar, span: Span },
-    If { span: Span },
-    BoolExpr(ExprBool),
-    Bool { val: Scalar, span: Span },
-    Cmp { op: CmpOp, span: Span },
+    Scalar {
+        val: Scalar,
+        span: Span,
+    },
+    IfBlock {
+        if_span: Span,
+        do_span: Span,
+        else_span: Span,
+        end_span: Span,
+        check: Box<ExprBool>,
+        if_true: Box<Ast>,
+        if_false: Box<Ast>,
+    },
+    Bool {
+        val: Scalar,
+        span: Span,
+    },
+    Cmp {
+        op: CmpOp,
+        span: Span,
+    },
     Pass(Span),
-    Eof,
+    Eof(Span),
 }
 
 impl Ast {
     pub(crate) fn ty(&self) -> Ty {
         match self {
-            Ast::Root => Ty::Ignore,
+            Ast::Root(_) => Ty::Ignore,
             Ast::Scalar { val, span: _ } => Ty::Kind(val.kind()),
             Ast::Pass(_) => Ty::Unknown,
-            Ast::Eof => Ty::Ignore,
-            Ast::If { .. } => Ty::Unknown,
+            Ast::Eof(_) => Ty::Ignore,
             Ast::Bool { .. } => Ty::Kind(DataType::Bool),
             Ast::Cmp { .. } => Ty::Unknown,
-            Ast::BoolExpr(_) => Ty::Unknown,
+            Ast::IfBlock { .. } => Ty::Unknown,
         }
     }
 

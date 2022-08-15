@@ -209,7 +209,7 @@ Root
 
     #[test]
     fn ifs() {
-        let s = check(
+        check(
             "if true do false else true end",
             expect![[r##"
 Root

@@ -9,10 +9,16 @@ use corelib::prelude::Scalar;
 use corelib::tree_flat::node::NodeId;
 
 pub(crate) fn root(p: &mut Checker) {
-    let parent = p.cst.ast.root().id;
+    let mut parent = p.cst.ast.root().id;
 
     loop {
-        check(p, parent);
+        parent = match check(p, parent) {
+            Ok(id) => id,
+            Err(_id) => {
+                //p.eat_to_recover(parent);
+                parent
+            }
+        };
 
         if p.at_end() {
             break;
@@ -180,8 +186,6 @@ pub(crate) fn parse_if(
     let next = p.advance_and_next();
     let end_span = next.span(&p.cst.tokens);
     p.check.check(&next, Step::Kw(Kw::End), end_span)?;
-
-    //; let span = span + check.span() + if_true.span() + if_false.span();
 
     Ok(Ast::IfBlock {
         if_span,

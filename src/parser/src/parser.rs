@@ -106,11 +106,16 @@ impl<'a> Checker<'a> {
         parent: NodeId,
     ) -> Result<NodeId, NodeId> {
         match of {
-            Ok(ast) => return Ok(self.push(ast, parent)),
-            Err(err) => self.errors.push(err),
+            Ok(ast) => {
+                self.advance();
+                Ok(self.push(ast, parent))
+            }
+            Err(err) => {
+                self.advance();
+                self.errors.push(err);
+                Err(parent)
+            }
         }
-        self.advance();
-        Err(parent)
     }
 
     pub(crate) fn recover(&mut self) {}

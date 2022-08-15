@@ -9,7 +9,7 @@ use logos::Logos;
 pub struct Lexer<'a> {
     file_id: FileId,
     lexer: logos::Lexer<'a, Syntax>,
-    cursor: usize,
+    pub(crate) cursor: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -17,7 +17,7 @@ impl<'a> Lexer<'a> {
         Self {
             file_id,
             lexer: Syntax::lexer(input),
-            cursor: 0,
+            cursor: 1, //Because Root is 0!
         }
     }
 }
@@ -66,30 +66,46 @@ impl<'a> Iterator for Lexer<'a> {
 pub struct Scanner {
     file_id: FileId,
     tokens: Vec<Token>,
-    eof: Token,
+    pub(crate) root: Token,
+    pub(crate) eof: Token,
     cursor: usize,
 }
 
 impl Scanner {
     pub fn from(lexer: Lexer<'_>) -> Self {
         let file_id = lexer.file_id;
-        let mut tokens: Vec<_> = lexer.collect();
-        //tokens.reverse();
+        let mut tokens = Vec::with_capacity(lexer.cursor + 1);
+
+        let root = Token {
+            file_id,
+            id: TokenId(0),
+            kind: Syntax::Root,
+            range: Default::default(),
+            line: 0,
+            col: 0,
+        };
+
+        tokens.push(root);
+
+        tokens.extend(lexer);
 
         let eof = Token {
             file_id,
-            id: TokenId(tokens.len() + 1),
+            id: TokenId(tokens.len() + 1), //Add Root!
             kind: Syntax::Eof,
             range: Default::default(),
             line: 0,
             col: 0,
         };
 
+        tokens.push(eof);
+
         Self {
             file_id,
             tokens,
+            root,
             eof,
-            cursor: 0,
+            cursor: 1, //Start at 1, because 0 is root!
         }
     }
 

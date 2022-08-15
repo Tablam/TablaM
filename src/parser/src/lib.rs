@@ -2,6 +2,7 @@ pub mod ast;
 mod checklist;
 mod cst;
 mod errors;
+mod expr;
 mod files;
 mod lexer;
 mod parser;

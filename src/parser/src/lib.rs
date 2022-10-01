@@ -1,10 +1,10 @@
 pub mod ast;
 mod checklist;
 mod cst;
-mod errors;
+pub mod errors;
 mod expr;
-mod files;
+pub mod files;
 mod lexer;
-mod parser;
+pub mod parser;
 mod pratt;
 mod token;

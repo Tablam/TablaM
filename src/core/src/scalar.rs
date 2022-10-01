@@ -107,7 +107,7 @@ impl<'a> ScalarSlice<'a> {
 }
 
 /// The scalar values stored as [T;1] to make easier to see them as rows/slices
-//NOTE: This define a total order, so it matter what is the order of the enum!
+//NOTE: This defines a total order, so it matter what is the order of the enum!
 //Must match DataType
 //The overall sorting order is defined as:
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

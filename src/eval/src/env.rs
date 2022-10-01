@@ -1,7 +1,16 @@
-use parser::ast::Ast;
-use std::collections::HashMap;
+use crate::function::FunVm;
 
+#[derive(Debug)]
 pub struct Env {
-    vars: HashMap<String, Ast>,
+    pub(crate) fun: Vec<FunVm>,
     parent: Vec<Env>,
+}
+
+impl Env {
+    pub fn new() -> Self {
+        Self {
+            fun: vec![],
+            parent: vec![],
+        }
+    }
 }

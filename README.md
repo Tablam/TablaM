@@ -1,8 +1,6 @@
 # TablaM: A relational language #
 
-**IN EXPERIMENTAL STAGE. NOT USE FOR REAL WORK**
-
-**NOTE: This is a full-rewrite, old code is at the [experimental](https://github.com/Tablam/TablaM/tree/experimental) branch**
+**IN EXPERIMENTAL STAGE**
 
 ### Official Code Repository ###
 
@@ -29,7 +27,10 @@ I accept people without experience in language design, just good enough with Rus
 
 Give a ⭐️ if you like this project!.
 
-To help make this project a reality consider donate or sponsor with a subscription in [https://www.buymeacoffee.com/mamcx](https://www.buymeacoffee.com/mamcx).
+To help make this project a reality consider donate or sponsor with a subscription in:
+
+* [https://www.buymeacoffee.com/mamcx](https://www.buymeacoffee.com/mamcx).
+* [https://opencollective.com/tablam](https://opencollective.com/tablam)
 
 ## 📝 Architecture
 
@@ -50,5 +51,7 @@ This project is licenced as [APACHE](./LICENSE-APACHE).
 ### Who do I talk to? ###
 
 [https://www.elmalabarista.com](https://www.elmalabarista.com)
+
+**NOTE: This is a full-rewrite, old code is at the [experimental](https://github.com/Tablam/TablaM/tree/experimental) branch**
 
 <a href="https://vercel.com/?utm_source=tablam&utm_campaign=oss">![powered-by-vercel](/docs/static/img/powered-by-vercel.svg)</a>

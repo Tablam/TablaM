@@ -25,6 +25,16 @@ pub struct Parsed {
     pub errors: Vec<ErrorParser>,
 }
 
+impl Parsed {
+    pub fn errors(&self) -> Option<&[ErrorParser]> {
+        if self.errors.is_empty() {
+            None
+        } else {
+            Some(&self.errors)
+        }
+    }
+}
+
 pub(crate) struct Checker<'a> {
     pub(crate) check: CheckList,
     pub(crate) cst: Cst<'a>,

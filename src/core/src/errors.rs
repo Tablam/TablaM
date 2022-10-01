@@ -83,7 +83,9 @@ pub enum ErrorLoc {
 pub struct ErrorLang {
     kind: ErrorKind,
     msg: Option<String>,
+    /// Optional context for the Error: Which record was not found, what value was invalid, etc.
     context: Option<Vec<ErrorCtx>>,
+    /// Optional location of the Error in the source code
     source: Option<Vec<ErrorLoc>>,
 }
 

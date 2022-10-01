@@ -13,3 +13,6 @@ edition = "2021"
 [dependencies]
 corelib = { path = "../core" , package="tablam-core" }
 parser = { path = "../parser" , package="tablam-parser" }
+
+[dev-dependencies]
+expect-test = "1.3.0"

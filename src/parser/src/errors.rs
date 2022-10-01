@@ -12,6 +12,17 @@ pub enum ErrorParser {
     Incomplete { err: CheckError, missing: Vec<Step> },
 }
 
+impl ErrorParser {
+    pub fn span(&self) -> &Span {
+        match self {
+            ErrorParser::BoolExpr { span, .. } => span,
+            ErrorParser::NoExpr { span, .. } => span,
+            ErrorParser::ScalarParse { span, .. } => span,
+            ErrorParser::Incomplete { err, .. } => &err.span,
+        }
+    }
+}
+
 impl From<CheckError> for ErrorParser {
     fn from(err: CheckError) -> Self {
         let missing = err.expect.into_iter().collect();

@@ -1,13 +1,122 @@
+use crate::code::{Code, CodePrinter};
+use crate::env::Env;
+use crate::errors::ErrorCode;
 use corelib::prelude::Span;
+use corelib::tree_flat::prelude::Tree;
 use parser::ast::Ast;
+use parser::parser::{Parsed, Parser};
 
-pub struct Program {}
+#[derive(Debug)]
+pub struct Program {
+    code: Tree<Code>,
+    env: Env,
+}
 
 impl Program {
-    pub fn new(_source: &str) -> Self {
-        Program {}
+    pub fn new() -> Self {
+        Program {
+            code: Tree::new(Code::Eof),
+            env: Env::new(),
+        }
     }
-    pub fn execute_str(&mut self, _source: &str) -> Ast {
-        Ast::Eof(Span::from(token_eof()))
+
+    pub fn from_src(source: &str) -> Self {
+        let mut p = Self::new();
+
+        match p.compile_from_src(source) {
+            Ok(()) => p,
+            Err(error) => {
+                let span = error.span().clone();
+                p.code = Tree::new(Code::Halt { error, span });
+                p
+            }
+        }
+    }
+
+    pub fn compile(&mut self, parsed: &Parsed) -> Result<(), ErrorCode> {
+        // Only compile valid code!
+        if let Some(err) = parsed.errors() {
+            return Err(err.into());
+        }
+
+        let mut code = Tree::with_capacity(Code::Root, parsed.ast.len());
+        let mut parent = code.root().id;
+        // Moving forward this MUST be correct code!
+        for node in parsed.ast.iter() {
+            let c = match node.data {
+                Ast::Root(_) => continue,
+                Ast::Scalar { val, span } => Code::Scalar {
+                    val: val.clone(),
+                    span: *span,
+                },
+                Ast::IfBlock {
+                    if_span,
+                    do_span,
+                    else_span,
+                    end_span,
+                    check,
+                    if_true,
+                    if_false,
+                } => {
+                    todo!()
+                }
+                Ast::Bool { val, span } => {
+                    todo!()
+                }
+                Ast::Cmp { op, span } => {
+                    todo!()
+                }
+                Ast::Pass(_) => continue,
+                Ast::Eof(_) => Code::Eof,
+            };
+
+            let mut node = code.node_mut(parent).expect("Invalid AST id");
+            parent = node.append(c);
+        }
+
+        self.code = code;
+        Ok(())
+    }
+
+    pub fn compile_from_src(&mut self, source: &str) -> Result<(), ErrorCode> {
+        let parse = Parser::from_src(source);
+        let result = parse.parse();
+        self.compile(&result)
+    }
+
+    pub fn eval(&self) -> Code {
+        for node in self.code.iter() {}
+
+        Code::Eof
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn check(source: &str, expected_tree: expect_test::Expect) {
+    let parse = Program::from_src(source);
+
+    let result = parse.eval();
+
+    let printer = CodePrinter {
+        parsed: &Tree::new(result),
+        src: source,
+    };
+    println!("{}", &printer);
+    expected_tree.assert_eq(&printer.to_string());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use expect_test::expect;
+
+    #[test]
+    fn eval_nothing() {
+        check(
+            "",
+            expect![[r##"
+Root
+"##]],
+        );
     }
 }

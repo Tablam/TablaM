@@ -982,6 +982,7 @@ dependencies = [
 name = "tablam-eval"
 version = "0.1.0"
 dependencies = [
+ "expect-test",
  "tablam-core",
  "tablam-parser",
 ]

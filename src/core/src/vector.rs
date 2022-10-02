@@ -46,15 +46,15 @@ impl std::fmt::Display for VecPos {
 
 /// The internal data for the [Vector]. We specialize for basic types only
 /// and let [Scalar] handle the other cases.
-//NOTE: This define a total order, so it matter what is the order of the enum!
+//NOTE: This defines a total order, so it matter what is the order of the enum!
 //Must match DataType/Scalar
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Array {
-    Bool(bv::BitVec),
+    Bool(Vec<bool>),
     //Numeric
     I64(Vec<i64>),
     Decimal(Vec<Decimal>),
-    F64(Vec<R64>),
+    F64(Vec<F64>),
     //Date
     Date(DateKind, Vec<DateT>),
     //Strings

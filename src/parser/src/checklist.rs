@@ -24,6 +24,7 @@ pub enum Kw {
 pub enum Step {
     Bool,
     I64,
+    Dec,
     Expr,
     ExprIncomplete,
     Ident,

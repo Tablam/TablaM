@@ -1,7 +1,7 @@
 use corelib::prelude::Span;
 use parser::errors::ErrorParser;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrorCode {
     Parser {
         errors: Vec<ErrorParser>,

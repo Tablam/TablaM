@@ -22,7 +22,7 @@ pub fn str(x: &str) -> Scalar {
     x.into()
 }
 
-pub fn float(x: R64) -> Scalar {
+pub fn float(x: F64) -> Scalar {
     x.into()
 }
 

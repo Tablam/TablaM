@@ -11,7 +11,7 @@ pub type FileId = tree_flat::node::NodeId;
 pub trait Value: Clone + PartialEq + PartialOrd + Eq + Ord + Hash {}
 impl<T: Clone + PartialEq + PartialOrd + Eq + Ord + Hash> Value for T {}
 
-//NOTE: This define a total order, so it matter what is the order of the enum!
+//NOTE: This defines a total order, so it matter what is the order of the enum!
 //Must match Scalar
 //The overall sorting order is defined as:
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -35,4 +35,11 @@ pub enum DataType {
 pub trait NativeKind {
     fn kind() -> DataType;
     fn num_rows() -> usize;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Arity {
+    Scalar,
+    Vector,
+    Table,
 }

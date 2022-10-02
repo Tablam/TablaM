@@ -11,7 +11,6 @@ categories = ["interpreter", "language", "relational", "tablam"]
 edition = "2021"
 
 [dependencies]
-bitvec = "1.0.1"
 chrono = { version = "0.4.19", features = ["default"] }
 decorum = { version = "0.3.1", features = ["std"] }
 derive_more = { version = "0.99.17", features = ["from", "display", "from_str"] }

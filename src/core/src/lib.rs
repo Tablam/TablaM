@@ -19,10 +19,9 @@ pub mod utils;
 pub mod vector;
 
 pub mod extra_types {
-    pub use bitvec::prelude as bv;
     pub use chrono;
     pub use decorum;
-    pub use decorum::R64;
+    pub use decorum::Total;
     pub use rust_decimal::Decimal;
 }
 
@@ -31,7 +30,7 @@ pub mod prelude {
     pub use crate::errors::{Error, ErrorLang, ResultT, Span};
     pub use crate::extra_types::*;
     pub use crate::relation::Rel;
-    pub use crate::scalar::{DateKind, DateT, Scalar, ScalarSlice};
+    pub use crate::scalar::{DateKind, DateT, Scalar, ScalarSlice, F64};
     pub use crate::schema::*;
     pub use crate::types::*;
     pub use crate::utils::*;

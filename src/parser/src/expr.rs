@@ -5,7 +5,7 @@ use crate::errors;
 use crate::errors::{not_a_expr, ErrorParser};
 use crate::parser::Checker;
 use crate::token::{Syntax, Token};
-use corelib::prelude::Scalar;
+use corelib::prelude::{Decimal, Scalar, F64};
 use corelib::tree_flat::node::NodeId;
 
 pub(crate) fn root(p: &mut Checker) {
@@ -102,14 +102,36 @@ fn parse_bool(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     Ok((Ast::scalar(x.into(), t), Step::Bool))
 }
 
+fn clean_num(code: &str) -> String {
+    code.replace('_', "")
+}
+
+fn clean_floats(code: &str) -> String {
+    if code.ends_with('d') || code.ends_with('f') {
+        clean_num(&code[..code.len() - 1])
+    } else {
+        clean_num(code)
+    }
+}
+
 fn parse_i64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = _parse_scalar::<i64>(code, t)?;
+    let x = _parse_scalar::<i64>(&clean_num(code), t)?;
     Ok((Ast::scalar(x.into(), t), Step::I64))
+}
+
+fn parse_d64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let x = _parse_scalar::<Decimal>(&clean_floats(code), t)?;
+    Ok((Ast::scalar(x.into(), t), Step::Dec))
+}
+
+fn parse_f64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let x = _parse_scalar::<F64>(&clean_floats(code), t)?;
+    Ok((Ast::scalar(x.into(), t), Step::Dec))
 }
 
 pub(crate) fn parse_scalar(
     p: &mut Checker,
-    parent: NodeId,
+    _parent: NodeId,
     node: &CstNode,
 ) -> Result<Ast, ErrorParser> {
     let t = p.token(node.token_id());
@@ -119,7 +141,9 @@ pub(crate) fn parse_scalar(
     let (ast, step) = match t.kind {
         Syntax::Bool => parse_bool(code, t)?,
         Syntax::Integer => parse_i64(code, t)?,
-        _ => unimplemented!(),
+        Syntax::Decimal => parse_d64(code, t)?,
+        Syntax::Float => parse_f64(code, t)?,
+        x => unimplemented!("{:?}", x),
     };
     p.check.check(node, step, span)?;
     Ok(ast)

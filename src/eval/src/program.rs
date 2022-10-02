@@ -1,7 +1,6 @@
 use crate::code::{Code, CodePrinter};
 use crate::env::Env;
 use crate::errors::ErrorCode;
-use corelib::prelude::Span;
 use corelib::tree_flat::prelude::Tree;
 use parser::ast::Ast;
 use parser::parser::{Parsed, Parser};
@@ -85,9 +84,23 @@ impl Program {
     }
 
     pub fn eval(&self) -> Code {
-        for node in self.code.iter() {}
+        let mut result = Code::Eof;
+        for node in self.code.into_iter() {
+            result = match node.data {
+                Code::Root => Code::Root,
+                Code::Scalar { .. } => node.data.clone(),
+                Code::If { code, .. } => {
+                    todo!()
+                }
+                Code::Halt { error, .. } => {
+                    result = node.data.clone();
+                    break;
+                }
+                Code::Eof => Code::Eof,
+            };
+        }
 
-        Code::Eof
+        result
     }
 }
 
@@ -99,7 +112,6 @@ pub(crate) fn check(source: &str, expected_tree: expect_test::Expect) {
 
     let printer = CodePrinter {
         parsed: &Tree::new(result),
-        src: source,
     };
     println!("{}", &printer);
     expected_tree.assert_eq(&printer.to_string());
@@ -116,6 +128,44 @@ mod tests {
             "",
             expect![[r##"
 Root
+"##]],
+        );
+    }
+
+    #[test]
+    fn eval_scalar() {
+        check(
+            "1",
+            expect![[r##"
+1
+"##]],
+        );
+
+        check(
+            "true",
+            expect![[r##"
+true
+"##]],
+        );
+
+        check(
+            "123_456",
+            expect![[r##"
+123456
+"##]],
+        );
+
+        check(
+            "1.1",
+            expect![[r##"
+1.1d
+"##]],
+        );
+
+        check(
+            "1.1f",
+            expect![[r##"
+1.1f
 "##]],
         );
     }

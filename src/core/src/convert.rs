@@ -1,6 +1,5 @@
 /// Macros and Utilities for making conversions from/to TablaM types
 use crate::prelude::*;
-use crate::scalar::{Bool, BoolBit};
 
 macro_rules! convert {
     ($kind:ident, $bound:path) => {
@@ -131,19 +130,19 @@ macro_rules! kind_native {
 kind_native!(i64, I64, 1);
 kind_native!(bool, Bool, 1);
 kind_native!(Decimal, Decimal, 1);
-kind_native!(R64, F64, 1);
+kind_native!(F64, F64, 1);
 kind_native!(f64, F64, 1);
 kind_native!(String, Utf8, 1);
 
 impl From<&[bool]> for Array {
     fn from(x: &[bool]) -> Self {
-        Array::Bool(x.iter().copied().collect())
+        Array::Bool(x.into())
     }
 }
 
 impl From<bool> for Scalar {
     fn from(x: bool) -> Self {
-        Scalar::Bool(Bool(BoolBit::new([x as usize])))
+        Scalar::Bool([x])
     }
 }
 
@@ -167,8 +166,8 @@ impl From<&[&str]> for Array {
 
 convert!(i64, Scalar::I64);
 convert_vec!(i64, Array::I64);
-convert!(R64, Scalar::F64);
-convert_vec!(R64, Array::F64);
+convert!(F64, Scalar::F64);
+convert_vec!(F64, Array::F64);
 convert!(Decimal, Scalar::Decimal);
 convert_vec!(Decimal, Array::Decimal);
 convert!(String, Scalar::Utf8);

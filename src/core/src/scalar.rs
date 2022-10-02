@@ -3,11 +3,15 @@
 //! A [Scalar] in TablaM can be considered a relation of exactly one row, one column, one value; so
 //! it means that we can operate on it with all the relational/array operators.
 
+use decorum::Total;
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
 
 use crate::prelude::*;
+
+/// The total ordered [f64]
+pub type F64 = Total<f64>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DateKind {
@@ -16,37 +20,22 @@ pub enum DateKind {
     DateTime,
 }
 
-/// An unified Date structure that collapse the different [DateKind] in a single value
+/// A unified Date structure that collapse the different [DateKind] in a single value
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DateT {
     pub kind: DateKind,
     pub date: DateTime,
 }
 
-pub type BoolBit = bv::BitArr!(for 1, in usize, bv::Lsb0);
-
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Bool(pub BoolBit);
-
-impl fmt::Debug for Bool {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.0 == BoolBit::new([true as usize]) {
-            write!(f, "true")
-        } else {
-            write!(f, "false")
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ScalarSlice<'a> {
     /// The **BOTTOM** value
     Unit(&'a [()]),
-    Bool(&'a bv::BitSlice),
+    Bool(&'a [bool]),
     //Numeric
     I64(&'a [i64]),
     Decimal(&'a [Decimal]),
-    F64(&'a [R64]),
+    F64(&'a [F64]),
     //Date
     Date(DateKind, &'a [DateT]),
     //Strings
@@ -69,6 +58,14 @@ impl<'a> ScalarSlice<'a> {
             Self::Utf8(x) => x.len(),
             Self::Scalar(x) => x.len(),
             Self::Top(x) => x.len(),
+        }
+    }
+
+    pub fn arity(&self) -> Arity {
+        match self.len() {
+            0 => Arity::Scalar,
+            1 => Arity::Scalar,
+            _ => Arity::Vector,
         }
     }
 
@@ -114,11 +111,11 @@ impl<'a> ScalarSlice<'a> {
 pub enum Scalar {
     /// The **BOTTOM** value
     Unit([(); 1]),
-    Bool(Bool),
+    Bool([bool; 1]),
     //Numeric
     I64([i64; 1]),
     Decimal([Decimal; 1]),
-    F64([R64; 1]),
+    F64([F64; 1]),
     //Date
     Date([DateT; 1]),
     //Strings
@@ -135,7 +132,7 @@ impl Scalar {
     pub fn slice(&self) -> ScalarSlice<'_> {
         match self {
             Self::Unit(x) => ScalarSlice::Unit(x),
-            Self::Bool(x) => ScalarSlice::Bool(x.0.as_bitslice()),
+            Self::Bool(x) => ScalarSlice::Bool(x),
             Self::I64(x) => ScalarSlice::I64(x),
             Self::Decimal(x) => ScalarSlice::Decimal(x),
             Self::F64(x) => ScalarSlice::F64(x),
@@ -156,5 +153,22 @@ impl Rel for Scalar {
     fn schema(&self) -> SchemaInfo {
         let kind = self.slice().kind();
         SchemaInfo::scalar(kind)
+    }
+}
+
+impl fmt::Display for Scalar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Scalar::Unit(_x) => todo!(),
+            Scalar::Bool(x) => format_slice_scalar(x, f),
+            Scalar::I64(x) => format_slice_scalar(x, f),
+            Scalar::Decimal(x) => format_slice_scalar_postfix(x, "d", f),
+            Scalar::F64(x) => format_slice_scalar_postfix(x, "f", f),
+            Scalar::Date(_) => {
+                todo!()
+            }
+            Scalar::Utf8(x) => format_slice_scalar(x, f),
+            Scalar::Top(_x) => todo!(),
+        }
     }
 }

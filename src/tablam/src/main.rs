@@ -7,8 +7,7 @@ use rustyline::Editor;
 use seahorse::{App, Command, Context};
 use syntect::easy::HighlightLines;
 
-use corelib::prelude::VERSION;
-use eval::ast::Expr;
+use corelib::prelude::{Scalar, VERSION};
 use eval::program::Program;
 
 fn print_welcome() {
@@ -23,6 +22,23 @@ fn print_welcome() {
     );
 }
 
+enum Execute {
+    Pass,
+    Halt((ErrorCode, Span)),
+    Value(Scalar),
+    Eof,
+}
+
+fn run_code(p: &Program) -> Execute {
+    match p.eval() {
+        Code::Root => Execute::Pass,
+        Code::Scalar { val, .. } => Execute::Value(val),
+        Code::If { .. } => Execute::Pass,
+        Code::Halt { error, span } => Execute::Halt((error, span)),
+        Code::Eof => Execute::Eof,
+    }
+}
+
 fn run_file(c: &Context) {
     if let Some(f) = c.args.first() {
         let path = PathBuf::from(f);
@@ -31,14 +47,12 @@ fn run_file(c: &Context) {
                 //TODO: Fill this
                 //let code = read_file_to_string(&mut f).expect("Fail to read file");
                 let code = String::new();
-                let mut program = Program::new(&code);
-                match program.execute_str(code.as_str()) {
-                    Ok(expr) => match expr {
-                        Expr::Pass(_) => (),
-                        Expr::Eof(_) => (),
-                        expr => println!("{:?}", expr),
-                    },
-                    Err(err) => eprintln!("{:?}", err),
+                let mut program = Program::from_src(&code);
+                match run_code(&program) {
+                    Execute::Pass => {}
+                    Execute::Halt((err, span)) => eprintln!("{:?}", err),
+                    Execute::Value(_) => {}
+                    Execute::Eof => {}
                 }
             }
             Err(err) => eprintln!("{}", err),
@@ -48,6 +62,9 @@ fn run_file(c: &Context) {
     }
 }
 
+use corelib::errors::Span;
+use eval::code::Code;
+use eval::errors::ErrorCode;
 use syntect::highlighting::{Color, ThemeSet};
 use syntect::html::highlighted_html_for_file;
 use syntect::parsing::SyntaxSet;
@@ -69,7 +86,7 @@ fn run_repl(c: &Context) {
         println!("No previous history.");
     }
     print_welcome();
-    let mut program = Program::new("");
+    let mut program = Program::new();
 
     loop {
         let readline = rl.readline("\x1b[1;32m>\x1b[0m ");
@@ -81,13 +98,14 @@ fn run_repl(c: &Context) {
                 line => {
                     rl.add_history_entry(line);
                     //dbg!(&line);
-                    match program.execute_str(line) {
-                        Ok(expr) => match expr {
-                            Expr::Pass(_) => continue,
-                            Expr::Eof(_) => {
-                                break;
+                    match program.append_from_src(line) {
+                        Ok(_) => match run_code(&program) {
+                            Execute::Pass => continue,
+                            Execute::Halt((err, span)) => eprintln!("{:?}", err),
+                            Execute::Value(x) => {
+                                println!("{}", x)
                             }
-                            expr => println!("{:?}", expr),
+                            Execute::Eof => break,
                         },
                         Err(err) => eprintln!("Error: {:?}", err),
                     }

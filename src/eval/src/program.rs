@@ -83,6 +83,12 @@ impl Program {
         self.compile(&result)
     }
 
+    pub fn append_from_src(&mut self, source: &str) -> Result<(), ErrorCode> {
+        let parse = Parser::from_src(source);
+        let result = parse.parse();
+        self.compile(&result)
+    }
+
     pub fn eval(&self) -> Code {
         let mut result = Code::Eof;
         for node in self.code.into_iter() {

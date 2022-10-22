@@ -23,7 +23,7 @@ impl From<&[ErrorParser]> for ErrorCode {
 
         ErrorCode::Parser {
             errors: x.into(),
-            span: span.clone(),
+            span: *span,
         }
     }
 }

@@ -43,7 +43,7 @@ fn fmt_node(node: &Code, level: usize, f: &mut fmt::Formatter<'_>) -> fmt::Resul
     match node {
         Code::Root => write!(f, "Root")?,
         Code::Scalar { val, .. } => fmt_t(f, level, &val)?,
-        Code::If { code, span } => {
+        Code::If { code: _, span } => {
             fmt_plain(f, level, &"if", span)?;
         }
         Code::Halt { error, span } => {

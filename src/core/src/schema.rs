@@ -5,7 +5,6 @@
 
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 
 use crate::prelude::*;
 
@@ -81,6 +80,10 @@ impl Schema {
     pub fn len(&self) -> usize {
         self.fields.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
 }
 
 impl PartialEq for Schema {
@@ -104,54 +107,5 @@ impl Hash for Schema {
         let mut a = self.fields.clone();
         a.sort();
         a.hash(state);
-    }
-}
-
-pub enum SchemaInfo {
-    Scalar(DataType),
-    Vec(Rc<Schema>),
-}
-
-impl SchemaInfo {
-    pub(crate) fn scalar(of: DataType) -> Self {
-        Self::Scalar(of)
-    }
-
-    pub(crate) fn vec(of: &Rc<Schema>) -> Self {
-        Self::Vec(of.clone())
-    }
-
-    fn schema(&self) -> Schema {
-        unimplemented!()
-    }
-
-    fn kind(&self) -> DataType {
-        unimplemented!()
-    }
-
-    fn len(&self) -> usize {
-        unimplemented!()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    fn get(&self, _pos: usize) -> Option<&FieldSlice<'_>> {
-        unimplemented!()
-    }
-
-    fn named(&self, _name: &str) -> Option<&FieldSlice<'_>> {
-        unimplemented!()
-    }
-    fn pk(&self) -> Option<usize> {
-        unimplemented!()
-    }
-    fn pk_field(&self) -> Option<&FieldSlice<'_>> {
-        if let Some(pos) = self.pk() {
-            self.get(pos)
-        } else {
-            None
-        }
     }
 }

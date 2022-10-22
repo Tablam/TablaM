@@ -9,7 +9,6 @@
 //!
 use crate::prelude::*;
 use crate::scalar::ScalarSlice;
-use std::rc::Rc;
 
 /// A struct used for indexing into a [Vector].
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
@@ -81,18 +80,14 @@ impl Array {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Vector {
     /// An user-assigned schema
-    pub schema: Rc<Schema>,
+    pub schema: Schema,
     pub rows: usize,
     pub data: Array,
 }
 
 impl Vector {
     pub fn new(schema: Schema, rows: usize, data: Array) -> Self {
-        Self {
-            rows,
-            data,
-            schema: Rc::new(schema),
-        }
+        Self { rows, data, schema }
     }
 
     pub fn row(&self, row: usize) -> ScalarSlice<'_> {
@@ -105,8 +100,8 @@ impl Rel for Vector {
         "Vector"
     }
 
-    fn schema(&self) -> SchemaInfo {
-        SchemaInfo::vec(&self.schema)
+    fn schema(&self) -> Schema {
+        self.schema.clone()
     }
 }
 

@@ -25,7 +25,7 @@ impl Program {
         match p.compile_from_src(source) {
             Ok(()) => p,
             Err(error) => {
-                let span = error.span().clone();
+                let span = *error.span();
                 p.code = Tree::new(Code::Halt { error, span });
                 p
             }

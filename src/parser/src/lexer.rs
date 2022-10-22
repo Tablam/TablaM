@@ -38,8 +38,8 @@ impl<'a> Iterator for Lexer<'a> {
         let span = self.lexer.span();
 
         let extra = self.lexer.extras;
-        let line = (extra.current_line as u32).into();
-        let col = ((span.end - extra.current_initial_column) as u32).into();
+        let line = extra.current_line as u32;
+        let col = (span.end - extra.current_initial_column) as u32;
 
         let range = {
             let StdRange { start, end } = span;

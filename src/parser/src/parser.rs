@@ -59,7 +59,7 @@ impl<'a> Checker<'a> {
 
     pub(crate) fn at_end(&self) -> bool {
         //NOTE: The last token is always EOF!
-        !(self.cursor < self.ast.len())
+        self.cursor >= self.ast.len()
     }
 
     pub(crate) fn new_task(&mut self, task: Task, t: TokenId) {
@@ -91,13 +91,13 @@ impl<'a> Checker<'a> {
 
     pub(crate) fn next(&mut self) -> CstNode {
         self.cst()
-            .map(|x| x.data.clone())
-            .unwrap_or(CstNode::Eof(token_eof().id))
+            .map(|x| *x.data)
+            .unwrap_or_else(|| CstNode::Eof(token_eof().id))
     }
 
     pub(crate) fn peek(&mut self) -> CstNode {
         self.cst_peek()
-            .map(|x| x.data.clone())
+            .map(|x| *x.data)
             .unwrap_or(CstNode::Eof(token_eof().id))
     }
 
@@ -228,15 +228,15 @@ fn fmt_node(node: &Ast, level: usize, f: &mut fmt::Formatter<'_>) -> fmt::Result
         } => {
             fmt_plain(f, level, &"if", if_span)?;
             writeln!(f)?;
-            fmt_bool_expr(&check, kind, level + 1, f)?;
+            fmt_bool_expr(check, kind, level + 1, f)?;
             writeln!(f)?;
             fmt_plain(f, level, &"do", do_span)?;
             writeln!(f)?;
-            fmt_node(&if_true, level + 1, f)?;
+            fmt_node(if_true, level + 1, f)?;
             writeln!(f)?;
             fmt_plain(f, level, &"else", else_span)?;
             writeln!(f)?;
-            fmt_node(&if_false, level + 1, f)?;
+            fmt_node(if_false, level + 1, f)?;
             writeln!(f)?;
             fmt_plain(f, level, &"end --if", end_span)?;
         }

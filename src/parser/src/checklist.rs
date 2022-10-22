@@ -4,13 +4,13 @@ use corelib::prelude::Span;
 use corelib::types::DataType;
 use std::cmp::min;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
     Finished,
     Continue,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kw {
     Let,
     Var,
@@ -120,9 +120,9 @@ impl CheckList {
     }
 
     pub fn span(&self) -> Span {
-        let mut first = self.span.first().unwrap().clone();
+        let mut first = *self.span.first().unwrap();
         for s in self.span.iter().skip(1) {
-            first.range.0 = first.range.0 + s.range.0.len();
+            first.range.0 += s.range.0.len();
         }
 
         first

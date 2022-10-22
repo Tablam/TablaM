@@ -150,9 +150,9 @@ impl Rel for Scalar {
         "Scalar"
     }
 
-    fn schema(&self) -> SchemaInfo {
+    fn schema(&self) -> Schema {
         let kind = self.slice().kind();
-        SchemaInfo::scalar(kind)
+        Schema::new_scalar(kind)
     }
 }
 

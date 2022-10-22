@@ -350,6 +350,7 @@ pub(crate) fn token_eof() -> Token {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn token_test() -> Token {
     Token {
         file_id: FileId::from_index(0),

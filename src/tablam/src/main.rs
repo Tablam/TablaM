@@ -65,8 +65,7 @@ fn run_file(c: &Context) {
 use corelib::errors::Span;
 use eval::code::Code;
 use eval::errors::ErrorCode;
-use syntect::highlighting::{Color, ThemeSet};
-use syntect::html::highlighted_html_for_file;
+use syntect::highlighting::ThemeSet;
 use syntect::parsing::SyntaxSet;
 
 fn run_repl(c: &Context) {

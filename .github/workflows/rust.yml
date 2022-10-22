@@ -21,10 +21,10 @@ jobs:
     name: Check
     steps:
       - uses: actions/checkout@v3
-      - name: Check Clippy
-        run: cargo clippy -- -D warnings
-      - name: Check Format
-        run: cargo fmt --all -- --check
+#      - name: Check Clippy
+#        run: cargo clippy -- -D warnings
+#      - name: Check Format
+#        run: cargo fmt --all -- --check
       - name: Run tests
         run: cargo test --all --verbose
 

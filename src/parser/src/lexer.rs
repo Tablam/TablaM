@@ -124,10 +124,6 @@ impl Scanner {
         *t
     }
 
-    pub(crate) fn len(&self) -> usize {
-        self.tokens.len()
-    }
-
     pub(crate) fn get(&self, id: TokenId) -> &Token {
         if let Some(t) = self.tokens.get(id.0) {
             t

@@ -1,4 +1,4 @@
-use crate::code::{Code, CodePrinter};
+use crate::code::Code;
 use crate::env::Env;
 use crate::errors::ErrorCode;
 use corelib::tree_flat::prelude::Tree;
@@ -110,23 +110,29 @@ impl Program {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn check(source: &str, expected_tree: expect_test::Expect) {
-    let parse = Program::from_src(source);
-
-    let result = parse.eval();
-
-    let printer = CodePrinter {
-        parsed: &Tree::new(result),
-    };
-    println!("{}", &printer);
-    expected_tree.assert_eq(&printer.to_string());
+impl Default for Program {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::code::CodePrinter;
     use expect_test::expect;
+
+    pub(crate) fn check(source: &str, expected_tree: expect_test::Expect) {
+        let parse = Program::from_src(source);
+
+        let result = parse.eval();
+
+        let printer = CodePrinter {
+            parsed: &Tree::new(result),
+        };
+        println!("{}", &printer);
+        expected_tree.assert_eq(&printer.to_string());
+    }
 
     #[test]
     fn eval_nothing() {

@@ -16,7 +16,6 @@ const RECOVERY_SET: [Syntax; 2] = [Syntax::LetKw, Syntax::VarKw];
 
 pub struct ParsedPrinter<'a> {
     parsed: &'a Parsed,
-    src: &'a str,
 }
 
 #[derive(Debug)]
@@ -98,7 +97,7 @@ impl<'a> Checker<'a> {
     pub(crate) fn peek(&mut self) -> CstNode {
         self.cst_peek()
             .map(|x| *x.data)
-            .unwrap_or(CstNode::Eof(token_eof().id))
+            .unwrap_or_else(|| CstNode::Eof(token_eof().id))
     }
 
     pub(crate) fn advance(&mut self) {
@@ -266,10 +265,7 @@ pub(crate) fn check(source: &str, expected_tree: expect_test::Expect) {
     let parse = Parser::from_src(source);
     let result = parse.parse();
 
-    let printer = ParsedPrinter {
-        parsed: &result,
-        src: source,
-    };
+    let printer = ParsedPrinter { parsed: &result };
     println!("{}", &printer);
     expected_tree.assert_eq(&printer.to_string());
 }
@@ -307,7 +303,7 @@ Root
             expect![[r##"
 Root
   0..2: "if"
-    @@ 3..7: Bool(true)
+    @@ 3..7: Bool([true])
   8..10: "do"
    T: I64 @@ 11..12: I64([1])
   13..17: "else"

@@ -122,7 +122,7 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
 
     loop {
         let next = lexer.peek();
-        let mut is_lhs = true;
+        let is_lhs = true;
 
         if next.kind == Syntax::Eof || next.kind.is() == SyntaxKind::Close {
             break;
@@ -131,7 +131,6 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
         let op = next.kind;
 
         if let Some((l_bp, ())) = postfix_binding_power(op) {
-            is_lhs = false;
             if l_bp < min_bp {
                 break;
             }
@@ -148,7 +147,6 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
         }
 
         if let Some((l_bp, r_bp)) = infix_binding_power(op) {
-            is_lhs = false;
             if l_bp < min_bp {
                 break;
             }

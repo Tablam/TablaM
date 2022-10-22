@@ -20,7 +20,7 @@ pub enum Kw {
     End,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
     Bool,
     I64,
@@ -85,7 +85,7 @@ pub struct CheckError {
     pub(crate) expect: Option<Step>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CheckList {
     pub task: Task,
     pub pos: usize,

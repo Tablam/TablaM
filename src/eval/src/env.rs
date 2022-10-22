@@ -1,4 +1,5 @@
 use crate::function::FunVm;
+use crate::program::Program;
 
 #[derive(Debug)]
 pub struct Env {
@@ -12,5 +13,11 @@ impl Env {
             fun: vec![],
             parent: vec![],
         }
+    }
+}
+
+impl Default for Env {
+    fn default() -> Self {
+        Self::new()
     }
 }

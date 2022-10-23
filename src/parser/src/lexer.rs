@@ -137,6 +137,16 @@ impl Scanner {
 mod tests {
     use super::*;
 
+    fn check_trivia(input: &str, kind: Syntax) {
+        assert_eq!(kind.is(), SyntaxKind::Trivia);
+
+        let mut lexer = Lexer::new(0.into(), input);
+
+        let token = lexer.next();
+        dbg!(&token);
+        assert!(token.is_none());
+    }
+
     fn check(input: &str, kind: Syntax) {
         let mut lexer = Lexer::new(0.into(), input);
 
@@ -178,6 +188,11 @@ mod tests {
         check("'a '", Syntax::String);
         check("\"a\n\"", Syntax::String);
         check("'a\n'", Syntax::String);
+    }
+
+    #[test]
+    fn lex_comment() {
+        check_trivia("-- Test", Syntax::Comment);
     }
 
     #[test]

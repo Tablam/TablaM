@@ -55,7 +55,7 @@ pub enum Syntax {
     Cr,
     #[regex(r"[ \t\f]+")]
     Whitespace,
-    #[regex("#.*")]
+    #[regex(r"--.*")]
     Comment,
 
     //literals

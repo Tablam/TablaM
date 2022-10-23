@@ -36,17 +36,17 @@ To help make this project a reality consider donate or sponsor with a subscripti
 
 Want to learn how is the code organized?
 
-Take a look at (./ARCHITECTURE.md).
+Take a look at [ARCHITECTURE](./ARCHITECTURE.md).
 
 ## 📝 Research
 
 Want to learn the fundamentals/ideas that are the base of this language?
 
-Take a look at (./RESEARCH.md).
+Take a look at [RESEARCH](./RESEARCH.md).
 
 ## 📝 License
 
-This project is licenced as [APACHE](./LICENSE-APACHE).
+This project is licenced as [MPL 2.0](./LICENSE).
 
 ### Who do I talk to? ###
 

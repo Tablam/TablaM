@@ -180,5 +180,13 @@ true
 1.1f
 "##]],
         );
+
+        check(
+            "'hello\nworld'",
+            expect![[r##"
+"hello
+world"
+"##]],
+        );
     }
 }

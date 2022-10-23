@@ -106,6 +106,14 @@ fn clean_num(code: &str) -> String {
     code.replace('_', "")
 }
 
+fn clean_str(code: &str) -> String {
+    format!(
+        "\"{}\"",
+        code.trim_start_matches(|x| x == '\'' || x == '"')
+            .trim_end_matches(|x| x == '\'' || x == '"')
+    )
+}
+
 fn clean_floats(code: &str) -> String {
     if code.ends_with('d') || code.ends_with('f') {
         clean_num(&code[..code.len() - 1])
@@ -129,6 +137,11 @@ fn parse_f64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     Ok((Ast::scalar(x.into(), t), Step::Dec))
 }
 
+fn parse_str(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let x = _parse_scalar::<String>(&clean_str(code), t)?;
+    Ok((Ast::scalar(x.into(), t), Step::Str))
+}
+
 pub(crate) fn parse_scalar(
     p: &mut Checker,
     _parent: NodeId,
@@ -143,6 +156,7 @@ pub(crate) fn parse_scalar(
         Syntax::Integer => parse_i64(code, t)?,
         Syntax::Decimal => parse_d64(code, t)?,
         Syntax::Float => parse_f64(code, t)?,
+        Syntax::String => parse_str(code, t)?,
         x => unimplemented!("{:?}", x),
     };
     p.check.check(node, step, span)?;

@@ -169,6 +169,18 @@ mod tests {
     }
 
     #[test]
+    fn lex_strings() {
+        check("''", Syntax::String);
+        check("\"\"", Syntax::String);
+        check("\"a\"", Syntax::String);
+        check("'a'", Syntax::String);
+        check("\"a \"", Syntax::String);
+        check("'a '", Syntax::String);
+        check("\"a\n\"", Syntax::String);
+        check("'a\n'", Syntax::String);
+    }
+
+    #[test]
     fn lex_kw() {
         check("let", Syntax::LetKw);
         check("var", Syntax::VarKw);

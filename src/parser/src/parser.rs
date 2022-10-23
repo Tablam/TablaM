@@ -297,6 +297,25 @@ Root
     }
 
     #[test]
+    fn parse_str() {
+        check(
+            "'hello\nworld'",
+            expect![[r#"
+                Root
+                  T: Utf8 @@ 0..13: Utf8(["\"hello\nworld\""])
+            "#]],
+        );
+
+        check(
+            "\"hello\nworld\"",
+            expect![[r#"
+                Root
+                  T: Utf8 @@ 0..13: Utf8(["\"hello\nworld\""])
+            "#]],
+        );
+    }
+
+    #[test]
     fn parse_if() {
         check(
             "if true do 1 else 2 end",

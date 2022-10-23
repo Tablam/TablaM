@@ -69,6 +69,10 @@ pub enum Syntax {
     #[regex(r"(?&decimal)\.(?&decimal)")]
     Decimal,
 
+    // Strings, capture with both single and double quote
+    #[regex(r#""([^"\\]|\\t|\\u|\\n|\\")*"|'([^'\\]|\\t|\\u|\\n|\\')*'"#)]
+    String,
+
     //keywords
     #[display(fmt = "fun")]
     #[token("fun")]
@@ -215,9 +219,12 @@ impl Syntax {
     pub fn is(self) -> SyntaxKind {
         match self {
             Syntax::Cr | Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
-            Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal | Syntax::Ident => {
-                SyntaxKind::Expr
-            }
+            Syntax::Bool
+            | Syntax::Integer
+            | Syntax::Float
+            | Syntax::Decimal
+            | Syntax::String
+            | Syntax::Ident => SyntaxKind::Expr,
             Syntax::FnKw
             | Syntax::LetKw
             | Syntax::VarKw

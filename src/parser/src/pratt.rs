@@ -89,7 +89,9 @@ fn infix_binding_power(op: Syntax) -> Option<(u8, u8)> {
 
 fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
     match t.kind {
-        Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal => S::Atom(t.id),
+        Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal | Syntax::String => {
+            S::Atom(t.id)
+        }
         Syntax::LParen => {
             let lhs = expr_bp(lexer, 0);
             assert_eq!(lexer.next().kind, Syntax::RParen);
@@ -199,6 +201,9 @@ mod tests {
 
         let s = expr("1.45");
         assert_eq!(s.to_string(), "1.45: Decimal");
+
+        let s = expr("'hello'");
+        assert_eq!(s.to_string(), "'hello': String");
 
         let s = expr("(((0)))");
         assert_eq!(s.to_string(), "0: Integer");

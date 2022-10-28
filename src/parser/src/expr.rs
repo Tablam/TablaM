@@ -153,7 +153,7 @@ fn parse_str(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
 }
 
 fn parse_date(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = clean_dates(code, &"d");
+    let x = clean_dates(code, "d");
     let d = types::parse_date_t(x).map_err(|x| ErrorParser::ScalarParse {
         span: t.into(),
         msg: x.to_string(),
@@ -162,7 +162,7 @@ fn parse_date(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
 }
 
 fn parse_time(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = clean_dates(code, &"t");
+    let x = clean_dates(code, "t");
     let d = types::parse_time_t(x).map_err(|x| ErrorParser::ScalarParse {
         span: t.into(),
         msg: x.to_string(),
@@ -171,7 +171,7 @@ fn parse_time(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
 }
 
 fn parse_datetime(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = clean_dates(code, &"dt");
+    let x = clean_dates(code, "dt");
     let d = types::parse_date_time_t(x).map_err(|x| ErrorParser::ScalarParse {
         span: t.into(),
         msg: x.to_string(),

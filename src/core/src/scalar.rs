@@ -21,10 +21,45 @@ pub enum DateKind {
 }
 
 /// A unified Date structure that collapse the different [DateKind] in a single value
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DateT {
     pub kind: DateKind,
     pub date: DateTime,
+}
+
+impl fmt::Debug for DateT {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}({})", self.kind, self.fmt())
+    }
+}
+
+impl DateT {
+    pub fn date(date: DateTime) -> Self {
+        Self {
+            kind: DateKind::Date,
+            date,
+        }
+    }
+    pub fn time(date: DateTime) -> Self {
+        Self {
+            kind: DateKind::Time,
+            date,
+        }
+    }
+    pub fn datetime(date: DateTime) -> Self {
+        Self {
+            kind: DateKind::DateTime,
+            date,
+        }
+    }
+
+    pub fn fmt(&self) -> String {
+        match self.kind {
+            DateKind::Time => self.date.format(TIME_FMT).to_string(),
+            DateKind::Date => self.date.format(DATE_FMT).to_string(),
+            DateKind::DateTime => self.date.format(DATE_TIME_FMT).to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -164,8 +199,8 @@ impl fmt::Display for Scalar {
             Scalar::I64(x) => format_slice_scalar(x, f),
             Scalar::Decimal(x) => format_slice_scalar_postfix(x, "d", f),
             Scalar::F64(x) => format_slice_scalar_postfix(x, "f", f),
-            Scalar::Date(_) => {
-                todo!()
+            Scalar::Date(x) => {
+                write!(f, "{}", x[0].fmt())
             }
             Scalar::Utf8(x) => format_slice_scalar(x, f),
             Scalar::Top(_x) => todo!(),

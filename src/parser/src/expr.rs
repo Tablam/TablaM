@@ -7,6 +7,7 @@ use crate::parser::Checker;
 use crate::token::{Syntax, Token};
 use corelib::prelude::{Decimal, Scalar, F64};
 use corelib::tree_flat::node::NodeId;
+use corelib::types;
 
 pub(crate) fn root(p: &mut Checker) {
     let mut parent = p.cst.ast.root().id;
@@ -106,12 +107,21 @@ fn clean_num(code: &str) -> String {
     code.replace('_', "")
 }
 
+fn clean_quotes(code: &str) -> &str {
+    code.trim_start_matches(|x| x == '\'' || x == '"')
+        .trim_end_matches(|x| x == '\'' || x == '"')
+}
+
+fn clean_prefix<'a>(code: &'a str, prefix: &str) -> &'a str {
+    code.trim_start_matches(prefix)
+}
+
+fn clean_dates<'a>(code: &'a str, prefix: &str) -> &'a str {
+    clean_quotes(clean_prefix(code, prefix))
+}
+
 fn clean_str(code: &str) -> String {
-    format!(
-        "\"{}\"",
-        code.trim_start_matches(|x| x == '\'' || x == '"')
-            .trim_end_matches(|x| x == '\'' || x == '"')
-    )
+    format!("\"{}\"", clean_quotes(code))
 }
 
 fn clean_floats(code: &str) -> String {
@@ -142,6 +152,33 @@ fn parse_str(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     Ok((Ast::scalar(x.into(), t), Step::Str))
 }
 
+fn parse_date(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let x = clean_dates(code, &"d");
+    let d = types::parse_date_t(x).map_err(|x| ErrorParser::ScalarParse {
+        span: t.into(),
+        msg: x.to_string(),
+    })?;
+    Ok((Ast::scalar(d.into(), t), Step::Date))
+}
+
+fn parse_time(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let x = clean_dates(code, &"t");
+    let d = types::parse_time_t(x).map_err(|x| ErrorParser::ScalarParse {
+        span: t.into(),
+        msg: x.to_string(),
+    })?;
+    Ok((Ast::scalar(d.into(), t), Step::Date))
+}
+
+fn parse_datetime(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let x = clean_dates(code, &"dt");
+    let d = types::parse_date_time_t(x).map_err(|x| ErrorParser::ScalarParse {
+        span: t.into(),
+        msg: x.to_string(),
+    })?;
+    Ok((Ast::scalar(d.into(), t), Step::Date))
+}
+
 pub(crate) fn parse_scalar(
     p: &mut Checker,
     _parent: NodeId,
@@ -157,6 +194,9 @@ pub(crate) fn parse_scalar(
         Syntax::Decimal => parse_d64(code, t)?,
         Syntax::Float => parse_f64(code, t)?,
         Syntax::String => parse_str(code, t)?,
+        Syntax::Date => parse_date(code, t)?,
+        Syntax::Time => parse_time(code, t)?,
+        Syntax::DateTime => parse_datetime(code, t)?,
         x => unimplemented!("{:?}", x),
     };
     p.check.check(node, step, span)?;

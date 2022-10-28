@@ -152,6 +152,12 @@ impl From<&str> for Scalar {
     }
 }
 
+impl From<DateT> for Scalar {
+    fn from(x: DateT) -> Self {
+        Scalar::Date([x])
+    }
+}
+
 impl From<&str> for Array {
     fn from(x: &str) -> Self {
         Array::Utf8(vec![x.into()])

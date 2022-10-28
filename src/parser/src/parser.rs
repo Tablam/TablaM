@@ -316,6 +316,54 @@ Root
     }
 
     #[test]
+    fn parse_date() {
+        check(
+            "d'2000-01-01'",
+            expect![[r#"
+                Root
+                  T: Date(Date) @@ 0..13: Date([Date(2000-01-01)])
+            "#]],
+        );
+        check(
+            "d\"2000-01-01\"",
+            expect![[r#"
+                Root
+                  T: Date(Date) @@ 0..13: Date([Date(2000-01-01)])
+            "#]],
+        );
+        check(
+            "t'22:10:57'",
+            expect![[r#"
+                Root
+                  T: Date(Time) @@ 0..11: Date([Time(22:10:57)])
+            "#]],
+        );
+        check(
+            "t\"22:10:57\"",
+            expect![[r#"
+                Root
+                  T: Date(Time) @@ 0..11: Date([Time(22:10:57)])
+            "#]],
+        );
+
+        check(
+            "dt'2000-01-01 22:10:57 +0900'",
+            expect![[r#"
+                Root
+                  T: Date(DateTime) @@ 0..29: Date([DateTime(2000-01-01 22:10:57 +0900)])
+            "#]],
+        );
+
+        check(
+            "dt\"2000-01-01 22:10:57 +0900\"",
+            expect![[r#"
+                Root
+                  T: Date(DateTime) @@ 0..29: Date([DateTime(2000-01-01 22:10:57 +0900)])
+            "#]],
+        );
+    }
+
+    #[test]
     fn parse_if() {
         check(
             "if true do 1 else 2 end",

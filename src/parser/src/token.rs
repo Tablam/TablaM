@@ -35,7 +35,8 @@ pub enum SyntaxKind {
     Close,
     Trivia,
     Kw,
-    Expr,
+    Atom,
+    Ident,
     Err,
     Root,
     Eof,
@@ -68,9 +69,18 @@ pub enum Syntax {
     #[regex(r"(?&decimal)\.(?&decimal)d")]
     #[regex(r"(?&decimal)\.(?&decimal)")]
     Decimal,
-
+    #[regex(r#"d"[^"]*""#)]
+    #[regex(r#"d'[^']*'"#)]
+    Date,
+    #[regex(r#"t"[^"]*""#)]
+    #[regex(r#"t'[^']*'"#)]
+    Time,
+    #[regex(r#"dt"[^"]*""#)]
+    #[regex(r#"dt'[^']*'"#)]
+    DateTime,
     // Strings, capture with both single and double quote
-    #[regex(r#""([^"\\]|\\t|\\u|\\n|\\")*"|'([^'\\]|\\t|\\u|\\n|\\')*'"#)]
+    #[regex(r#""[^"]*""#)]
+    #[regex(r#"'[^']*'"#)]
     String,
 
     //keywords
@@ -224,7 +234,10 @@ impl Syntax {
             | Syntax::Float
             | Syntax::Decimal
             | Syntax::String
-            | Syntax::Ident => SyntaxKind::Expr,
+            | Syntax::Date
+            | Syntax::Time
+            | Syntax::DateTime => SyntaxKind::Atom,
+            Syntax::Ident => SyntaxKind::Atom,
             Syntax::FnKw
             | Syntax::LetKw
             | Syntax::VarKw
@@ -259,7 +272,7 @@ impl Syntax {
         }
     }
     pub fn is_head_tree(self) -> bool {
-        self.is() != SyntaxKind::Expr
+        self.is() != SyntaxKind::Atom
     }
 
     pub fn to_bin_op(self) -> Option<BinaryOp> {

@@ -26,6 +26,7 @@ pub enum Step {
     I64,
     Dec,
     Str,
+    Date,
     Expr,
     ExprIncomplete,
     Ident,

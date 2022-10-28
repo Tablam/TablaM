@@ -191,6 +191,20 @@ mod tests {
     }
 
     #[test]
+    fn lex_dates() {
+        //The lexer not check the date are parsed correct, only that are with the proper prefix!
+        check("d'2000-01-01'", Syntax::Date);
+        check("d\"2000-01-01\"", Syntax::Date);
+        check("t'09:10:11'", Syntax::Time);
+        check("t\"09:10:11\"", Syntax::Time);
+        check("dt'2000-01-01 09:10:11'", Syntax::DateTime);
+        check("dt'2000-01-01T09:10:11'", Syntax::DateTime);
+        check("dt\"2000-01-01 09:10:11\"", Syntax::DateTime);
+        check("dt\"2000-01-01T09:10:11\"", Syntax::DateTime);
+        check("dt\"trash\"", Syntax::DateTime);
+    }
+
+    #[test]
     fn lex_comment() {
         check_trivia("-- Test", Syntax::Comment);
     }

@@ -8,7 +8,41 @@ file_extensions:
 scope: source.tbm
 
 variables:
-  dec_literal: '[0-9](?:[0-9_])*'
+  ws: '[ \t]*'
+  wsnl: '([ \t\n])*'
+
+  int_literal: '[0-9](?:[0-9_])*'
+  # 00-23
+  time_hour: '[0-2][0-9]'
+  # 00-59
+  time_minute: '[0-5][0-9]'
+  # 00-58, 00-59, 00-60 (leap second rules)
+  time_second: '[0-6][0-9]'
+  # ( "+" / "-" ) time-hour ":" time-minute
+  time_numoffset: '[+-] {{time_hour}} : {{time_minute}}'
+
+  # time-hour ":" time-minute ":" time-second
+  partial_time: '{{time_hour}} : {{time_minute}} : {{time_second}}'
+
+  # partial-time time-offset
+  full_time: '{{partial_time}} {{time_numoffset}}'
+
+  # 2000
+  date_fullyear: '[0-9]{4}'
+  # 01-12
+  date_month: '[0-1][0-9]'
+  # 01-28, 01-29, 01-30, 01-31 based on month/year
+  date_mday: '[0-3][0-9]'
+
+  # date-fullyear "-" date-month "-" date-mday
+  full_date: '{{date_fullyear}} - {{date_month}} - {{date_mday}}'
+
+  # full-date T|%20 full-time
+  offset_date_time: '{{full_date}} [T ] {{full_time}}'
+  # full-date T|%20 partial-time
+  local_date_time: '{{full_date}} [T ] {{partial_time}}'
+
+  date_time: '{{offset_date_time}} | {{local_date_time}} | {{full_date}} | {{partial_time}}'
 
 contexts:
   # The prototype context is prepended to all contexts but those setting
@@ -22,7 +56,16 @@ contexts:
     - include: keywords
     - include: booleans
     - include: numbers
+    - include: date-time
     - include: strings
+    - match: '{{ws}}$'
+      # Don't show an incomplete line as invalid to avoid frequent red
+      # highlighting while typing.
+      pop: true
+    - match: '\w+|.'
+      scope: invalid.illegal.value.tbm
+      pop: true
+
 
   keywords:
     - match: '\b(let|var)\b'
@@ -48,12 +91,12 @@ contexts:
 
   numbers:
     # Binary Float
-    - match: '\b(-)?[0-9.]+f\b'
+    - match: '\b({{int_literal}}(?:\.{{int_literal}})?)f\b'
       scope: constant.numeric.source.tbm
     # Decimal
-    - match: '\b(-)?[0-9.]+d\b'
+    - match: '\b({{int_literal}}(?:\.{{int_literal}})?)d\b'
       scope: constant.numeric.source.tbm
-    - match: '\b(-)?[0-9.]+\b'
+    - match: '\b({{int_literal}}(?:\.{{int_literal}})?)\b'
       scope: constant.numeric.source.tbm
 
   strings:
@@ -63,12 +106,48 @@ contexts:
       scope: punctuation.definition.string.begin.source.tbm
       push: double_quoted_string
 
+    - match: "'"
+      scope: punctuation.definition.string.begin.source.tbm
+      push: single_quoted_string
+
   double_quoted_string:
     - meta_scope: string.quoted.double.source.tbm
     - match: '\\.'
       scope: constant.character.escape.source.tbm
     - match: '"'
       scope: punctuation.definition.string.end.source.tbm
+      pop: true
+
+  single_quoted_string:
+    - meta_scope: string.quoted.double.source.tbm
+    - match: '\\.'
+      scope: constant.character.escape.source.tbm
+    - match: "'"
+      scope: punctuation.definition.string.end.source.tbm
+      pop: true
+
+  date-time:
+    - match: "(d|t|dt)'"
+      scope: constant.other.datetime.begin.source.tbm
+      push: single_quoted_date
+    - match: '(d|t|dt)"'
+      scope: constant.other.datetime.begin.source.tbm
+      push: double_quoted_date
+
+  double_quoted_date:
+    - meta_scope: string.quoted.double.source.tbm
+    - match: '(?x) {{date_time}}'
+      scope: constant.character.escape.source.tbm
+    - match: '"'
+      scope: constant.other.datetime.end.source.tbm
+      pop: true
+
+  single_quoted_date:
+    - meta_scope: string.quoted.double.source.tbm
+    - match: '(?x) {{date_time}}'
+      scope: constant.character.escape.source.tbm
+    - match: "'"
+      scope: constant.other.datetime.end.source.tbm
       pop: true
 
   comments:

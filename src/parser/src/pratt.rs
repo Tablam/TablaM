@@ -89,9 +89,6 @@ fn infix_binding_power(op: Syntax) -> Option<(u8, u8)> {
 
 fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
     match t.kind {
-        Syntax::Bool | Syntax::Integer | Syntax::Float | Syntax::Decimal | Syntax::String => {
-            S::Atom(t.id)
-        }
         Syntax::LParen => {
             let lhs = expr_bp(lexer, 0);
             assert_eq!(lexer.next().kind, Syntax::RParen);
@@ -111,6 +108,7 @@ fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
             S::Atom(t.id)
         }
         s => match s.is() {
+            SyntaxKind::Atom => S::Atom(t.id),
             SyntaxKind::Eof => S::Eof(t.id),
             _ => S::Err(t.id),
         },
@@ -207,6 +205,15 @@ mod tests {
 
         let s = expr("(((0)))");
         assert_eq!(s.to_string(), "0: Integer");
+
+        let s = expr("d'2000-01-01'");
+        assert_eq!(s.to_string(), "d'2000-01-01': Date");
+
+        let s = expr("t'09:10:11'");
+        assert_eq!(s.to_string(), "t'09:10:11': Time");
+
+        let s = expr("dt'2000-01-01 09:10:11'");
+        assert_eq!(s.to_string(), "dt'2000-01-01 09:10:11': DateTime");
     }
 
     #[test]

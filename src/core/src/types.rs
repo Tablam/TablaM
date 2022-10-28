@@ -1,5 +1,8 @@
-use crate::scalar::DateKind;
+use chrono::{FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use std::hash::Hash;
+
+use crate::prelude::DateT;
+use crate::scalar::DateKind;
 
 //Type Alias...
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
@@ -42,4 +45,32 @@ pub enum Arity {
     Scalar,
     Vector,
     Table,
+}
+
+pub const DATE_FMT: &str = "%Y-%m-%d";
+pub const TIME_FMT: &str = "%H:%M:%S";
+pub const DATE_TIME_FMT: &str = "%Y-%m-%d %H:%M:%S %z";
+
+fn to_date(of: NaiveDateTime) -> chrono::DateTime<FixedOffset> {
+    let of = chrono::DateTime::<Utc>::from_utc(of, Utc);
+    DateTime::from(of)
+}
+
+pub fn parse_date_t(of: &str) -> Result<DateT, chrono::ParseError> {
+    let of = NaiveDate::parse_from_str(of, DATE_FMT)?.and_hms(0, 0, 0);
+
+    Ok(DateT::date(to_date(of)))
+}
+
+pub fn parse_time_t(of: &str) -> Result<DateT, chrono::ParseError> {
+    let d = NaiveTime::parse_from_str(of, TIME_FMT)?;
+    let d = chrono::naive::MIN_DATE.and_time(d);
+
+    Ok(DateT::time(to_date(d)))
+}
+
+pub fn parse_date_time_t(of: &str) -> Result<DateT, chrono::ParseError> {
+    let d = DateTime::parse_from_str(of, DATE_TIME_FMT)?;
+
+    Ok(DateT::datetime(d))
 }

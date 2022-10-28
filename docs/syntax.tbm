@@ -23,7 +23,7 @@
 -- The default floating point number!
 -- Decimal: Dec 64 bit Decimals (base 10)
 1.0
-1.0d    -- with explicit suffix
+1_000.0d    -- with explicit suffix
 
 -- Float: Float 64 bit floats (base 2, requiered explicit suffix)
 1.0f
@@ -51,6 +51,7 @@ A long text
 --- Dates, all ISO 8601 encoded
 
 -- DateTime: DateTime (with TimeZone)
+d'2020-02-02'
 d"2020-02-02"
 dt"2020-02-02T08:00:00+05:00"
 dt"2020-02-02T08:00:00" -- Is a shortcut for above, imply LocalTime
@@ -83,7 +84,7 @@ div(33, 2) -- 16 with Int division
 20 * 10% -- similar to 20 * 0.10 or 20 * 10/100
 
 -- You can use unicode math chars for multiplication/division, 
--- are equivalent!
+-- x × or / ÷, are equivalent!
 10 × 2 -- 20
 33 ÷ 2 -- 16.5 with Dec division
 

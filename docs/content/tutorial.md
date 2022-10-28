@@ -43,7 +43,7 @@ This is what makes the relational model its power. Is fairly "visual" and consid
 
 Now, to express this relation in **TablaM**, you need to write in the *repl*, or a text editor, with a file called `sales.tbm`:
 
-```rust
+```tablam
 let sales:= [
   name:Str, price:Dec, qty:Int;
   "Hamburger", 10.2, 2;
@@ -81,7 +81,7 @@ We will only worry about this 2 operations for now:
 
 The `?select` operator (aka: projection or `SELECT * FROM` in SQL), allow filtering *the columns* in a relation. Using the character `#` to indicate that is a name (like `#price`) or a number (like `#0`) of a column:
 
-```rust
+```tablam
 let products := sales ?select #name
 print(products)
 > Vec[name:Str; 'Hamburger'; 'Soda'; 'French fries']
@@ -91,7 +91,7 @@ print(products)
 
 The `?where` operator (aka: selection or `where...` in SQL), allow filtering *the rows* in a relation. It needs a "Boolean expression*", i.e.: expression that compares values, columns or returns true/false. The `=` is the equal operator, more [logical operators](/syntax/#compare-values-tbd).
 
-```rust
+```tablam
 -- let soda := sales ?where #name = "Soda" (TBD)
 let soda := sales ?where #0 = "Soda" -- #0 is #name column
 
@@ -103,7 +103,7 @@ let cheaper := sales ?where #1 < 5.0 -- #1 is #price column
 
 Now we can start to do more stuff. We can know how many money we get for this sale: 
 
-```rust
+```tablam
 let profit_items := sales?select #price * #qty -- arithmetic operations in relational operators (TBD)
 print(profit_items)
 let profit_total := sum(profit_items)
@@ -112,7 +112,7 @@ print(profit_total)
 
 And which product give the biggest profit:
 
-```rust
+```tablam
 let most := sales?select #price * #qty
 let most := max(most)
 print(most)
@@ -124,13 +124,13 @@ Single values like `1` or `"Soda"` are also relations. Also know as "[scalars](h
 
 This mean that this is possible:
 
-```rust
+```tablam
 let price := 1.0 ?select #0
 ```
 
 Now, we can continue with the program and make it more useful. We said before that the values are "***immutable***" by default. This mean that if we want to change them we need to create *new* values from the *olds*. Let's add another sale:
 
-```rust
+```tablam
 let new_sale := ["Hot dog", 4.0, 1]
 let sales := add(sales, new_sale)
 print(sales)
@@ -140,7 +140,7 @@ Something *weird* happened here. **TablaM** use types to not mix wrong things, y
 
 Well, is because **TablaM** use a neat trick: Their values are not only typed, but also [compared structurally](https://en.wikipedia.org/wiki/Structural_type_system). In other languages, two things are different just to be [*named differently*](https://en.wikipedia.org/wiki/Nominal_type_system):
 
-```rust
+```tablam
 // In rust, a nominal typed language
 struct SalesA {name:Str, price:Dec, qty:Int}
 struct SalesB {name:Str, price:Dec, qty:Int}
@@ -151,7 +151,7 @@ a = b //false
 
 Instead, in **TablaM**, two things are equal if their *schema/header* match:
 
-```rust
+```tablam
 -- In TablaM, a structural typed language
 let a := ["Hot dog", 4.0, 1]
 -- is automatically infered the header [name:Str, price:Dec, qty:Int;]

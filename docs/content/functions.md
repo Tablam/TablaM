@@ -13,11 +13,11 @@ Operations like "`+,-,*,/`" are in fact functions internally. With them is also 
 
 The `sum` function operate on  relations of numbers and return the total:
 
-```rust
+```tablam
 fun sum(rel:[Number]) = Number
 ```
 
-```rust
+```tablam
 sum(1.0f) -- = 1.0f
 sum([1; 2; 3]) -- = 6
 ```
@@ -26,11 +26,11 @@ sum([1; 2; 3]) -- = 6
 
 The `avg` function operate on  relations of numbers and return the average of the values:
 
-```rust
+```tablam
 fun avg(rel:[Number]) = Number
 ```
 
-```rust
+```tablam
 avg(1.0f) -- = 1.0f
 avg([1; 2; 3]) -- = 2
 ```
@@ -43,12 +43,12 @@ The `min`& `max` functions accept a relation and return the min or max value, ac
 
 Note that these are *logical function*s, not math. So it operates on *ANY* value following the total order of types.
 
-```rust
+```tablam
 fun min(rel:Rel) = Rel
 fun max(rel:Rel) = Rel
 ```
 
-```rust
+```tablam
 min([1; 2]) -- = 1
 max([1; 2]) -- = 2
 
@@ -64,12 +64,12 @@ To operate with IO (files, stdin, stdout, sockets, etc):
 
 The `print`& `println` functions accept a list of values and convert them to `String` and output the result to the stdout, which is commonly the terminal.
 
-```rust
+```tablam
 fun print(values: Any...)
 fun println(values: Any...)
 ```
 
-```rust
+```tablam
 print("hello")
 print("world")
 
@@ -81,11 +81,11 @@ println("world")
 
 The `open` function load a `.csv` file, *scan the header* and return it as a relation. Note that this functionality is temporal. Later will be correctly used to open any kind of file.
 
-```rust
+```tablam
 fun open(path: Path) = Rel
 ```
 
-```rust
+```tablam
 -- With a csv file like
 -- id,ref,name
 -- 1,24236-097,Noodles
@@ -97,11 +97,11 @@ let products := open("products.csv")
 
 The `read_to_string` function take a `File` and load the contents as a `String`.
 
-```rust
+```tablam
 fun read_to_string(file: File) = String
 ```
 
-```rust
+```tablam
 let products := open("products.csv")
 let txt := read_to_string(products)
 ```
@@ -110,11 +110,11 @@ let txt := read_to_string(products)
 
 The `save` function turn the relation in a `String`, then save the results to the disk. Note that this functionally not yet work correctly.
 
-```rust
+```tablam
 fun save(rel:Rel, path: Path)
 ```
 
-```rust
+```tablam
 let products := [
   id:Int, ref:Str, name:Str; 
   1,"24236-097","Noodles"]

@@ -15,7 +15,7 @@ For example, where most languages have different methods to "*query*" items (som
 
 A small taste of the language:
 
-```rust
+```tablam
 -- A column, aka: Vectors...
 let qty := [10.5, 4.0, 3.0] 
 -- Like APL/kdb+ operations apply to more than scalars

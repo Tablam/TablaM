@@ -11,10 +11,10 @@ The syntax is made to be learned quickly, and be as consistent as possible.
 
 ### Comments
 
-```sql
+```tablam
 -- Comments start with 2 'minus' symbol
---- Multiline 
-commentaries
+--- 
+--- Multiline? just repeat it!
 ---
 ```
 
@@ -22,7 +22,7 @@ commentaries
 
 By *default*, the values are immutable except if explicitly marked as mutable **(TBD)**. To declare a value you write:
 
-```swift
+```tablam
 let x := 1 -- immutable aka: final (java), const (js), it cannot be updated
 var x := 1 -- mutable
 ```
@@ -35,7 +35,7 @@ Literals are values that are typed directly in the source code, and are the most
 
 ### Numbers
 
-```sql
+```tablam
 1 --64 bit Integers
 1.0 --64 bit Decimals (base 10)
 1.0d --64 bit Decimals (with explicit suffix)
@@ -50,7 +50,7 @@ With numbers it is possible to do some arithmetic and assignment operators
 
 ### Math
 
-```rust
+```tablam
 1 + 1 -- = 2
 2.0 - 1.0 -- = 1.0d
 2.0f * 10.0f -- = 20.0f
@@ -64,7 +64,7 @@ num += 1 -- arithmetic and assignment operators (TBD)
 
 Similar to array languages/libraries like APL/kdb+/NumPy, the operators know how to work with *scalars* & *collections* like:
 
-```rust
+```tablam
 1 + 1 -- Scalar + Scalar
 1 + [1; 2; 3] -- Scalar + Vector
 [1; 2] + [3; 4] -- Vector + Vector, same rank
@@ -73,7 +73,7 @@ Similar to array languages/libraries like APL/kdb+/NumPy, the operators know how
 
 ### Booleans & Bits
 
-```sql
+```tablam
 true
 false
 0b1        -- Bit 1
@@ -85,7 +85,7 @@ With Boolean values we can do *Boolean expressions*, so we can
 
 ### Compare values (**TBD**):
 
-```python
+```tablam
 1 = 1 -- = true
 1 <> 1 -- = false
 
@@ -103,7 +103,7 @@ and with bit/bitarrays do bit manipulation:
 
 ### Bit operations (**TBD**):
 
-```python
+```tablam
 let a = 0b0
 let b = 0b_1b
 
@@ -118,7 +118,7 @@ a.shift_right_zero(b)
 
 **TablaM** has the concept of a "*total order*". It means all values can be compared in relation to the others. This is required for things like sorting to work. The total order is defined as:
 
-```rust
+```tablam
 Bit < Bool < Int < Float < Dec < Time < Date < DateTime <
 Char < Str < Vec < Tree < Map < FFI Object < Any
 ```
@@ -129,7 +129,7 @@ You don't need to memorize this. Only to know that this feature exist.
 
 All strings are encoded in valid [UTF8](https://en.wikipedia.org/wiki/UTF-8).
 
-```sql
+```tablam
 "hello" -- Strings are enclosed with quotes
 'hello' -- both '' or "".
 
@@ -146,7 +146,7 @@ A long text
 
 Dates can be entered and validated at compile time if the string is prefixed & formatted as ISO date:
 
-```sql
+```tablam
 dt"2020-02-02T08:00:00" -- Full date time 
 d"2020-02-02" -- Just date time 
 t"08:00:00" -- Just time 
@@ -158,7 +158,7 @@ t"08:00:00" -- Just time
 
 Types are described in *TitleCase* like this:
 
-```rust
+```tablam
 Int
 Dec
 Float
@@ -172,7 +172,7 @@ Map[name:Str, age:Int]
 
 Note how some values have a list of types inside `[]`. This is called *the schema* (or header) of the relation. *ALL values have a schema*:
 
-```rust
+```tablam
 Int = [it:Int]
 Str = [it:Str]
 Map[name:Str, age:Int] = [name:Str, age:Int]
@@ -190,7 +190,7 @@ A scalar is a relation of a *unique value*, a single column, a single row.
 
 Examples of scalars are:
 
-```rust
+```tablam
 1
 true
 "hello"
@@ -198,7 +198,7 @@ true
 
 Looking at them as relation, are identical to:
 
-```rust
+```tablam
 1 = [Int; 1]
 true = [Bool; true]
 "hello" = [Str; "hello"]
@@ -212,7 +212,7 @@ A vector is a collection of contiguous scalars that are of the *same type*. Can 
 
 Examples of vectors are:
 
-```rust
+```tablam
 [1; 2; 3] -- A vector of Ints
 1 -- A vector of Ints
 
@@ -240,7 +240,7 @@ The name Tree can convey the idea of a hierarchy of values in most languages. Bu
 
 Examples of trees are:
 
-```matlab
+```tablam
 Tree[|
   pk id:Int, name:Str;
   1, "hello"; -- row0
@@ -254,7 +254,7 @@ Note the use of `[||]` to enclose the data, that it must be preceded by the type
 
 To declare enums:
 
-```rust
+```tablam
 enum Status do
     case Active
     case Inactive
@@ -278,7 +278,7 @@ enum ValueNums: Value
 
 To pattern match on enums
 
-```rust
+```tablam
 match status do
 case Active do
     "active"
@@ -302,7 +302,7 @@ All relational operators must start with the operator *query* `?`.
 
 Examples of relational operators are:
 
-```sql
+```tablam
 -- Filter only values exactly = 2
 [1; 2; 3] ?where #0 = 2 
 
@@ -320,7 +320,7 @@ Most of the functionality of the language is provided with functions. A function
 
 To declare a function:
 
-```swift
+```tablam
 fun sum(a:Int, b:Int) = Int do
    a + b
 end
@@ -332,7 +332,7 @@ end
 
 To use a function:
 
-```rust
+```tablam
 -- print the value to stdout (aka: Terminal)
 print(1) 
 
@@ -351,7 +351,7 @@ In **TablaM** is more idiomatic to use the relational operators or use a more fu
 
 ### if
 
-```rust
+```tablam
 let value := 
 if true do
    1
@@ -366,7 +366,7 @@ However, this is not possible for looping constructs, these return the "pass"  v
 
 ### while
 
-```rust
+```tablam
 while true do
    println("this repeat forever")
 end
@@ -375,7 +375,7 @@ end
 
 ### for
 
-```rust
+```tablam
 for i in 1..10 do --this count from 1 to 9
    println(i)
 end
@@ -384,7 +384,7 @@ end
 
 ## Types (tbd)
 
-```rust
+```tablam
 type Invoice do
     price:Decimal
     qty:Decimal
@@ -404,7 +404,7 @@ type InvoiceId is i32  -- newtype
 
 ## Traits (tbd)
 
-```rust
+```tablam
 trait Display do
     fun display(self)=String
 
@@ -418,7 +418,7 @@ end
 ```
 
 ## Modules (tbd)
-```rust
+```tablam
 mod Invoices
 
 end

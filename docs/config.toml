@@ -16,6 +16,7 @@ build_search_index = true
 [markdown]
 highlight_code = true
 highlight_theme = "charcoal"
+extra_syntaxes_and_themes = ["../tools/sublime"]
 
 [extra]
 # Put all your custom variables here

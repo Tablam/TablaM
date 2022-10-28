@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.1.6 | MIT License | https://tailwindcss.com
+! tailwindcss v3.2.1 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -355,13 +355,6 @@ input::-moz-placeholder, textarea::-moz-placeholder {
   /* 2 */
 }
 
-input:-ms-input-placeholder, textarea:-ms-input-placeholder {
-  opacity: 1;
-  /* 1 */
-  color: #9ca3af;
-  /* 2 */
-}
-
 input::placeholder,
 textarea::placeholder {
   opacity: 1;
@@ -415,6 +408,12 @@ img,
 video {
   max-width: 100%;
   height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+
+[hidden] {
+  display: none;
 }
 
 *, ::before, ::after {
@@ -1536,8 +1535,7 @@ video {
 }
 
 .underline {
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 .shadow {
@@ -1566,6 +1564,14 @@ video {
 }
 
 @media (min-width: 640px) {
+  .sm\:h-9 {
+    height: 2.25rem;
+  }
+
+  .sm\:flex-row {
+    flex-direction: row;
+  }
+
   .sm\:prose-2xl {
     font-size: 1.5rem;
     line-height: 1.6666667;
@@ -1722,6 +1728,11 @@ video {
     margin-bottom: 3em;
   }
 
+  .sm\:py-0 {
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+
   .sm\:prose-2xl :where(hr + *):not(:where([class~="not-prose"] *)) {
     margin-top: 0;
   }
@@ -1778,19 +1789,6 @@ video {
 
   .sm\:prose-2xl :where(.prose > :last-child):not(:where([class~="not-prose"] *)) {
     margin-bottom: 0;
-  }
-
-  .sm\:h-9 {
-    height: 2.25rem;
-  }
-
-  .sm\:flex-row {
-    flex-direction: row;
-  }
-
-  .sm\:py-0 {
-    padding-top: 0px;
-    padding-bottom: 0px;
   }
 }
 

@@ -13,7 +13,6 @@ edition = "2021"
 [dependencies]
 corelib = { path = "../core" , package="tablam-core" }
 
-ariadne = "0.1.5"
 logos = "0.12.1"
 
 [dev-dependencies]

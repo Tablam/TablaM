@@ -3,12 +3,17 @@ use crate::env::Env;
 use crate::errors::ErrorCode;
 use corelib::tree_flat::prelude::Tree;
 use parser::ast::Ast;
+use parser::files::{File, FilesDb};
 use parser::parser::{Parsed, Parser};
+use std::io::Read;
+use std::path::PathBuf;
+use std::{fs, io};
 
 #[derive(Debug)]
 pub struct Program {
     code: Tree<Code>,
     env: Env,
+    pub files: FilesDb,
 }
 
 impl Program {
@@ -16,6 +21,15 @@ impl Program {
         Program {
             code: Tree::new(Code::Eof),
             env: Env::new(),
+            files: FilesDb::from_src(""),
+        }
+    }
+
+    pub fn from_file(file: File) -> Self {
+        Program {
+            code: Tree::new(Code::Eof),
+            env: Env::new(),
+            files: FilesDb::new(file),
         }
     }
 
@@ -69,7 +83,7 @@ impl Program {
                 Ast::Eof(_) => Code::Eof,
             };
 
-            let mut node = code.node_mut(parent).expect("Invalid AST id");
+            let mut node = code.tree_node_mut(parent).expect("Invalid AST id");
             parent = node.append(c);
         }
 
@@ -84,6 +98,9 @@ impl Program {
     }
 
     pub fn append_from_src(&mut self, source: &str) -> Result<(), ErrorCode> {
+        let root = self.files.get_root_mut();
+        root.append(source);
+
         let parse = Parser::from_src(source);
         let result = parse.parse();
         self.compile(&result)
@@ -114,6 +131,16 @@ impl Default for Program {
     fn default() -> Self {
         Self::new()
     }
+}
+
+pub fn read_file_to_string(f: &mut fs::File) -> Result<String, io::Error> {
+    let mut x = String::new();
+    f.read_to_string(&mut x)?;
+    Ok(x)
+}
+
+pub fn create_file(path: PathBuf, source: &str) -> File {
+    File::from_path(path, source)
 }
 
 #[cfg(test)]

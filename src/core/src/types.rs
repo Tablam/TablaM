@@ -64,7 +64,7 @@ pub fn parse_date_t(of: &str) -> Result<DateT, chrono::ParseError> {
 
 pub fn parse_time_t(of: &str) -> Result<DateT, chrono::ParseError> {
     let d = NaiveTime::parse_from_str(of, TIME_FMT)?;
-    let d = chrono::naive::MIN_DATE.and_time(d);
+    let d = chrono::naive::NaiveDate::MIN.and_time(d);
 
     Ok(DateT::time(to_date(d)))
 }

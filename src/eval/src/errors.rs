@@ -3,27 +3,21 @@ use parser::errors::ErrorParser;
 
 #[derive(Debug, Clone)]
 pub enum ErrorCode {
-    Parser {
-        errors: Vec<ErrorParser>,
-        span: Span,
-    },
+    Parser { error: ErrorParser },
 }
 
 impl ErrorCode {
     pub fn span(&self) -> &Span {
         match self {
-            ErrorCode::Parser { span, .. } => span,
+            ErrorCode::Parser { error } => error.span(),
         }
     }
 }
 
 impl From<&[ErrorParser]> for ErrorCode {
     fn from(x: &[ErrorParser]) -> Self {
-        let span = x.first().map(|x| x.span()).unwrap();
+        let x = x.first().unwrap();
 
-        ErrorCode::Parser {
-            errors: x.into(),
-            span: *span,
-        }
+        ErrorCode::Parser { error: x.clone() }
     }
 }

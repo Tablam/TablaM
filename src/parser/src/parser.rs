@@ -1,7 +1,7 @@
 use crate::ast::{Ast, ExprBool, Ty};
 use crate::checklist::{CheckList, Task};
 use crate::cst::{src_to_cst, Cst, CstNode};
-use crate::files::Files;
+use crate::files::FilesDb;
 use crate::token::{token_eof, Syntax, Token, TokenId};
 use crate::{errors, expr};
 
@@ -76,7 +76,7 @@ impl<'a> Checker<'a> {
     }
 
     pub(crate) fn push(&mut self, ast: Ast, parent: NodeId) -> NodeId {
-        let mut node = self.ast.node_mut(parent).expect("Invalid AST id");
+        let mut node = self.ast.tree_node_mut(parent).expect("Invalid AST id");
         node.append(ast)
     }
 
@@ -142,22 +142,22 @@ impl<'a> Checker<'a> {
 }
 
 pub struct Parser {
-    pub(crate) files: Files,
+    pub(crate) files: FilesDb,
 }
 
 impl Parser {
-    pub fn new(files: Files) -> Self {
+    pub fn new(files: FilesDb) -> Self {
         Self { files }
     }
 
     pub fn from_src(source: &str) -> Self {
-        let files = Files::from_src(source);
+        let files = FilesDb::from_src(source);
         Self::new(files)
     }
 
     pub fn parse(&self) -> Parsed {
         let root = self.files.get_root();
-        let cst = src_to_cst(root.data.source());
+        let cst = src_to_cst(root.source());
 
         let mut check = Checker::new(cst);
         expr::root(&mut check);

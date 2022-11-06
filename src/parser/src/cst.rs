@@ -4,7 +4,7 @@ use std::fmt;
 use std::rc::Rc;
 
 use crate::lexer::Scanner;
-use corelib::tree_flat::prelude::{NodeMut, Tree};
+use corelib::tree_flat::prelude::{Tree, TreeMut};
 
 use crate::pratt::S;
 use crate::pratt::{expr, Pratt};
@@ -125,11 +125,11 @@ impl fmt::Display for Cst<'_> {
     }
 }
 
-fn push(tree: &mut NodeMut<CstNode>, t: CstNode) {
+fn push(tree: &mut TreeMut<CstNode>, t: CstNode) {
     tree.push(t);
 }
 
-fn to_cst(tree: &mut NodeMut<CstNode>, tokens: &Scanner, ast: S) {
+fn to_cst(tree: &mut TreeMut<CstNode>, tokens: &Scanner, ast: S) {
     match ast {
         S::Atom(t) => push(tree, CstNode::Atom(t)),
         S::Cons(op, rest) => {
@@ -155,7 +155,7 @@ fn to_cst(tree: &mut NodeMut<CstNode>, tokens: &Scanner, ast: S) {
 pub(crate) fn parse(pratt: Pratt<'_>) -> Cst<'_> {
     let mut ast = Tree::new(CstNode::Root(pratt.tokens.root.id));
 
-    let mut root = ast.root_mut();
+    let mut root = ast.tree_root_mut();
     let tokens = pratt.tokens.clone();
 
     to_cst(&mut root, &tokens, pratt.ast);

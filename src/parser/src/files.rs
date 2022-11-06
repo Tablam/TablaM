@@ -1,9 +1,12 @@
 use corelib::prelude::FileId;
 use std::path::PathBuf;
 
-use corelib::tree_flat::prelude::{Node, NodeMut, Tree};
+use corelib::tree_flat::iter::TreeIter;
+use corelib::tree_flat::prelude::Tree;
 
 use crate::token::Token;
+
+pub const REPL_FILE_NAME: &str = "repl";
 
 /// The main container for a source "File"
 #[derive(Debug)]
@@ -30,16 +33,28 @@ impl File {
     pub fn source(&self) -> &str {
         self.source.as_str()
     }
+
+    pub fn name(&self) -> String {
+        self.path
+            .as_ref()
+            .and_then(|x| x.to_str())
+            .map(String::from)
+            .unwrap_or_else(|| REPL_FILE_NAME.to_string())
+    }
+
+    pub fn append(&mut self, src: &str) {
+        self.source += src;
+    }
 }
 
 #[derive(Debug)]
-pub struct Files {
+pub struct FilesDb {
     files: Tree<File>,
 }
 
-impl Files {
+impl FilesDb {
     pub fn new(root: File) -> Self {
-        Files {
+        FilesDb {
             files: Tree::new(root),
         }
     }
@@ -50,7 +65,7 @@ impl Files {
     }
 
     fn _add(&mut self, p: Option<PathBuf>, source: &str) -> FileId {
-        let mut root = self.files.root_mut();
+        let mut root = self.files.tree_root_mut();
         let f = if let Some(f) = p {
             root.push(File::from_path(f, source))
         } else {
@@ -72,12 +87,16 @@ impl Files {
         self.files.node(idx).map(|x| x.data)
     }
 
-    pub fn get_root_mut(&mut self) -> NodeMut<'_, File> {
-        self.files.root_mut()
+    pub fn get_root_mut(&mut self) -> &mut File {
+        self.files.root_mut().data
     }
 
-    pub fn get_root(&self) -> Node<'_, File> {
-        self.files.root()
+    pub fn get_root(&self) -> &File {
+        self.files.root().data
+    }
+
+    pub fn files(&self) -> TreeIter<'_, File> {
+        self.files.iter()
     }
 
     pub fn source(&self, token: &Token) -> &str {

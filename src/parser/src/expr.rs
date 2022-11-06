@@ -6,8 +6,10 @@ use crate::errors::{not_a_expr, ErrorParser};
 use crate::parser::Checker;
 use crate::token::{Syntax, Token};
 use corelib::prelude::{Decimal, Scalar, F64};
+use corelib::scalar::DateKind;
 use corelib::tree_flat::node::NodeId;
 use corelib::types;
+use corelib::types::DataType;
 
 pub(crate) fn root(p: &mut Checker) {
     let mut parent = p.cst.ast.root().id;
@@ -87,19 +89,19 @@ fn check(p: &mut Checker, parent: NodeId) -> Result<NodeId, NodeId> {
     Err(parent)
 }
 
-fn _parse_scalar<T>(code: &str, t: &Token) -> Result<T, ErrorParser>
+fn _parse_scalar<T>(code: &str, kind: DataType, t: &Token) -> Result<T, ErrorParser>
 where
     T: Into<Scalar> + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
     match code.parse::<T>() {
         Ok(x) => Ok(x),
-        Err(x) => Err(errors::parse(t, &x.to_string())),
+        Err(x) => Err(errors::parse(t, kind, &x.to_string())),
     }
 }
 
 fn parse_bool(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = _parse_scalar::<bool>(code, t)?;
+    let x = _parse_scalar::<bool>(code, DataType::Bool, t)?;
     Ok((Ast::scalar(x.into(), t), Step::Bool))
 }
 
@@ -133,28 +135,29 @@ fn clean_floats(code: &str) -> String {
 }
 
 fn parse_i64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = _parse_scalar::<i64>(&clean_num(code), t)?;
+    let x = _parse_scalar::<i64>(&clean_num(code), DataType::I64, t)?;
     Ok((Ast::scalar(x.into(), t), Step::I64))
 }
 
 fn parse_d64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = _parse_scalar::<Decimal>(&clean_floats(code), t)?;
+    let x = _parse_scalar::<Decimal>(&clean_floats(code), DataType::Decimal, t)?;
     Ok((Ast::scalar(x.into(), t), Step::Dec))
 }
 
 fn parse_f64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = _parse_scalar::<F64>(&clean_floats(code), t)?;
+    let x = _parse_scalar::<F64>(&clean_floats(code), DataType::F64, t)?;
     Ok((Ast::scalar(x.into(), t), Step::Dec))
 }
 
 fn parse_str(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let x = _parse_scalar::<String>(&clean_str(code), t)?;
+    let x = _parse_scalar::<String>(&clean_str(code), DataType::Utf8, t)?;
     Ok((Ast::scalar(x.into(), t), Step::Str))
 }
 
 fn parse_date(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     let x = clean_dates(code, "d");
     let d = types::parse_date_t(x).map_err(|x| ErrorParser::ScalarParse {
+        kind: DataType::Date(DateKind::Date),
         span: t.into(),
         msg: x.to_string(),
     })?;
@@ -164,6 +167,7 @@ fn parse_date(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
 fn parse_time(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     let x = clean_dates(code, "t");
     let d = types::parse_time_t(x).map_err(|x| ErrorParser::ScalarParse {
+        kind: DataType::Date(DateKind::Time),
         span: t.into(),
         msg: x.to_string(),
     })?;
@@ -173,6 +177,7 @@ fn parse_time(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
 fn parse_datetime(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     let x = clean_dates(code, "dt");
     let d = types::parse_date_time_t(x).map_err(|x| ErrorParser::ScalarParse {
+        kind: DataType::Date(DateKind::DateTime),
         span: t.into(),
         msg: x.to_string(),
     })?;
@@ -213,7 +218,7 @@ pub(crate) fn parse_bool_expr(p: &mut Checker, node: &CstNode) -> Result<ExprBoo
 
     if let CstNode::Atom(_) = node {
         if t.kind == Syntax::Bool {
-            let x = _parse_scalar::<bool>(code, t)?;
+            let x = _parse_scalar::<bool>(code, DataType::Bool, t)?;
             return Ok(ExprBool::bool(x, t));
         }
     }

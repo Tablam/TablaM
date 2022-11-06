@@ -1,14 +1,20 @@
-use std::env;
 use std::fs::File;
+use std::io::Read;
 use std::path::PathBuf;
+use std::{env, fs, io};
 
+use corelib::errors::Span;
+use corelib::prelude::{Scalar, VERSION};
+use eval::code::Code;
+use eval::diagnostic::print_diagnostic;
+use eval::errors::ErrorCode;
+use eval::program::{create_file, read_file_to_string, Program};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use seahorse::{App, Command, Context};
 use syntect::easy::HighlightLines;
-
-use corelib::prelude::{Scalar, VERSION};
-use eval::program::Program;
+use syntect::highlighting::ThemeSet;
+use syntect::parsing::SyntaxSet;
 
 fn print_welcome() {
     print!(
@@ -42,12 +48,13 @@ fn run_code(p: &Program) -> Execute {
 fn run_file(c: &Context) {
     if let Some(f) = c.args.first() {
         let path = PathBuf::from(f);
-        match File::open(path) {
+        match File::open(path.clone()) {
             Ok(mut f) => {
                 //TODO: Fill this
-                //let code = read_file_to_string(&mut f).expect("Fail to read file");
-                let code = String::new();
-                let mut program = Program::from_src(&code);
+                let code = read_file_to_string(&mut f).expect("Fail to read file");
+                let file = create_file(path, &code);
+
+                let program = Program::from_file(file);
                 match run_code(&program) {
                     Execute::Pass => {}
                     Execute::Halt((err, span)) => eprintln!("{:?}", err),
@@ -61,12 +68,6 @@ fn run_file(c: &Context) {
         eprintln!("Error: Need a file name");
     }
 }
-
-use corelib::errors::Span;
-use eval::code::Code;
-use eval::errors::ErrorCode;
-use syntect::highlighting::ThemeSet;
-use syntect::parsing::SyntaxSet;
 
 fn run_repl(c: &Context) {
     // Load these once at the start of your program
@@ -93,7 +94,7 @@ fn run_repl(c: &Context) {
             Ok(line) => match line.as_str().trim() {
                 "" => continue,
                 "exit" => break,
-                "help" => println!("Help & more info at http://www.tablam.org"),
+                "help" => println!("Help & more info at https://www.tablam.org"),
                 line => {
                     rl.add_history_entry(line);
                     //dbg!(&line);
@@ -106,7 +107,8 @@ fn run_repl(c: &Context) {
                             }
                             Execute::Eof => break,
                         },
-                        Err(err) => eprintln!("Error: {:?}", err),
+                        Err(err) => print_diagnostic(&program.files, &err)
+                            .expect("Fail to report diagnostics"),
                     }
                 }
             },

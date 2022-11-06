@@ -1,16 +1,19 @@
-use crate::types::{DataType, FileId};
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::Hash;
+use std::ops::Range;
+
 use text_size::TextRange;
+
+use crate::types::{DataType, FileId};
 
 /// Define the internal errors
 #[derive(Debug)]
-pub enum Error {
+pub enum ErrorCore {
     TypeMismatch { expected: DataType, get: DataType },
 }
 
-pub type ResultT<T> = Result<T, Error>;
+pub type ResultT<T> = Result<T, ErrorCore>;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ErrorKind {
@@ -64,6 +67,15 @@ pub struct Span {
     pub range: RangeCode,
     pub line: u32,
     pub col: u32,
+}
+
+impl Span {
+    pub fn range(&self) -> Range<usize> {
+        let start: usize = self.range.0.start().into();
+        let end: usize = self.range.0.end().into();
+
+        start..end
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

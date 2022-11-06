@@ -11,12 +11,12 @@ categories = ["interpreter", "language", "relational", "tablam"]
 edition = "2021"
 
 [dependencies]
-chrono = { version = "0.4.19", features = ["default"] }
+chrono = { version = "0.4.22", features = ["default"] }
 decorum = { version = "0.3.1", features = ["std"] }
 derive_more = { version = "0.99.17", features = ["from", "display", "from_str"] }
 downcast-rs = "1.2.0"
 indexmap = { version = "1.9.1", features = [] }
-rust_decimal = { version = "1.25.0", features = [] }
+rust_decimal = { version = "1.26.1", features = [] }
 slotmap = "1.0.6"
 text-size = "1.1.0"
-tree-flat = { git = "https://github.com/mamcx/tree-flat" }
+tree-flat = "0.1.2"

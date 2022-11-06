@@ -2,17 +2,42 @@ use crate::checklist::{CheckError, CheckList, Step};
 use crate::cst::CstNode;
 use crate::token::Token;
 use corelib::errors::Span;
+use corelib::types::DataType;
+
+pub enum ErrorCode {
+    ParseLiteral = 1,
+}
 
 /// Define the main Error type for the parser
 #[derive(Debug, Clone)]
 pub enum ErrorParser {
-    BoolExpr { span: Span, found: String },
-    NoExpr { span: Span, found: String },
-    ScalarParse { span: Span, msg: String },
-    Incomplete { err: CheckError, missing: Vec<Step> },
+    BoolExpr {
+        span: Span,
+        found: String,
+    },
+    NoExpr {
+        span: Span,
+        found: String,
+    },
+    ScalarParse {
+        span: Span,
+        kind: DataType,
+        msg: String,
+    },
+    Incomplete {
+        err: CheckError,
+        missing: Vec<Step>,
+    },
 }
 
 impl ErrorParser {
+    pub fn error_code(&self) -> ErrorCode {
+        match self {
+            ErrorParser::ScalarParse { .. } => ErrorCode::ParseLiteral,
+            _ => todo!(),
+        }
+    }
+
     pub fn span(&self) -> &Span {
         match self {
             ErrorParser::BoolExpr { span, .. } => span,
@@ -30,10 +55,11 @@ impl From<CheckError> for ErrorParser {
     }
 }
 
-pub(crate) fn parse(t: &Token, msg: &str) -> ErrorParser {
+pub(crate) fn parse(t: &Token, kind: DataType, msg: &str) -> ErrorParser {
     let span: Span = t.into();
     ErrorParser::ScalarParse {
         span,
+        kind,
         msg: msg.into(),
     }
 }

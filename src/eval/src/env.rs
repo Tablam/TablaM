@@ -1,5 +1,4 @@
 use crate::function::FunVm;
-use crate::program::Program;
 
 #[derive(Debug)]
 pub struct Env {

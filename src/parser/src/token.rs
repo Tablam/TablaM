@@ -62,6 +62,8 @@ pub enum Syntax {
     //literals
     #[regex("true|false")]
     Bool,
+    #[regex(r"(?&decimal)b")]
+    Bit,
     #[regex(r"(?&decimal)")]
     Integer,
     #[regex(r"(?&decimal)\.(?&decimal)f")]
@@ -71,8 +73,6 @@ pub enum Syntax {
     Decimal,
     #[regex(r#"d"[^"]*""#)]
     #[regex(r#"d'[^']*'"#)]
-    #[regex(r"(?&decimal)b")]
-    Bit,
     Date,
     #[regex(r#"t"[^"]*""#)]
     #[regex(r#"t'[^']*'"#)]

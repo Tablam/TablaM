@@ -216,4 +216,21 @@ world"
 "##]],
         );
     }
+
+    #[test]
+    fn eval_bits() {
+        check(
+            "1b",
+            expect![[r##"
+Bits[1b]
+"##]],
+        );
+
+        check(
+            "0b",
+            expect![[r##"
+Bits[0b]
+"##]],
+        );
+    }
 }

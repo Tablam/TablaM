@@ -23,6 +23,7 @@ pub enum Kw {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
     Bool,
+    Bit,
     I64,
     Dec,
     Str,

@@ -286,7 +286,7 @@ Root
     }
 
     #[test]
-    fn parse_int() {
+    fn parse_num() {
         check(
             " 123",
             expect![[r##"

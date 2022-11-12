@@ -35,6 +35,10 @@
 true
 false
 
+--- Bits : Bit
+0b
+1_00100_001b
+
 --- Strings: Str (Utf-8 encoded)
 
 "hello" -- Strings are enclosed with quotes

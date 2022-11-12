@@ -5,6 +5,7 @@ use crate::errors;
 use crate::errors::{not_a_expr, ErrorParser};
 use crate::parser::Checker;
 use crate::token::{Syntax, Token};
+use corelib::dsl::str;
 use corelib::prelude::{Decimal, Scalar, F64};
 use corelib::scalar::DateKind;
 use corelib::tree_flat::node::NodeId;
@@ -134,6 +135,30 @@ fn clean_floats(code: &str) -> String {
     }
 }
 
+fn parse_bit(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
+    let mut bits = Vec::with_capacity(code.len());
+
+    for (pos, x) in code[..code.len() - 1].chars().enumerate() {
+        match x {
+            '0' => bits.push(false),
+            '1' => bits.push(true),
+            x => {
+                return Err(errors::parse(
+                    t,
+                    DataType::Bit,
+                    &format!("Invalid bit char `{x}` at pos {pos}. Must be 1 or 0."),
+                ))
+            }
+        }
+    }
+
+    if bits.len() == 1 {
+        Ok((Ast::scalar(Scalar::Bit([bits[0]]), t), Step::Bit))
+    } else {
+        todo!()
+    }
+}
+
 fn parse_i64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
     let x = _parse_scalar::<i64>(&clean_num(code), DataType::I64, t)?;
     Ok((Ast::scalar(x.into(), t), Step::I64))
@@ -198,6 +223,7 @@ pub(crate) fn parse_scalar(
         Syntax::Integer => parse_i64(code, t)?,
         Syntax::Decimal => parse_d64(code, t)?,
         Syntax::Float => parse_f64(code, t)?,
+        Syntax::Bit => parse_bit(code, t)?,
         Syntax::String => parse_str(code, t)?,
         Syntax::Date => parse_date(code, t)?,
         Syntax::Time => parse_time(code, t)?,

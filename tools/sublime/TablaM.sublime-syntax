@@ -11,6 +11,7 @@ variables:
   ws: '[ \t]*'
   wsnl: '([ \t\n])*'
 
+  bit_literal: '[0-1](?:[0-1_])*'
   int_literal: '[0-9](?:[0-9_])*'
   # 00-23
   time_hour: '[0-2][0-9]'
@@ -90,6 +91,9 @@ contexts:
       scope: constant.language.source.tbm
 
   numbers:
+    # Bits
+    - match: '\b({{bit_literal}})b\b'
+      scope: constant.numeric.source.tbm
     # Binary Float
     - match: '\b({{int_literal}}(?:\.{{int_literal}})?)f\b'
       scope: constant.numeric.source.tbm

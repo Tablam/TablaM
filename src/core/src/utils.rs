@@ -36,6 +36,16 @@ where
     write!(f, "{}", end)
 }
 
+pub fn format_slice_bit(list: &[bool], f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    format_list(
+        list.iter().map(|x| if *x { '1' } else { '0' }),
+        list.len(),
+        "Bits[",
+        "b]",
+        f,
+    )
+}
+
 pub fn format_slice_scalar<I>(list: &[I], f: &mut fmt::Formatter<'_>) -> fmt::Result
 where
     I: fmt::Display,

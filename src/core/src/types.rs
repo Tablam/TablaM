@@ -22,6 +22,7 @@ pub enum DataType {
     //The BOTTOM type
     Unit,
     Bool,
+    Bit,
     // Numeric
     I64,
     Decimal,

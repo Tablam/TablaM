@@ -76,9 +76,9 @@ Similar to array languages/libraries like APL/kdb+/NumPy, the operators know how
 ```tablam
 true
 false
-0b1        -- Bit 1
-0b0        -- Bit 0
-0b_01010101b --Bit Array, can use _ for clarity
+1b        -- Bit 1
+0b        -- Bit 0
+010_101_01b --Bit Array, can use _ for clarity
 ```
 
 With Boolean values we can do *Boolean expressions*, so we can

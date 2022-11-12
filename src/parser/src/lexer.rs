@@ -179,6 +179,12 @@ mod tests {
     }
 
     #[test]
+    fn lex_bits() {
+        check("0bf", Syntax::Bit);
+        check("01_01bf", Syntax::Bit);
+    }
+
+    #[test]
     fn lex_strings() {
         check("''", Syntax::String);
         check("\"\"", Syntax::String);

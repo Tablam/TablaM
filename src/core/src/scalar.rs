@@ -3,10 +3,11 @@
 //! A [Scalar] in TablaM can be considered a relation of exactly one row, one column, one value; so
 //! it means that we can operate on it with all the relational/array operators.
 
-use decorum::Total;
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
+
+use decorum::Total;
 
 use crate::prelude::*;
 
@@ -67,6 +68,7 @@ pub enum ScalarSlice<'a> {
     /// The **BOTTOM** value
     Unit(&'a [()]),
     Bool(&'a [bool]),
+    Bit(&'a [bool]),
     //Numeric
     I64(&'a [i64]),
     Decimal(&'a [Decimal]),
@@ -86,6 +88,7 @@ impl<'a> ScalarSlice<'a> {
         match self {
             Self::Unit(x) => x.len(),
             Self::Bool(x) => x.len(),
+            Self::Bit(x) => x.len(),
             Self::I64(x) => x.len(),
             Self::Decimal(x) => x.len(),
             Self::F64(x) => x.len(),
@@ -108,6 +111,7 @@ impl<'a> ScalarSlice<'a> {
         match self {
             Self::Unit(_) => DataType::Unit,
             Self::Bool(_) => DataType::Bool,
+            Self::Bit(_) => DataType::Bit,
             Self::I64(_) => DataType::I64,
             Self::Decimal(_) => DataType::Decimal,
             Self::F64(_) => DataType::F64,
@@ -122,6 +126,7 @@ impl<'a> ScalarSlice<'a> {
         match self {
             Self::Unit(x) => Self::Unit(&x[r]),
             Self::Bool(x) => Self::Bool(&x[r]),
+            Self::Bit(x) => Self::Bool(&x[r]),
             Self::I64(x) => Self::I64(&x[r]),
             Self::Decimal(x) => Self::Decimal(&x[r]),
             Self::F64(x) => Self::F64(&x[r]),
@@ -147,6 +152,7 @@ pub enum Scalar {
     /// The **BOTTOM** value
     Unit([(); 1]),
     Bool([bool; 1]),
+    Bit([bool; 1]),
     //Numeric
     I64([i64; 1]),
     Decimal([Decimal; 1]),
@@ -168,6 +174,7 @@ impl Scalar {
         match self {
             Self::Unit(x) => ScalarSlice::Unit(x),
             Self::Bool(x) => ScalarSlice::Bool(x),
+            Self::Bit(x) => ScalarSlice::Bit(x),
             Self::I64(x) => ScalarSlice::I64(x),
             Self::Decimal(x) => ScalarSlice::Decimal(x),
             Self::F64(x) => ScalarSlice::F64(x),
@@ -196,6 +203,7 @@ impl fmt::Display for Scalar {
         match self {
             Scalar::Unit(_x) => todo!(),
             Scalar::Bool(x) => format_slice_scalar(x, f),
+            Scalar::Bit(x) => format_slice_bit(x, f),
             Scalar::I64(x) => format_slice_scalar(x, f),
             Scalar::Decimal(x) => format_slice_scalar_postfix(x, "d", f),
             Scalar::F64(x) => format_slice_scalar_postfix(x, "f", f),

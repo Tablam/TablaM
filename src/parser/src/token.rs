@@ -71,6 +71,8 @@ pub enum Syntax {
     Decimal,
     #[regex(r#"d"[^"]*""#)]
     #[regex(r#"d'[^']*'"#)]
+    #[regex(r"(?&decimal)b")]
+    Bit,
     Date,
     #[regex(r#"t"[^"]*""#)]
     #[regex(r#"t'[^']*'"#)]
@@ -233,6 +235,7 @@ impl Syntax {
             | Syntax::Integer
             | Syntax::Float
             | Syntax::Decimal
+            | Syntax::Bit
             | Syntax::String
             | Syntax::Date
             | Syntax::Time

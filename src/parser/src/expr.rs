@@ -7,7 +7,7 @@ use crate::parser::Checker;
 use crate::token::{Syntax, Token};
 use corelib::dsl::str;
 use corelib::prelude::{Decimal, Scalar, F64};
-use corelib::scalar::DateKind;
+use corelib::scalar::{BitVec, DateKind};
 use corelib::tree_flat::node::NodeId;
 use corelib::types;
 use corelib::types::DataType;
@@ -136,12 +136,13 @@ fn clean_floats(code: &str) -> String {
 }
 
 fn parse_bit(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
-    let mut bits = Vec::with_capacity(code.len());
+    let mut bits = BitVec::with_capacity(code.len() - 1);
 
     for (pos, x) in code[..code.len() - 1].chars().enumerate() {
         match x {
             '0' => bits.push(false),
             '1' => bits.push(true),
+            '_' => continue,
             x => {
                 return Err(errors::parse(
                     t,
@@ -152,11 +153,7 @@ fn parse_bit(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {
         }
     }
 
-    if bits.len() == 1 {
-        Ok((Ast::scalar(Scalar::Bit([bits[0]]), t), Step::Bit))
-    } else {
-        todo!()
-    }
+    Ok((Ast::scalar(Scalar::Bit(bits), t), Step::Bit))
 }
 
 fn parse_i64(code: &str, t: &Token) -> Result<(Ast, Step), ErrorParser> {

@@ -222,14 +222,21 @@ world"
         check(
             "1b",
             expect![[r##"
-Bits[1b]
+Bits[1]
 "##]],
         );
 
         check(
             "0b",
             expect![[r##"
-Bits[0b]
+Bits[0]
+"##]],
+        );
+
+        check(
+            "01_001b",
+            expect![[r##"
+Bits[0, 1, 0, 0, 1]
 "##]],
         );
     }

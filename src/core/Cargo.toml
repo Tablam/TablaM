@@ -20,3 +20,4 @@ rust_decimal = { version = "1.26.1", features = [] }
 slotmap = "1.0.6"
 text-size = "1.1.0"
 tree-flat = "0.1.2"
+bitvec = "1.0.1"

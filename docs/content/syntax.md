@@ -78,7 +78,7 @@ true
 false
 1b        -- Bit 1
 0b        -- Bit 0
-010_101_01b --Bit Array, can use _ for clarity
+010_10101b --Bit Array, can use _ for clarity
 ```
 
 With Boolean values we can do *Boolean expressions*, so we can

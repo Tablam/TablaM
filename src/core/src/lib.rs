@@ -30,7 +30,7 @@ pub mod prelude {
     pub use crate::errors::{ErrorCore, ErrorLang, ResultT, Span};
     pub use crate::extra_types::*;
     pub use crate::relation::Rel;
-    pub use crate::scalar::{DateKind, DateT, Scalar, ScalarSlice, F64};
+    pub use crate::scalar::{BitSlice, BitVec, DateKind, DateT, Scalar, ScalarSlice, F64};
     pub use crate::schema::*;
     pub use crate::types::*;
     pub use crate::utils::*;

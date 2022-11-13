@@ -7,12 +7,15 @@ use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
 
+use bitvec::prelude as bv;
 use decorum::Total;
 
 use crate::prelude::*;
 
 /// The total ordered [f64]
 pub type F64 = Total<f64>;
+pub type BitSlice = bv::BitSlice<usize, bv::Lsb0>;
+pub type BitVec = bv::BitVec<usize, bv::Lsb0>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DateKind {
@@ -68,7 +71,7 @@ pub enum ScalarSlice<'a> {
     /// The **BOTTOM** value
     Unit(&'a [()]),
     Bool(&'a [bool]),
-    Bit(&'a [bool]),
+    Bit(&'a BitSlice),
     //Numeric
     I64(&'a [i64]),
     Decimal(&'a [Decimal]),
@@ -126,7 +129,7 @@ impl<'a> ScalarSlice<'a> {
         match self {
             Self::Unit(x) => Self::Unit(&x[r]),
             Self::Bool(x) => Self::Bool(&x[r]),
-            Self::Bit(x) => Self::Bool(&x[r]),
+            Self::Bit(x) => Self::Bit(&x[r]),
             Self::I64(x) => Self::I64(&x[r]),
             Self::Decimal(x) => Self::Decimal(&x[r]),
             Self::F64(x) => Self::F64(&x[r]),
@@ -152,7 +155,7 @@ pub enum Scalar {
     /// The **BOTTOM** value
     Unit([(); 1]),
     Bool([bool; 1]),
-    Bit([bool; 1]),
+    Bit(BitVec),
     //Numeric
     I64([i64; 1]),
     Decimal([Decimal; 1]),

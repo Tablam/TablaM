@@ -78,10 +78,7 @@ pub enum Ast {
         if_true: Box<Ast>,
         if_false: Box<Ast>,
     },
-    Bool {
-        val: Scalar,
-        span: Span,
-    },
+
     Cmp {
         op: CmpOp,
         span: Span,
@@ -97,7 +94,6 @@ impl Ast {
             Ast::Scalar { val, span: _ } => Ty::Kind(val.kind()),
             Ast::Pass(_) => Ty::Unknown,
             Ast::Eof(_) => Ty::Ignore,
-            Ast::Bool { .. } => Ty::Kind(DataType::Bool),
             Ast::Cmp { .. } => Ty::Unknown,
             Ast::IfBlock { .. } => Ty::Unknown,
         }

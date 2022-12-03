@@ -132,6 +132,23 @@ fn push(tree: &mut TreeMut<CstNode>, t: CstNode) {
 fn to_cst(tree: &mut TreeMut<CstNode>, tokens: &Scanner, ast: S) {
     match ast {
         S::Atom(t) => push(tree, CstNode::Atom(t)),
+        S::Keyword(keyword, t) => {
+            let node = match keyword {
+                Syntax::IfKw => CstNode::If(t),
+                Syntax::ElseKw => CstNode::Else(t),
+                Syntax::DoKw => CstNode::Do(t),
+                Syntax::EndKw => CstNode::End(t),
+                _ => unreachable!("Invalid keyword"),
+            };
+
+            push(tree, node)
+        }
+        S::Block(rest) => {
+            for s in rest {
+                to_cst(tree, tokens, s);
+            }
+        }
+
         S::Cons(op, rest) => {
             let op = tokens.get(op);
             let node = match op.kind {

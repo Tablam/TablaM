@@ -34,7 +34,11 @@ impl Program {
     }
 
     pub fn from_src(source: &str) -> Self {
-        let mut p = Self::new();
+        let mut p = Program {
+            code: Tree::new(Code::Eof),
+            env: Env::new(),
+            files: FilesDb::from_src(source),
+        };
 
         match p.compile_from_src(source) {
             Ok(()) => p,
@@ -73,9 +77,6 @@ impl Program {
                 } => {
                     todo!()
                 }
-                Ast::Bool { val, span } => {
-                    todo!()
-                }
                 Ast::Cmp { op, span } => {
                     todo!()
                 }
@@ -100,6 +101,7 @@ impl Program {
     pub fn append_from_src(&mut self, source: &str) -> Result<(), ErrorCode> {
         let root = self.files.get_root_mut();
         root.append(source);
+        root.append("\n");
 
         let parse = Parser::from_src(source);
         let result = parse.parse();
@@ -147,6 +149,7 @@ pub fn create_file(path: PathBuf, source: &str) -> File {
 mod tests {
     use super::*;
     use crate::code::CodePrinter;
+    use crate::diagnostic::{print_diagnostic, print_diagnostic_to_str};
     use expect_test::expect;
 
     pub(crate) fn check(source: &str, expected_tree: expect_test::Expect) {
@@ -159,6 +162,19 @@ mod tests {
         };
         println!("{}", &printer);
         expected_tree.assert_eq(&printer.to_string());
+    }
+
+    pub(crate) fn check_err(source: &str, expected_tree: expect_test::Expect) {
+        let parse = Program::from_src(source);
+
+        let result = parse.eval();
+
+        let err = match result {
+            Code::Halt { error, .. } => print_diagnostic_to_str(&parse.files, &error).unwrap(),
+            x => panic!("Expected err, got: {x:?}"),
+        };
+
+        expected_tree.assert_eq(&err);
     }
 
     #[test]
@@ -237,6 +253,24 @@ Bits[0]
             "01_001b",
             expect![[r##"
 Bits[0, 1, 0, 0, 1]
+"##]],
+        );
+    }
+
+    #[test]
+    fn eval_diagnostic() {
+        check_err(
+            "1\n2b",
+            expect![[r##"
+[01] Error: Invalid bit char `2` at pos 0. Must be 1 or 0.
+   ╭─[repl:1:1]
+   │
+ 2 │ 2b
+   · ─┬  
+   ·  ╰── Invalid bit char `2` at pos 0. Must be 1 or 0.
+   · 
+   · Note: Parsing value of type: Bit
+───╯
 "##]],
         );
     }

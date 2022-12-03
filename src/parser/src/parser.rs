@@ -58,7 +58,7 @@ impl<'a> Checker<'a> {
 
     pub(crate) fn at_end(&self) -> bool {
         //NOTE: The last token is always EOF!
-        self.cursor >= self.ast.len()
+        self.cursor >= self.cst.ast.len()
     }
 
     pub(crate) fn new_task(&mut self, task: Task, t: TokenId) {
@@ -102,6 +102,10 @@ impl<'a> Checker<'a> {
 
     pub(crate) fn advance(&mut self) {
         self.cursor += 1;
+    }
+
+    pub(crate) fn advance_eof(&mut self) {
+        self.cursor = self.cst.ast.len();
     }
 
     pub(crate) fn advance_and_next(&mut self) -> CstNode {
@@ -212,7 +216,6 @@ fn fmt_node(node: &Ast, level: usize, f: &mut fmt::Formatter<'_>) -> fmt::Result
     match node {
         Ast::Root(_) => write!(f, "Root")?,
         Ast::Scalar { val, span } => fmt_t(f, level, kind, val, span)?,
-        Ast::Bool { val, span } => fmt_t(f, level, kind, val, span)?,
         Ast::Pass(span) => fmt_plain(f, level, &"Pass", span)?,
         Ast::Eof(_) => write!(f, "Eof")?,
         Ast::Cmp { op, span } => fmt_plain(f, level, &format!("{:?}", op), span)?,
@@ -376,6 +379,18 @@ Root
   13..17: "else"
    T: I64 @@ 18..19: I64([2])
   20..23: "end --if"
+"##]],
+        );
+    }
+
+    #[test]
+    fn parse_fragment_lit() {
+        check(
+            "1\ntrue",
+            expect![[r##"
+Root
+  T: I64 @@ 0..1: I64([1])
+  T: Bool @@ 2..6: Bool([true])
 "##]],
         );
     }

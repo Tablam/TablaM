@@ -33,6 +33,7 @@ pub enum SyntaxKind {
     Postfix,
     Open,
     Close,
+    Line,
     Trivia,
     Kw,
     Atom,
@@ -230,7 +231,8 @@ pub enum Syntax {
 impl Syntax {
     pub fn is(self) -> SyntaxKind {
         match self {
-            Syntax::Cr | Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
+            Syntax::Cr => SyntaxKind::Line,
+            Syntax::Whitespace | Syntax::Comment => SyntaxKind::Trivia,
             Syntax::Bool
             | Syntax::Integer
             | Syntax::Float

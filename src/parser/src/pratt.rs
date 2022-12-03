@@ -16,8 +16,10 @@ use crate::token::{Syntax, SyntaxKind, Token, TokenId};
 #[derive(Debug, Clone)]
 pub(crate) enum S {
     Err(TokenId),
+    Keyword(Syntax, TokenId),
     Atom(TokenId),
     Cons(TokenId, Vec<S>),
+    Block(Vec<S>),
     Eof(TokenId),
 }
 
@@ -33,6 +35,26 @@ impl fmt::Display for Pratt<'_> {
             S::Atom(t) => {
                 let t = self.tokens.get(*t);
                 write!(f, "{}: {}", &self.code[t.range], t.kind)
+            }
+            S::Keyword(_s, t) => {
+                let t = self.tokens.get(*t);
+                write!(f, "{}: {}", &self.code[t.range], t.kind)
+            }
+            S::Block(rest) => {
+                let last = rest.len() - 1;
+                for (pos, s) in rest.iter().enumerate() {
+                    let p = Pratt {
+                        ast: s.clone(),
+                        code: self.code,
+                        tokens: self.tokens.clone(),
+                    };
+                    if pos < last {
+                        write!(f, "{}\n", p)?
+                    } else {
+                        write!(f, "{}", p)?
+                    }
+                }
+                Ok(())
             }
             S::Cons(head, rest) => {
                 let head = self.tokens.get(*head);
@@ -105,11 +127,20 @@ fn expr_lhs(lexer: &mut Scanner, t: Token) -> S {
         Syntax::IfKw | Syntax::DoKw | Syntax::ElseKw | Syntax::EndKw => {
             // let rhs = expr_bp(lexer, 0);
             // S::Cons(t, vec![rhs])
-            S::Atom(t.id)
+            S::Keyword(t.kind, t.id)
         }
         s => match s.is() {
             SyntaxKind::Atom => S::Atom(t.id),
             SyntaxKind::Eof => S::Eof(t.id),
+            SyntaxKind::Line => {
+                let t = loop {
+                    let t = lexer.next();
+                    if t.kind != Syntax::Cr {
+                        break t;
+                    }
+                };
+                expr_lhs(lexer, t)
+            }
             _ => S::Err(t.id),
         },
     }
@@ -122,9 +153,8 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
 
     loop {
         let next = lexer.peek();
-        let is_lhs = true;
 
-        if next.kind == Syntax::Eof || next.kind.is() == SyntaxKind::Close {
+        if [SyntaxKind::Eof, SyntaxKind::Close].contains(&next.kind.is()) {
             break;
         };
 
@@ -157,15 +187,16 @@ fn expr_bp(lexer: &mut Scanner, min_bp: u8) -> S {
 
             continue;
         }
-
-        if is_lhs {
-            lexer.next();
+        lexer.next();
+        if t.kind == Syntax::Cr || op == Syntax::Cr {
+            let rhs = expr_lhs(lexer, next);
+            lhs = S::Block(vec![lhs, rhs]);
+        } else {
             lhs = expr_lhs(lexer, next);
             let rhs = expr_bp(lexer, 0);
+
             lhs = S::Cons(t.id, vec![lhs, rhs]);
-            continue;
         }
-        break;
     }
 
     lhs
@@ -223,11 +254,23 @@ mod tests {
             s.to_string(),
             "(if true: Bool (do false: Bool (else true: Bool end: end)))"
         );
+
+        let s = expr("if true do false\n1 else true\n2 end");
+        assert_eq!(
+            s.to_string(),
+            "(if true: Bool (do false: Bool 1: Integer\nelse: else\ntrue: Bool\n2: Integer\nend: end))"
+        );
     }
 
     #[test]
     fn ops() {
         let s = expr("1 + 2 * 3");
         assert_eq!(s.to_string(), "(+ 1: Integer (* 2: Integer 3: Integer))");
+    }
+
+    #[test]
+    fn lit() {
+        let s = expr("1\ntrue");
+        assert_eq!(s.to_string(), "1: Integer\ntrue: Bool");
     }
 }

@@ -96,14 +96,16 @@ fn run_repl(c: &Context) {
                 "exit" => break,
                 "help" => println!("Help & more info at https://www.tablam.org"),
                 line => {
-                    rl.add_history_entry(line);
                     //dbg!(&line);
                     match program.append_from_src(line) {
                         Ok(_) => match run_code(&program) {
                             Execute::Pass => continue,
-                            Execute::Halt((err, span)) => eprintln!("{:?}", err),
+                            Execute::Halt((err, span)) => print_diagnostic(&program.files, &err)
+                                .expect("Fail to report diagnostics"),
                             Execute::Value(x) => {
-                                println!("{}", x)
+                                rl.add_history_entry(line);
+
+                                println!("{x}");
                             }
                             Execute::Eof => break,
                         },

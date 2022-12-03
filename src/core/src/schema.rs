@@ -47,7 +47,7 @@ impl Field {
     }
 }
 
-#[derive(Debug, Clone, PartialOrd, Ord)]
+#[derive(Debug, Clone, Eq, PartialOrd, Ord)]
 pub struct Schema {
     pub pk: Option<usize>,
     pub fields: Vec<Field>,
@@ -88,7 +88,7 @@ impl Schema {
 
 impl PartialEq for Schema {
     fn eq(&self, other: &Schema) -> bool {
-        if self.fields.len() == other.fields.len() {
+        if self.pk == other.pk && self.fields.len() == other.fields.len() {
             let mut a = self.fields.clone();
             let mut b = other.fields.clone();
             a.sort();
@@ -100,10 +100,9 @@ impl PartialEq for Schema {
     }
 }
 
-impl Eq for Schema {}
-
 impl Hash for Schema {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        self.pk.hash(state);
         let mut a = self.fields.clone();
         a.sort();
         a.hash(state);

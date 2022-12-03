@@ -5,7 +5,6 @@ use crate::errors;
 use crate::errors::{not_a_expr, ErrorParser};
 use crate::parser::Checker;
 use crate::token::{Syntax, Token};
-use corelib::dsl::str;
 use corelib::prelude::{Decimal, Scalar, F64};
 use corelib::scalar::{BitVec, DateKind};
 use corelib::tree_flat::node::NodeId;
@@ -46,6 +45,7 @@ fn check(p: &mut Checker, parent: NodeId) -> Result<NodeId, NodeId> {
     let next = p.next();
     if let CstNode::Eof(_) = next {
         p.check.advance();
+        p.advance_eof();
         return Ok(parent);
     }
     if let CstNode::Err(_) = next {
@@ -64,13 +64,13 @@ fn check(p: &mut Checker, parent: NodeId) -> Result<NodeId, NodeId> {
                 p.new_task(Task::IfExpr, t);
             }
             //If the Task is still Start then we found a syntax error or unfinished parsing logic
-            if p.check.task == Task::Start {
+            return if p.check.task == Task::Start {
                 //if p.peek()
                 let _ = p.check.check(&next, Step::Expr, next.span(&p.cst.tokens));
-                return Err(parent);
+                Err(parent)
             } else {
-                return check(p, parent);
-            }
+                check(p, parent)
+            };
         }
         Task::Expr => {
             if let CstNode::Atom(_) = &next {

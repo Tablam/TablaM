@@ -6,6 +6,9 @@ use corelib::types::DataType;
 
 pub enum ErrorCode {
     ParseLiteral = 1,
+    ParseBoolExpr,
+    ParseNoExpr,
+    ParseIncomplete,
 }
 
 /// Define the main Error type for the parser
@@ -34,7 +37,9 @@ impl ErrorParser {
     pub fn error_code(&self) -> ErrorCode {
         match self {
             ErrorParser::ScalarParse { .. } => ErrorCode::ParseLiteral,
-            _ => todo!(),
+            ErrorParser::BoolExpr { .. } => ErrorCode::ParseBoolExpr,
+            ErrorParser::NoExpr { .. } => ErrorCode::ParseNoExpr,
+            ErrorParser::Incomplete { .. } => ErrorCode::ParseIncomplete,
         }
     }
 
